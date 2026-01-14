@@ -1,0 +1,45 @@
+{
+  // Onshape URL of the assembly
+  "url": "https://cad.onshape.com/documents/6006520d7e567b7f616afa69/w/10b25d97dd9b3cea810edf0f/e/0e8fe2c78e38de67c452e429",
+  // Output format
+  "output_format": "mujoco",
+
+  // Don't create actuators for passive joints
+  "joint_properties": {
+    "*": {
+      "damping": 0.008824,
+      "armature": 0.00006499,
+      "forcerange": 0.236,
+      "limits": [-1.91986, 1.91986],
+      "kp": 500
+    },
+    "Lpassive*": { "actuated": false },
+    "Rpassive*": { "actuated": false },
+    "LhipY": { "qpos0": "0.10472" },
+    "LhipX": { "qpos0": "0.523599" },
+    "Lknee": { "qpos0": "0.523599" },
+    "RhipY": { "qpos0": "0.10472" },
+    "RhipX": { "qpos0": "0.523599" },
+    "Rknee": { "qpos0": "0.523599" }
+  },
+
+  "ignore": {
+    // Ignore visual
+    "cm4lite": "visual",
+    "Intel*": "visual",
+
+    // Ignore everything expect "leg" for collision
+    "*": "collision",
+    "!Tibia": "collision",
+    "!Brd": "collision",
+    "!Antenna": "collision",
+    "!Trunclink": "collision"
+  },
+  // Override equality attributes
+  "equalities": {
+    "closing_*": {
+      "solref": "0.002 1",
+      "solimp": "0.99 0.999 0.0005 0.5 2"
+    }
+  }
+}
