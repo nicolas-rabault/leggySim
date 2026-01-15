@@ -11,7 +11,7 @@
       "armature": 0.00006499,
       "forcerange": 0.236,
       "limits": [-1.91986, 1.91986],
-      "kp": 500
+      "frictionloss": 0.01
     },
     "Lpassive*": { "actuated": false },
     "Rpassive*": { "actuated": false },
