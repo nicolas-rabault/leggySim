@@ -1,21 +1,10 @@
-import gymnasium as gym
+from mjlab.tasks.registry import register_mjlab_task
 
-gym.register(
-    id="Mjlab-Stand-up-Flat-Leggy",
-    entry_point="mjlab.envs:ManagerBasedRlEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": f"{__name__}.leggy_stand_up:LeggyStandUpEnvCfg",
-        "rl_cfg_entry_point": f"{__name__}.leggy_stand_up:LeggyStandUpRlCfg",
-    },
-)
+from .leggy_stand_up import leggy_stand_up_env_cfg, leggy_stand_up_rl_cfg
 
-gym.register(
-    id="Mjlab-Stand-up-Flat-Leggy-Play",
-    entry_point="mjlab.envs:ManagerBasedRlEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": f"{__name__}.leggy_stand_up:LeggyStandUpEnvCfg_PLAY",
-        "rl_cfg_entry_point": f"{__name__}.leggy_stand_up:LeggyStandUpRlCfg",
-    },
+register_mjlab_task(
+    task_id="Mjlab-Stand-up-Flat-Leggy",
+    env_cfg=leggy_stand_up_env_cfg(play=False),
+    play_env_cfg=leggy_stand_up_env_cfg(play=True),
+    rl_cfg=leggy_stand_up_rl_cfg(),
 )

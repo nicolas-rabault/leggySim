@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Training leggy to stand up in MJLab"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["mjlab"]
+dependencies = ["mjlab @ git+https://github.com/mujocolab/mjlab.git@d1d32d8b86e68fe317356de2561f4efc63ffcc29"]
 
 [project.optional-dependencies]
 visualization = ["rerun-sdk>=0.20.0"]
@@ -16,9 +16,6 @@ dev = [
     "onshape-to-robot @ git+https://github.com/nicolas-rabault/onshape-to-robot.git@feat/geom_properties",
     "rerun-sdk>=0.20.0",
 ]
-
-[project.scripts]
-leggy-train = "mjlab_leggy.scripts.train:main"
 
 [project.entry-points."mjlab.tasks"]
 mjlab_leggy = "mjlab_leggy.tasks"
@@ -35,3 +32,8 @@ include = ["src/mjlab_leggy/**"]
 [tool.ruff]
 src = ["src"]
 indent-width = 4
+
+[tool.uv]
+override-dependencies = [
+    "mujoco",
+]

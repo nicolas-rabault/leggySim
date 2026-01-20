@@ -119,6 +119,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Training logs and experiment tracking
+logs/
+wandb/
+
 # Pyre type checker
 .pyre/
 
