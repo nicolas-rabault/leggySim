@@ -22,12 +22,20 @@ class LeggyStandUpEnvCfg(LocomotionVelocityEnvCfg):
         # Contact sensors for feet
         foot_contact_sensors = [
             ContactSensorCfg(
-                name="feet_ground_contact",
-                subtree1=r"^(Tibia|tibia)$",
+                name="left_foot_ground_contact",
+                geom1="left_foot_collision",
                 body2="terrain",
-                data=("found", "force"),
-                reduce="netforce",
                 num=1,
+                data=("found",),
+                reduce="netforce",
+            ),
+            ContactSensorCfg(
+                name="right_foot_ground_contact",
+                geom1="right_foot_collision",
+                body2="terrain",
+                num=1,
+                data=("found",),
+                reduce="netforce",
             ),
         ]
 
