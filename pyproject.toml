@@ -1,6 +1,6 @@
 [build-system]
-requires = ["uv_build>=0.8.19,<0.9.0"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "mjlab-leggy"
@@ -10,11 +10,31 @@ readme = "README.md"
 requires-python = ">=3.12, <3.14"
 dependencies = ["mjlab"]
 
+[project.optional-dependencies]
+visualization = [
+    "rerun-sdk>=0.20.0",
+]
+dev = [
+    "onshape-to-robot @ git+https://github.com/nicolas-rabault/onshape-to-robot.git@feat/geom_properties",
+    "rerun-sdk>=0.20.0",
+]
+
 [project.scripts]
 leggy-train = "mjlab_leggy.scripts.train:main"
 
 [project.entry-points."mjlab.tasks"]
 mjlab_leggy = "mjlab_leggy.tasks"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mjlab_leggy"]
+
+[tool.hatch.build]
+include = [
+    "src/mjlab_leggy/**",
+]
 
 [tool.ruff]
 src = ["src"]

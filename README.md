@@ -1,37 +1,36 @@
 # LeggySim
 
-A robot simulation environment package for training biped robots using reinforcement learning. This project enables importing robots from Onshape, creating MuJoCo-based simulation environments with parallel execution, and preparing them for RL policy training with LeRobot.
+A robot simulation environment package for training biped robots using reinforcement learning. This project enables importing robots from Onshape, creating MuJoCo-based simulation environments with parallel execution, and training RL policies with [mjlab](https://github.com/mujocolab/mjlab).
 
 ## Overview
 
 LeggySim bridges the gap between CAD design and RL training by providing:
 - Automated robot import from Onshape CAD models
-- MuJoCo-based physics simulation with [mjlab](https://github.com/mujocolab/mjlab) integration
+- MuJoCo-based physics simulation with mjlab integration
 - Parallel environment execution for efficient training
-- [LeRobot envHub](https://huggingface.co/docs/lerobot/en/envhub) compatibility for seamless RL training
-
-This package focuses on the **robot + simulation layer**. Training and policy deployment are handled separately using LeRobot.
+- Ready-to-use training tasks for the Leggy biped robot
 
 ## Features
 
 ### Current Features
+- **Stand-up Task**: Train Leggy to stand up from various initial positions
 - **Gymnasium Environment**: Full implementation of biped robot environment with:
   - IMU sensor readings (acceleration, gyroscope, orientation)
   - Joint position, velocity, and torque feedback
   - Configurable observation and action spaces
   - Customizable reward functions
-- **Parallel Execution**: Run N synchronized or asynchronous environments
-- **Visualization**: Browser-based multi-environment visualization using Viser
-- **LeRobot Integration**: envHub-compatible environment factory
+- **Parallel Execution**: Run thousands of synchronized environments for efficient training
+- **mjlab Integration**: Seamless integration with mjlab's training infrastructure
 
 ### Planned Features
 - [ ] Command-line robot import from Onshape
 - [ ] Scene description configuration
-- [ ] Input/output vector definitions via config files
-- [ ] Reward function templates and customization
-- [ ] Environment parameter randomization
+- [ ] Additional locomotion tasks (walking, jumping)
+- [ ] Environment parameter randomization for sim-to-real transfer
 
 ## Installation
+
+### Using pip (recommended for development)
 
 ```bash
 # Clone the repository
@@ -42,22 +41,61 @@ cd leggySim
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install in editable mode
+pip install -e .
+
+# Install with visualization support
+pip install -e ".[visualization]"
+
+# Install with all development dependencies
+pip install -e ".[dev]"
+```
+
+### Using uv
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd leggySim
+
+# Install and sync dependencies
+uv sync
 ```
 
 ### Dependencies
-- `onshape-to-robot`: Robot URDF/XML generation from Onshape CAD
-- `mjlab`: MuJoCo lab integration for robot simulation
-- `lerobot`: LeRobot framework for RL training
-- `viser`: 3D visualization in browser
-- `huggingface_hub`: Environment distribution
 
-Note: mjlab includes MuJoCo, Gymnasium, NumPy, and PyTorch as transitive dependencies.
+Core dependency:
+- `mjlab`: MuJoCo lab integration for robot simulation (includes MuJoCo, Gymnasium, NumPy, and PyTorch)
+
+Optional dependencies:
+- `rerun-sdk`: 3D visualization
+- `onshape-to-robot`: Robot URDF/XML generation from Onshape CAD (development only)
 
 ## Usage
 
-### 1. Import Robot from Onshape
+### Training
+
+Run training with mjlab using the `leggy-train` command:
+
+```bash
+# Using uv (recommended)
+uv run leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
+
+# Or if installed via pip
+leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
+```
+
+#### Training Options
+
+```bash
+# Adjust number of parallel environments
+uv run leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 4096
+
+# See all available options
+uv run leggy-train --help
+```
+
+### Import Robot from Onshape
 
 ```bash
 # TODO: Command to import robot from Onshape
@@ -66,68 +104,35 @@ Note: mjlab includes MuJoCo, Gymnasium, NumPy, and PyTorch as transitive depende
 
 This will generate the robot XML files in the `leggy/` directory that MuJoCo can load.
 
-### 2. Run Simulation
-
-#### Basic Test with N Parallel Environments
-
-```bash
-# Run with 4 parallel environments (default)
-python env.py
-
-# Run with custom number of environments
-python env.py 8
-```
-
-This will:
-- Create N parallel robot instances
-- Run random actions on all robots
-- Print height and reward metrics
-- Continue until interrupted (Ctrl+C)
-
-#### Visual Debugging
+### Visual Debugging
 
 ```bash
 # Visualize single robot with MuJoCo viewer
-python -m mujoco.viewer --mjcf=leggy/robot.xml
-
-# Visualize multiple robots in browser (Viser)
-python visualize_envs.py 4
-```
-
-Open http://localhost:8080 to see all robots running in parallel in your browser.
-
-### 3. Integrate with LeRobot
-
-```python
-from env import make_env
-
-# Create environment factory for LeRobot
-envs_dict = make_env(n_envs=16, use_async_envs=True)
-
-# Use with LeRobot training
-# (See LeRobot documentation for full training setup)
-```
-
-The `make_env()` function returns a dictionary in the format expected by LeRobot envHub:
-```python
-{
-    "suite_name": {
-        task_id: VectorEnv
-    }
-}
+python -m mujoco.viewer --mjcf=src/mjlab_leggy/leggy/robot.xml
 ```
 
 ## Project Structure
 
 ```
 leggySim/
-├── env.py                  # Main Gymnasium environment implementation
-├── visualize_envs.py       # Viser-based multi-env visualization
-├── requirements.txt        # Python dependencies
-├── leggy/                  # Robot model directory
-│   ├── robot.xml          # MuJoCo robot model (generated from Onshape)
-│   └── config.json        # Robot configuration (optional)
-└── README.md              # This file
+├── pyproject.toml              # Package configuration and dependencies
+├── requirements.txt            # Legacy requirements (for reference)
+├── env.py                      # Deprecated standalone environment (kept for reference)
+├── infer_policy.py             # Policy inference script
+└── src/
+    └── mjlab_leggy/            # Main package
+        ├── __init__.py
+        ├── leggy/              # Robot model directory
+        │   ├── robot.xml       # MuJoCo robot model
+        │   ├── scene.xml       # Scene with robot + ground
+        │   ├── sensors.xml     # Sensor definitions
+        │   ├── config.json     # Robot configuration
+        │   ├── leggy_constants.py  # Robot constants
+        │   └── assets/         # Robot mesh files (STL)
+        ├── scripts/
+        │   └── train.py        # Training entry point
+        └── tasks/
+            └── leggy_stand_up.py  # Stand-up task definition
 ```
 
 ## Environment Details
@@ -149,33 +154,11 @@ Total dimension: 3 + 3 + 4 + 4N (where N = number of joints)
 - **Scaled**: Actions are automatically scaled to joint limits
 - **Dimension**: N (number of actuated joints)
 
-### Reward Function
-Current reward encourages forward walking:
-- Forward velocity (positive reward for moving forward)
-- Height stability (exponential penalty for deviating from standing height)
-- Energy efficiency (L2 penalty on motor torques)
+## Available Tasks
 
-Weights are tunable in `env.py:157`.
-
-## Configuration
-
-### Robot Parameters
-Edit these in `env.py` to match your robot:
-- `n_joints`: Number of actuated joints
-- `initial_height`: Standing height in meters
-- `min_height`: Fall detection threshold
-- `initial_qpos`: Default joint positions for standing pose
-
-### Simulation Parameters
-- `dt`: Timestep (20ms by default)
-- `frame_skip`: Physics steps per environment step
-- `render_fps`: Rendering frequency
-
-### Reward Tuning
-Modify `_compute_reward()` in `env.py:157` to customize:
-- Task objectives (walking, jumping, balancing, etc.)
-- Penalty terms (energy, smoothness, joint limits, etc.)
-- Weight coefficients
+| Task Name | Description |
+|-----------|-------------|
+| `Mjlab-Stand-up-Flat-Leggy` | Train Leggy to stand up on flat ground |
 
 ## Next Steps
 
@@ -186,13 +169,10 @@ Modify `_compute_reward()` in `env.py:157` to customize:
 4. Build reward function library and configuration system
 5. Add domain randomization for sim-to-real transfer
 
-### For Training (Separate Repository)
-This environment package is designed to be imported into a training repository that will:
-1. Load environments using `make_env()`
-2. Configure RL algorithm (PPO, SAC, etc.)
-3. Set up training loop with LeRobot
-4. Handle model checkpointing and logging
-5. Deploy policies on real hardware
+### For Deployment
+1. Export trained policies for hardware deployment
+2. Implement sim-to-real transfer techniques
+3. Test on physical Leggy robot
 
 ## Contributing
 
@@ -204,7 +184,6 @@ This is a work in progress. Key areas needing development:
 
 ## Resources
 
-- [LeRobot envHub Documentation](https://huggingface.co/docs/lerobot/en/envhub)
 - [mjlab GitHub](https://github.com/mujocolab/mjlab)
 - [onshape-to-robot](https://github.com/Rhoban/onshape-to-robot)
 - [MuJoCo Documentation](https://mujoco.readthedocs.io/)

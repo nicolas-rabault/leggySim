@@ -2,6 +2,10 @@
 LeggySim Environment - Biped robot learning to walk
 
 Minimal Gymnasium environment for Leggy biped robot.
+
+DEPRECATED: This file is kept for reference and future use.
+For training, use the mjlab-based environment instead:
+    uv run leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
 """
 
 import gymnasium as gym
