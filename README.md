@@ -13,14 +13,10 @@ LeggySim bridges the gap between CAD design and RL training by providing:
 ## Features
 
 ### Current Features
-- **Stand-up Task**: Train Leggy to stand up from various initial positions
-- **Gymnasium Environment**: Full implementation of biped robot environment with:
-  - IMU sensor readings (acceleration, gyroscope, orientation)
-  - Joint position, velocity, and torque feedback
-  - Configurable observation and action spaces
-  - Customizable reward functions
+- **Stand-up Task**: Train Leggy to stand up and balance
+- **mjlab Integration**: Full integration with mjlab's training infrastructure
 - **Parallel Execution**: Run thousands of synchronized environments for efficient training
-- **mjlab Integration**: Seamless integration with mjlab's training infrastructure
+- **Contact Sensors**: Foot contact detection for locomotion rewards
 
 ### Planned Features
 - [ ] Command-line robot import from Onshape
@@ -30,28 +26,7 @@ LeggySim bridges the gap between CAD design and RL training by providing:
 
 ## Installation
 
-### Using pip (recommended for development)
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd leggySim
-
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install in editable mode
-pip install -e .
-
-# Install with visualization support
-pip install -e ".[visualization]"
-
-# Install with all development dependencies
-pip install -e ".[dev]"
-```
-
-### Using uv
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
 ```bash
 # Clone the repository
@@ -65,7 +40,7 @@ uv sync
 ### Dependencies
 
 Core dependency:
-- `mjlab`: MuJoCo lab integration for robot simulation (includes MuJoCo, Gymnasium, NumPy, and PyTorch)
+- `mjlab`: MuJoCo lab integration for robot simulation (pinned to stable revision `d1d32d8`)
 
 Optional dependencies:
 - `rerun-sdk`: 3D visualization
@@ -75,24 +50,32 @@ Optional dependencies:
 
 ### Training
 
-Run training with mjlab using the `leggy-train` command:
+Run training using mjlab's train command:
 
 ```bash
-# Using uv (recommended)
-uv run leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
+# Train with default settings
+uv run train Mjlab-Stand-up-Flat-Leggy
 
-# Or if installed via pip
-leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
-```
-
-#### Training Options
-
-```bash
 # Adjust number of parallel environments
-uv run leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 4096
+uv run train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
 
 # See all available options
-uv run leggy-train --help
+uv run train Mjlab-Stand-up-Flat-Leggy --help
+```
+
+### Play/Evaluation
+
+Run a trained policy:
+
+```bash
+# Play with a wandb checkpoint
+uv run play Mjlab-Stand-up-Flat-Leggy --wandb-run-path <your-wandb-path>
+
+# Play with a local checkpoint
+uv run play Mjlab-Stand-up-Flat-Leggy --checkpoint-file logs/rsl_rl/leggy_stand_up/<run>/model_*.pt
+
+# Use random actions (for testing)
+uv run play Mjlab-Stand-up-Flat-Leggy --agent random
 ```
 
 ### Import Robot from Onshape
@@ -107,7 +90,7 @@ This will generate the robot XML files in the `leggy/` directory that MuJoCo can
 ### Visual Debugging
 
 ```bash
-# Visualize single robot with MuJoCo viewer
+# Visualize robot with MuJoCo viewer
 python -m mujoco.viewer --mjcf=src/mjlab_leggy/leggy/robot.xml
 ```
 
@@ -116,9 +99,8 @@ python -m mujoco.viewer --mjcf=src/mjlab_leggy/leggy/robot.xml
 ```
 leggySim/
 ├── pyproject.toml              # Package configuration and dependencies
-├── requirements.txt            # Legacy requirements (for reference)
 ├── env.py                      # Deprecated standalone environment (kept for reference)
-├── infer_policy.py             # Policy inference script
+├── infer_policy.py             # ONNX policy inference script
 └── src/
     └── mjlab_leggy/            # Main package
         ├── __init__.py
@@ -127,38 +109,42 @@ leggySim/
         │   ├── scene.xml       # Scene with robot + ground
         │   ├── sensors.xml     # Sensor definitions
         │   ├── config.json     # Robot configuration
-        │   ├── leggy_constants.py  # Robot constants
+        │   ├── leggy_constants.py  # Robot constants and config
         │   └── assets/         # Robot mesh files (STL)
-        ├── scripts/
-        │   └── train.py        # Training entry point
         └── tasks/
+            ├── __init__.py     # Task registration
             └── leggy_stand_up.py  # Stand-up task definition
 ```
 
 ## Environment Details
 
 ### Observation Space
-The environment provides sensor readings typically available on real hardware:
-- **IMU Acceleration** (3D): Linear acceleration from accelerometer
-- **IMU Gyroscope** (3D): Angular velocity from gyroscope
-- **IMU Orientation** (4D): Quaternion orientation
-- **Joint Positions** (N): Encoder readings for each joint
-- **Joint Velocities** (N): Joint angular velocities
-- **Motor Torques** (N): Current torque output of each actuator
-- **Previous Action** (N): Action from previous timestep
 
-Total dimension: 3 + 3 + 4 + 4N (where N = number of joints)
+The policy observation includes (38 dimensions):
+- **Base Linear Velocity** (3D): Robot body velocity
+- **Base Angular Velocity** (3D): Robot body angular velocity
+- **Projected Gravity** (3D): Gravity vector in body frame
+- **Joint Positions** (10D): All joint positions (including passive joints)
+- **Joint Velocities** (10D): All joint velocities
+- **Actions** (6D): Previous action
+- **Command** (3D): Velocity command (lin_vel_x, lin_vel_y, ang_vel_z)
+
+The critic observation includes additional information (50 dimensions):
+- All policy observations
+- **Foot Height** (2D): Height of each foot
+- **Foot Air Time** (2D): Time since last ground contact
+- **Foot Contact** (2D): Binary contact state
+- **Foot Contact Forces** (6D): Contact force vectors
 
 ### Action Space
-- **Continuous**: Box space in [-1, 1] for each joint
-- **Scaled**: Actions are automatically scaled to joint limits
-- **Dimension**: N (number of actuated joints)
+- **Continuous**: 6 joint position targets
+- **Joints**: LhipY, LhipX, Lknee, RhipY, RhipX, Rknee
 
 ## Available Tasks
 
 | Task Name | Description |
 |-----------|-------------|
-| `Mjlab-Stand-up-Flat-Leggy` | Train Leggy to stand up on flat ground |
+| `Mjlab-Stand-up-Flat-Leggy` | Train Leggy to stand and balance on flat ground |
 
 ## Next Steps
 
@@ -187,7 +173,6 @@ This is a work in progress. Key areas needing development:
 - [mjlab GitHub](https://github.com/mujocolab/mjlab)
 - [onshape-to-robot](https://github.com/Rhoban/onshape-to-robot)
 - [MuJoCo Documentation](https://mujoco.readthedocs.io/)
-- [Gymnasium Documentation](https://gymnasium.farama.org/)
 
 ## License
 

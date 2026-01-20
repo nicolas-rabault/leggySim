@@ -38,8 +38,8 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # so we skip the nonfoot ground contact sensor
     cfg.scene.sensors = (feet_ground_cfg,)
 
-    # Configure viewer
-    cfg.viewer.body_name = "trunclink"
+    # Configure viewer (main body is called "boddy" in robot.xml)
+    cfg.viewer.body_name = "boddy"
 
     # Configure velocity command ranges (mostly standing for balance training)
     twist_cmd = cfg.commands["twist"]
@@ -61,9 +61,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         if reward_name in cfg.rewards:
             cfg.rewards[reward_name].params["asset_cfg"].site_names = FOOT_SITE_NAMES
 
-    # Update rewards that reference body names
-    cfg.rewards["upright"].params["asset_cfg"].body_names = ("trunclink",)
-    cfg.rewards["body_ang_vel"].params["asset_cfg"].body_names = ("trunclink",)
+    # Update rewards that reference body names (main body is "boddy")
+    cfg.rewards["upright"].params["asset_cfg"].body_names = ("boddy",)
+    cfg.rewards["body_ang_vel"].params["asset_cfg"].body_names = ("boddy",)
 
     # Walking on plane only
     assert cfg.scene.terrain is not None
