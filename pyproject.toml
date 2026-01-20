@@ -11,9 +11,7 @@ requires-python = ">=3.10"
 dependencies = ["mjlab"]
 
 [project.optional-dependencies]
-visualization = [
-    "rerun-sdk>=0.20.0",
-]
+visualization = ["rerun-sdk>=0.20.0"]
 dev = [
     "onshape-to-robot @ git+https://github.com/nicolas-rabault/onshape-to-robot.git@feat/geom_properties",
     "rerun-sdk>=0.20.0",
@@ -32,9 +30,7 @@ allow-direct-references = true
 packages = ["src/mjlab_leggy"]
 
 [tool.hatch.build]
-include = [
-    "src/mjlab_leggy/**",
-]
+include = ["src/mjlab_leggy/**"]
 
 [tool.ruff]
 src = ["src"]

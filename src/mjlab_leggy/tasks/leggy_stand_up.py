@@ -1,6 +1,6 @@
 """Leggy stand up environment"""
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
 
@@ -11,7 +11,6 @@ from mjlab.rl import (
 )
 
 from mjlab.tasks.velocity.velocity_env_cfg import LocomotionVelocityEnvCfg
-from mjlab.utils.spec_config import ContactSensorCfg
 
 
 @dataclass
@@ -19,29 +18,8 @@ class LeggyStandUpEnvCfg(LocomotionVelocityEnvCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        # Contact sensors for feet
-        foot_contact_sensors = [
-            ContactSensorCfg(
-                name="left_foot_ground_contact",
-                geom1="left_foot_collision",
-                body2="terrain",
-                num=1,
-                data=("found",),
-                reduce="netforce",
-            ),
-            ContactSensorCfg(
-                name="right_foot_ground_contact",
-                geom1="right_foot_collision",
-                body2="terrain",
-                num=1,
-                data=("found",),
-                reduce="netforce",
-            ),
-        ]
-
-        # Set leggy robot with sensors
-        leggy_cfg = replace(LEGGY_ROBOT_CFG, sensors=tuple(foot_contact_sensors))
-        self.scene.entities = {"robot": leggy_cfg}
+        # Set leggy robot
+        self.scene.entities = {"robot": LEGGY_ROBOT_CFG}
 
         # Configure viewer
         self.viewer.body_name = "trunclink"
