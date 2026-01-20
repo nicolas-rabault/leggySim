@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, replace
 
-from leggy.leggy_constants import LEGGY_ROBOT_CFG
+from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
 
 from mjlab.rl import (
     RslRlOnPolicyRunnerCfg,
@@ -54,19 +54,14 @@ class LeggyStandUpEnvCfg(LocomotionVelocityEnvCfg):
         self.curriculum.command_vel = None
 
 
-def make_leggy_stand_up_env_cfg(play: bool = False) -> LeggyStandUpEnvCfg:
-    """Create Leggy stand up environment configuration.
+@dataclass
+class LeggyStandUpEnvCfg_PLAY(LeggyStandUpEnvCfg):
+    """Play configuration with infinite episode length."""
 
-    Args:
-        play: If True, use play configuration (infinite episodes, no push)
-    """
-    cfg = LeggyStandUpEnvCfg()
-
-    if play:
+    def __post_init__(self):
+        super().__post_init__()
         # Infinite episode length for testing
-        cfg.episode_length_s = int(1e9)
-
-    return cfg
+        self.episode_length_s = int(1e9)
 
 
 # RL training configuration

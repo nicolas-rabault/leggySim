@@ -1,0 +1,21 @@
+[build-system]
+requires = ["uv_build>=0.8.19,<0.9.0"]
+build-backend = "uv_build"
+
+[project]
+name = "mjlab-leggy"
+version = "0.1.0"
+description = "Training leggy to stand up in MJLab"
+readme = "README.md"
+requires-python = ">=3.12, <3.14"
+dependencies = ["mjlab"]
+
+[project.scripts]
+leggy-train = "mjlab_leggy.scripts.train:main"
+
+[project.entry-points."mjlab.tasks"]
+mjlab_leggy = "mjlab_leggy.tasks"
+
+[tool.ruff]
+src = ["src"]
+indent-width = 4
