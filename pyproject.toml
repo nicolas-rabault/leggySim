@@ -7,7 +7,7 @@ name = "mjlab-leggy"
 version = "0.1.0"
 description = "Training leggy to stand up in MJLab"
 readme = "README.md"
-requires-python = ">=3.12, <3.14"
+requires-python = ">=3.10"
 dependencies = ["mjlab"]
 
 [project.optional-dependencies]
