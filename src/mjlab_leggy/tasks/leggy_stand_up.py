@@ -62,8 +62,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             cfg.rewards[reward_name].params["asset_cfg"].site_names = FOOT_SITE_NAMES
 
     # Update rewards that reference body names (main body is "boddy")
-    cfg.rewards["upright"].params["asset_cfg"].body_names = ("boddy",)
-    cfg.rewards["body_ang_vel"].params["asset_cfg"].body_names = ("boddy",)
+    # The default velocity config uses "trunclink" which doesn't exist in Leggy
+    for reward_name in ["upright", "body_ang_vel", "flat_orientation", "base_height", "lin_vel_z_l2"]:
+        if reward_name in cfg.rewards and hasattr(cfg.rewards[reward_name].params.get("asset_cfg", None), "body_names"):
+            cfg.rewards[reward_name].params["asset_cfg"].body_names = ("boddy",)
 
     # Walking on plane only
     assert cfg.scene.terrain is not None
