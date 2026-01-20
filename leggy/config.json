@@ -11,7 +11,8 @@
       "armature": 0.00006499,
       "forcerange": 0.236,
       "limits": [-1.91986, 1.91986],
-      "frictionloss": 0.01
+      "frictionloss": 0.01,
+      "kp": 10
     },
     "Lpassive*": { "actuated": false },
     "Rpassive*": { "actuated": false },
@@ -22,6 +23,18 @@
     "RhipX": { "qpos0": "0.523599" },
     "Rknee": { "qpos0": "0.523599" }
   },
+  "geom_properties": {
+    "tibia": {
+      "collision": {
+        "name": "left_foot_collision"
+      },
+      "tibia_2": {
+        "collision": {
+          "name": "right_foot_collision"
+        }
+      }
+    }
+  },
 
   "ignore": {
     // Ignore visual
@@ -30,10 +43,7 @@
 
     // Ignore everything expect "leg" for collision
     "*": "collision",
-    "!Tibia": "collision",
-    "!Brd": "collision",
-    "!Antenna": "collision",
-    "!Trunclink": "collision"
+    "!Tibia": "collision"
   },
   // Override equality attributes
   "equalities": {
@@ -41,5 +51,6 @@
       "solref": "0.002 1",
       "solimp": "0.99 0.999 0.0005 0.5 2"
     }
-  }
+  },
+  "additional_xml": ["sensors.xml"]
 }

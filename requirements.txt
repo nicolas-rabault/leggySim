@@ -1,5 +1,5 @@
 # Core dependencies
-onshape-to-robot>=1.7.0
+onshape-to-robot @ git+https://github.com/nicolas-rabault/onshape-to-robot.git@feat/geom_properties
 mjlab>=0.1.0
 
 # RL training
