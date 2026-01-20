@@ -27,11 +27,11 @@
     "tibia": {
       "collision": {
         "name": "left_foot_collision"
-      },
-      "tibia_2": {
-        "collision": {
-          "name": "right_foot_collision"
-        }
+      }
+    },
+    "tibia_2": {
+      "collision": {
+        "name": "right_foot_collision"
       }
     }
   },
