@@ -3,6 +3,8 @@
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
 
 from mjlab.envs import ManagerBasedRlEnvCfg
+from mjlab.envs.mdp import terminations as mdp_terminations
+from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.rl import (
     RslRlOnPolicyRunnerCfg,
     RslRlPpoActorCriticCfg,
@@ -100,6 +102,13 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Disable terrain curriculum (if present)
     if cfg.curriculum is not None and "terrain_levels" in cfg.curriculum:
         del cfg.curriculum["terrain_levels"]
+
+    # Add termination condition: reset if body goes below the floor
+    # This prevents the policy from learning to exploit floor penetration
+    cfg.terminations["body_below_floor"] = TerminationTermCfg(
+        func=mdp_terminations.root_height_below_minimum,
+        params={"minimum_height": 0.0},
+    )
 
     # Apply play mode overrides
     if play:
