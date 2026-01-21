@@ -67,6 +67,31 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         if reward_name in cfg.rewards and hasattr(cfg.rewards[reward_name].params.get("asset_cfg", None), "body_names"):
             cfg.rewards[reward_name].params["asset_cfg"].body_names = ("boddy",)
 
+    # Configure the pose reward with joint-specific std values for Leggy
+    # These control how tightly the robot should maintain its default pose
+    # Smaller std = tighter constraint, larger std = more relaxed
+    # Only use actuated joints (exclude passive joints which aren't observable on real robot)
+    if "pose" in cfg.rewards:
+        # Limit to actuated joints only (exclude Lpassive*, Rpassive*)
+        cfg.rewards["pose"].params["asset_cfg"].joint_names = (
+            "LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"
+        )
+        # Standing: tight constraints to maintain balance
+        cfg.rewards["pose"].params["std_standing"] = {
+            ".*hip.*": 0.15,  # Hip joints need tight control for balance
+            ".*knee.*": 0.2,  # Knee joints slightly more relaxed
+        }
+        # Walking: medium constraints
+        cfg.rewards["pose"].params["std_walking"] = {
+            ".*hip.*": 0.3,
+            ".*knee.*": 0.4,
+        }
+        # Running: relaxed constraints for dynamic motion
+        cfg.rewards["pose"].params["std_running"] = {
+            ".*hip.*": 0.5,
+            ".*knee.*": 0.6,
+        }
+
     # Walking on plane only
     assert cfg.scene.terrain is not None
     cfg.scene.terrain.terrain_type = "plane"
