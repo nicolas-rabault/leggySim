@@ -48,12 +48,12 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Configure action offsets to match initial joint positions from HOME_FRAME
     # This ensures action=0 targets the initial standing pose, not joint position 0
     # (The XML joints don't have 'ref' attributes, so use_default_offset would use 0)
-    cfg.actions["joint_pos"].use_default_offset = False
-    cfg.actions["joint_pos"].offset = {
-        ".*hipY": 6 * np.pi / 180.0,
-        ".*hipX": 30 * np.pi / 180.0,
-        ".*knee": 30 * np.pi / 180.0,
-    }
+    # cfg.actions["joint_pos"].use_default_offset = False
+    # cfg.actions["joint_pos"].offset = {
+    #     ".*hipY": 6 * np.pi / 180.0,
+    #     ".*hipX": 30 * np.pi / 180.0,
+    #     ".*knee": 30 * np.pi / 180.0,
+    # }
 
     # Configure velocity command ranges (mostly standing for balance training)
     twist_cmd = cfg.commands["twist"]

@@ -25,35 +25,35 @@
     <!-- Link boddy -->
     <body name="boddy" pos="0 0 0" quat="1 0 0 0" childclass="leggy">
       <freejoint name="boddy_freejoint"/>
-      <inertial pos="-0.00139843 0.0178986 0.177176" mass="0.227015" fullinertia="0.000271489 0.000303651 0.000253796 1.36758e-08 4.88864e-09 -9.36267e-05"/>
+      <inertial pos="-0.00139843 0.0178986 0.177176" mass="0.227015" fullinertia="0.000271489 0.000303651 0.000253796 1.36757e-08 4.8887e-09 -9.36267e-05"/>
       <!-- Part trunclink -->
-      <geom type="mesh" class="visual" pos="-0.00139637 0.00698983 0.183672" quat="1 -1.04633e-11 -1.28626e-11 -5.27452e-13" mesh="trunclink" material="trunclink_material"/>
+      <geom type="mesh" class="visual" pos="-0.00139637 0.00698983 0.183672" quat="1 -1.42944e-11 -1.87678e-11 -9.68422e-13" mesh="trunclink" material="trunclink_material"/>
       <!-- Part antenna -->
-      <geom type="mesh" class="visual" pos="-0.0176393 0.0713898 0.185176" quat="0.999048 -1.04764e-11 -0.0436194 -7.05863e-14" mesh="antenna" material="antenna_material"/>
+      <geom type="mesh" class="visual" pos="-0.0176393 0.0713898 0.185176" quat="0.999048 -1.43231e-11 -0.0436194 -3.44145e-13" mesh="antenna" material="antenna_material"/>
       <!-- Part brd -->
-      <geom type="mesh" class="visual" pos="-0.00139637 0.00698983 0.183672" quat="1 -1.04633e-11 -1.28692e-11 -5.27001e-13" mesh="brd" material="brd_material"/>
+      <geom type="mesh" class="visual" pos="-0.00139637 0.00698983 0.183672" quat="1 -1.42944e-11 -1.87745e-11 -9.67973e-13" mesh="brd" material="brd_material"/>
       <!-- Part antenna_2 -->
-      <geom type="mesh" class="visual" pos="0.0148466 0.0713898 0.185176" quat="0.999048 -1.04304e-11 0.0436194 -9.83354e-13" mesh="antenna" material="antenna_material"/>
+      <geom type="mesh" class="visual" pos="0.0148466 0.0713898 0.185176" quat="0.999048 -1.42386e-11 0.0436194 -1.59102e-12" mesh="antenna" material="antenna_material"/>
       <!-- Part cm4lite -->
       <!-- Part intel_ax210_ngw_wifi_6___bt_nvme_parts -->
       <!-- Part gear2__c331c3826e3aeff78bc4513233f2bf84 -->
-      <geom type="mesh" class="visual" pos="-0.0388425 0.00898983 0.137657" quat="0.498203 -0.501791 0.501791 -0.498203" mesh="gear2__c331c3826e3aeff78bc4513233f2bf84" material="gear2__c331c3826e3aeff78bc4513233f2bf84_material"/>
+      <geom type="mesh" class="visual" pos="-0.0230349 0.00898983 0.136688" quat="0.671338 -0.222048 0.222048 -0.671338" mesh="gear2__c331c3826e3aeff78bc4513233f2bf84" material="gear2__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63 -->
-      <geom type="mesh" class="visual" pos="-0.0199464 0.000389829 0.167084" quat="0.501791 0.501791 -0.498203 0.498203" mesh="mr63" material="mr63_material"/>
+      <geom type="mesh" class="visual" pos="-0.0199464 0.000389829 0.167084" quat="0.222048 0.222048 -0.671338 0.671338" mesh="mr63" material="mr63_material"/>
       <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84 -->
       <geom type="mesh" class="visual" pos="-0.0276854 0.0113898 0.145821" quat="0.690346 -0.153046 -0.153046 0.690346" mesh="spacer_small__c331c3826e3aeff78bc4513233f2bf84" material="spacer_small__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part enc_magnet -->
       <geom type="mesh" class="visual" pos="-0.0403866 -0.00181017 0.168648" quat="0.190116 -0.190116 0.68107 0.68107" mesh="enc_magnet" material="enc_magnet_material"/>
       <!-- Part rotor -->
-      <geom type="mesh" class="visual" pos="-0.0199464 0.0274898 0.167084" quat="0.707102 0.00253747 0.00253747 0.707102" mesh="rotor" material="rotor_material"/>
+      <geom type="mesh" class="visual" pos="-0.0199464 0.0274898 0.167084" quat="0.631719 -0.317696 -0.317696 0.631719" mesh="rotor" material="rotor_material"/>
       <!-- Part output_axis__c331c3826e3aeff78bc4513233f2bf84 -->
       <geom type="mesh" class="visual" pos="-0.0582411 0.00898983 0.178721" quat="0.347156 0.616021 -0.616021 -0.347156" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63_2 -->
-      <geom type="mesh" class="visual" pos="-0.0403866 0.00698983 0.168648" quat="0.431088 -0.431088 0.560503 0.560503" mesh="mr63" material="mr63_material"/>
+      <geom type="mesh" class="visual" pos="-0.0403866 0.00698983 0.168648" quat="0.638054 -0.638054 0.304774 0.304774" mesh="mr63" material="mr63_material"/>
       <!-- Part gear3__c331c3826e3aeff78bc4513233f2bf84 -->
       <geom type="mesh" class="visual" pos="-0.0582411 0.00898983 0.178721" quat="0.347156 0.616021 -0.616021 -0.347156" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part short_axe__c331c3826e3aeff78bc4513233f2bf84 -->
-      <geom type="mesh" class="visual" pos="-0.029984 0.00898983 0.152749" quat="0.00253747 0.707102 -0.707102 -0.00253747" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
+      <geom type="mesh" class="visual" pos="-0.029984 0.00898983 0.152749" quat="0.317696 -0.631719 0.631719 -0.317696" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_2 -->
       <geom type="mesh" class="visual" pos="-0.0199464 0.0113898 0.167084" quat="0.690346 -0.153046 -0.153046 0.690346" mesh="spacer_small__c331c3826e3aeff78bc4513233f2bf84" material="spacer_small__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part pcb_support__c331c3826e3aeff78bc4513233f2bf84 -->
@@ -67,13 +67,13 @@
       <!-- Part output_support__c331c3826e3aeff78bc4513233f2bf84 -->
       <geom type="mesh" class="visual" pos="-0.0199464 0.0157898 0.167084" quat="0.153046 0.690346 0.690346 0.153046" mesh="output_support__c331c3826e3aeff78bc4513233f2bf84" material="output_support__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part gear1__c331c3826e3aeff78bc4513233f2bf84 -->
-      <geom type="mesh" class="visual" pos="-0.0199464 0.00158983 0.167084" quat="0.707102 0.00253747 0.00253747 0.707102" mesh="gear1__c331c3826e3aeff78bc4513233f2bf84" material="gear1__c331c3826e3aeff78bc4513233f2bf84_material"/>
+      <geom type="mesh" class="visual" pos="-0.0199464 0.00158983 0.167084" quat="0.631719 -0.317696 -0.317696 0.631719" mesh="gear1__c331c3826e3aeff78bc4513233f2bf84" material="gear1__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63_3 -->
-      <geom type="mesh" class="visual" pos="-0.0403866 0.0133898 0.168648" quat="0.591883 0.591883 0.386877 -0.386877" mesh="mr63" material="mr63_material"/>
+      <geom type="mesh" class="visual" pos="-0.0403866 0.0133898 0.168648" quat="0.702882 0.702882 0.0771815 -0.0771815" mesh="mr63" material="mr63_material"/>
       <!-- Part short_axe__c331c3826e3aeff78bc4513233f2bf84_2 -->
-      <geom type="mesh" class="visual" pos="-0.0199464 -0.00161017 0.167084" quat="0.707102 0.00253747 0.00253747 0.707102" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
+      <geom type="mesh" class="visual" pos="-0.0199464 -0.00161017 0.167084" quat="0.631719 -0.317696 -0.317696 0.631719" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63_4 -->
-      <geom type="mesh" class="visual" pos="-0.0403866 0.000389829 0.168648" quat="0.342689 0.342689 -0.618518 0.618518" mesh="mr63" material="mr63_material"/>
+      <geom type="mesh" class="visual" pos="-0.0403866 0.000389829 0.168648" quat="0.0257237 0.0257237 -0.706639 0.706639" mesh="mr63" material="mr63_material"/>
       <!-- Part enc_magnet_2 -->
       <geom type="mesh" class="visual" pos="-0.0403866 0.0135898 0.168648" quat="0.68107 0.68107 -0.190116 0.190116" mesh="enc_magnet" material="enc_magnet_material"/>
       <!-- Part motor_support__c331c3826e3aeff78bc4513233f2bf84 -->
@@ -83,7 +83,7 @@
       <!-- Part spacer__c331c3826e3aeff78bc4513233f2bf84_2 -->
       <geom type="mesh" class="visual" pos="-0.0199464 -0.00161017 0.167084" quat="0.690346 -0.153046 -0.153046 0.690346" mesh="spacer__c331c3826e3aeff78bc4513233f2bf84" material="spacer__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part gear2__c331c3826e3aeff78bc4513233f2bf84_2 -->
-      <geom type="mesh" class="visual" pos="0.0184412 0.00898983 0.137594" quat="0.5 -0.5 0.5 -0.5" mesh="gear2__c331c3826e3aeff78bc4513233f2bf84" material="gear2__c331c3826e3aeff78bc4513233f2bf84_material"/>
+      <geom type="mesh" class="visual" pos="0.0342554 0.00898983 0.136738" quat="0.672131 -0.219637 0.219637 -0.672131" mesh="gear2__c331c3826e3aeff78bc4513233f2bf84" material="gear2__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63_5 -->
       <geom type="mesh" class="visual" pos="0.0171536 0.000389829 0.167084" quat="0.596368 0.596368 -0.379928 0.379928" mesh="mr63" material="mr63_material"/>
       <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_4 -->
@@ -91,7 +91,7 @@
       <!-- Part enc_magnet_3 -->
       <geom type="mesh" class="visual" pos="0.0375939 -0.00181017 0.168648" quat="0.683359 -0.683359 -0.181714 -0.181714" mesh="enc_magnet" material="enc_magnet_material"/>
       <!-- Part rotor_2 -->
-      <geom type="mesh" class="visual" pos="0.0171536 0.0274898 0.167084" quat="0.707107 2.67236e-09 2.68716e-09 0.707107" mesh="rotor" material="rotor_material"/>
+      <geom type="mesh" class="visual" pos="0.0171536 0.0274898 0.167084" quat="0.630575 -0.319961 -0.319961 0.630575" mesh="rotor" material="rotor_material"/>
       <!-- Part output_axis__c331c3826e3aeff78bc4513233f2bf84_2 -->
       <geom type="mesh" class="visual" pos="0.0551948 0.00898983 0.158138" quat="0.611699 -0.354717 0.354717 -0.611699" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63_6 -->
@@ -113,11 +113,11 @@
       <!-- Part output_support__c331c3826e3aeff78bc4513233f2bf84_2 -->
       <geom type="mesh" class="visual" pos="0.0171536 0.00898983 0.167084" quat="0.153046 0.690346 -0.690346 -0.153046" mesh="output_support__c331c3826e3aeff78bc4513233f2bf84" material="output_support__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part gear1__c331c3826e3aeff78bc4513233f2bf84_2 -->
-      <geom type="mesh" class="visual" pos="0.0171536 0.00158983 0.167084" quat="0.707107 2.67153e-09 2.68633e-09 0.707107" mesh="gear1__c331c3826e3aeff78bc4513233f2bf84" material="gear1__c331c3826e3aeff78bc4513233f2bf84_material"/>
+      <geom type="mesh" class="visual" pos="0.0171536 0.00158983 0.167084" quat="0.109987 0.6985 0.6985 0.109987" mesh="gear1__c331c3826e3aeff78bc4513233f2bf84" material="gear1__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63_7 -->
       <geom type="mesh" class="visual" pos="0.0375939 0.0133898 0.168648" quat="0.596368 0.596368 -0.379928 0.379928" mesh="mr63" material="mr63_material"/>
       <!-- Part short_axe__c331c3826e3aeff78bc4513233f2bf84_4 -->
-      <geom type="mesh" class="visual" pos="0.0171536 -0.00161017 0.167084" quat="0.707107 2.67236e-09 2.68716e-09 0.707107" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
+      <geom type="mesh" class="visual" pos="0.0171536 -0.00161017 0.167084" quat="0.6985 -0.109987 -0.109987 0.6985" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Part mr63_8 -->
       <geom type="mesh" class="visual" pos="0.0375939 0.000389829 0.168648" quat="0.596368 0.596368 -0.379928 0.379928" mesh="mr63" material="mr63_material"/>
       <!-- Part enc_magnet_4 -->
@@ -129,7 +129,7 @@
       <!-- Part spacer__c331c3826e3aeff78bc4513233f2bf84_4 -->
       <geom type="mesh" class="visual" pos="0.0171536 -0.00161017 0.167084" quat="0.690346 0.153046 0.153046 0.690346" mesh="spacer__c331c3826e3aeff78bc4513233f2bf84" material="spacer__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Frame imu -->
-      <site group="3" name="imu" pos="-0.00140596 0.0255441 0.189634" quat="1 -1.04633e-11 -1.28692e-11 -5.27001e-13"/>
+      <site group="3" name="imu" pos="-0.00140596 0.0255441 0.189634" quat="1 -1.42944e-11 -1.87745e-11 -9.67973e-13"/>
       <!-- Link lhip -->
       <body name="lhip" pos="0.0375939 0.0113898 0.168648" quat="0.153046 -0.153046 -0.690346 -0.690346">
         <!-- Joint from boddy to lhip -->
@@ -146,15 +146,15 @@
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_7 -->
         <geom type="mesh" class="visual" pos="0.0191116 0.00703607 0.0468" quat="0.680445 0.680445 -0.192341 -0.192341" mesh="spacer_small__c331c3826e3aeff78bc4513233f2bf84" material="spacer_small__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part enc_magnet_5 -->
-        <geom type="mesh" class="visual" pos="-0.0057756 -0.00825374 0.0486642" quat="0.117627 -0.532495 0.465241 -0.697255" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="-0.0057756 -0.00825374 0.0486642" quat="0.126457 -0.526554 0.471954 -0.695707" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part rotor_3 -->
         <geom type="mesh" class="visual" pos="0.0244529 -0.0150248 0.0308" quat="0.508982 0.816668 -0.230848 -0.143874" mesh="rotor" material="rotor_material"/>
         <!-- Part output_axis__c331c3826e3aeff78bc4513233f2bf84_3 -->
-        <geom type="mesh" class="visual" pos="-0.00656969 -0.0301761 0.0412029" quat="0.2458 -0.116502 -0.412149 0.869564" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.00646745 -0.0300097 0.0407213" quat="0.244303 -0.119609 -0.42314 0.86427" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part mr63_10 -->
         <geom type="mesh" class="visual" pos="0.00172217 -0.0128606 0.0486642" quat="0.520067 0.680457 0.192297 0.479093" mesh="mr63" material="mr63_material"/>
         <!-- Part gear3__c331c3826e3aeff78bc4513233f2bf84_3 -->
-        <geom type="mesh" class="visual" pos="-0.00656969 -0.0301761 0.0412029" quat="0.2458 -0.116502 -0.412149 0.869564" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.00646745 -0.0300097 0.0407213" quat="0.244303 -0.119609 -0.42314 0.86427" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part short_axe__c331c3826e3aeff78bc4513233f2bf84_5 -->
         <geom type="mesh" class="visual" pos="0.0132713 0.00211536 0.0459554" quat="0.196951 0.187619 0.663737 0.696751" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_8 -->
@@ -178,11 +178,11 @@
         <!-- Part mr63_12 -->
         <geom type="mesh" class="visual" pos="-0.00390115 -0.00940546 0.0486642" quat="0.491578 0.17572 -0.684925 -0.508282" mesh="mr63" material="mr63_material"/>
         <!-- Part enc_magnet_6 -->
-        <geom type="mesh" class="visual" pos="0.0073455 -0.0163158 0.0486642" quat="0.465241 -0.697255 -0.117627 0.532495" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="0.0073455 -0.0163158 0.0486642" quat="0.471954 -0.695707 -0.126457 0.526554" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part motor_support__c331c3826e3aeff78bc4513233f2bf84_3 -->
         <geom type="mesh" class="visual" pos="0.00698656 -0.00429279 0.0308" quat="0.680445 -0.680445 0.192341 -0.192341" mesh="motor_support__c331c3826e3aeff78bc4513233f2bf84" material="motor_support__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spring__c331c3826e3aeff78bc4513233f2bf84_3 -->
-        <geom type="mesh" class="visual" pos="-0.00608803 -0.0122006 0.0284697" quat="0.412149 -0.869564 0.2458 -0.116502" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.00581941 -0.0117634 0.0283868" quat="0.42314 -0.86427 0.244303 -0.119609" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer__c331c3826e3aeff78bc4513233f2bf84_6 -->
         <geom type="mesh" class="visual" pos="-0.000340808 0.000209404 0.0308" quat="0.680445 0.680445 -0.192341 -0.192341" mesh="spacer__c331c3826e3aeff78bc4513233f2bf84" material="spacer__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part gear2__c331c3826e3aeff78bc4513233f2bf84_4 -->
@@ -192,15 +192,15 @@
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_10 -->
         <geom type="mesh" class="visual" pos="-0.0145845 0.00377014 0.00630897" quat="0.235569 -0.136006 -0.481147 0.833371" mesh="spacer_small__c331c3826e3aeff78bc4513233f2bf84" material="spacer_small__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part enc_magnet_7 -->
-        <geom type="mesh" class="visual" pos="-0.00628681 -0.00793963 0.0486642" quat="0.670549 -0.15983 -0.688807 -0.224419" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="-0.00628681 -0.00793963 0.0486642" quat="0.66765 -0.151085 -0.690777 -0.232902" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part rotor_4 -->
         <geom type="mesh" class="visual" pos="-0.0313679 0.00720889 0.0281654" quat="0.114639 -0.246675 -0.872659 0.405557" mesh="rotor" material="rotor_material"/>
         <!-- Part output_axis__c331c3826e3aeff78bc4513233f2bf84_4 -->
-        <geom type="mesh" class="visual" pos="-0.00667781 0.012054 0.0603686" quat="0.961209 0.0456717 -0.01291 -0.271705" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.00683599 0.0117965 0.0607915" quat="0.960553 0.0578537 -0.0163535 -0.27152" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part mr63_14 -->
         <geom type="mesh" class="visual" pos="-0.0137846 -0.00333274 0.0486642" quat="0.506795 -0.685453 -0.17365 0.493112" mesh="mr63" material="mr63_material"/>
         <!-- Part gear3__c331c3826e3aeff78bc4513233f2bf84_4 -->
-        <geom type="mesh" class="visual" pos="-0.00667781 0.012054 0.0603686" quat="0.961209 0.0456717 -0.01291 -0.271705" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.00683599 0.0117965 0.0607915" quat="0.960553 0.0578537 -0.0163535 -0.27152" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part short_axe__c331c3826e3aeff78bc4513233f2bf84_7 -->
         <geom type="mesh" class="visual" pos="-0.00767153 0.0104367 0.0369154" quat="0.481147 -0.833371 0.235569 -0.136006" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_11 -->
@@ -224,65 +224,65 @@
         <!-- Part mr63_16 -->
         <geom type="mesh" class="visual" pos="-0.00816125 -0.00678791 0.0486642" quat="0.17365 -0.493112 0.506795 -0.685453" mesh="mr63" material="mr63_material"/>
         <!-- Part enc_magnet_8 -->
-        <geom type="mesh" class="visual" pos="-0.0194079 0.000122434 0.0486642" quat="0.688807 0.224419 0.670549 -0.15983" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="-0.0194079 0.000122434 0.0486642" quat="0.690777 0.232902 0.66765 -0.151085" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part motor_support__c331c3826e3aeff78bc4513233f2bf84_4 -->
         <geom type="mesh" class="visual" pos="-0.0156056 -0.00247605 0.0281654" quat="0.481147 -0.833371 0.235569 -0.136006" mesh="motor_support__c331c3826e3aeff78bc4513233f2bf84" material="motor_support__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spring__c331c3826e3aeff78bc4513233f2bf84_4 -->
-        <geom type="mesh" class="visual" pos="0.00198865 0.00896709 0.0403473" quat="0.01291 0.271705 0.961209 0.0456717" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="0.00209588 0.00914161 0.0408251" quat="0.0163535 0.27152 0.960553 0.0578537" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer__c331c3826e3aeff78bc4513233f2bf84_8 -->
         <geom type="mesh" class="visual" pos="-0.00657416 -0.00802526 0.0281654" quat="0.235569 -0.136006 -0.481147 0.833371" mesh="spacer__c331c3826e3aeff78bc4513233f2bf84" material="spacer__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Link lfemur -->
-        <body name="lfemur" pos="0.00547106 -0.0151641 0.0486642" quat="0.192341 -0.680445 0.192341 0.680445">
+        <body name="lfemur" pos="0.00547106 -0.0151641 0.0486642" quat="0.680445 0.192341 0.680445 -0.192341">
           <!-- Joint from lhip to lfemur -->
           <joint axis="0 0 1" name="LhipX" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-          <inertial pos="-0.056134 0.0344907 0.00361538" mass="0.00761016" fullinertia="3.61382e-06 9.49536e-06 1.30695e-05 5.80562e-06 2.9715e-07 -1.82579e-07"/>
+          <inertial pos="-0.056134 -0.0344907 -0.00361538" mass="0.00761016" fullinertia="3.61382e-06 9.49536e-06 1.30695e-05 -5.80562e-06 -2.9715e-07 -1.82579e-07"/>
           <!-- Part femur -->
-          <geom type="mesh" class="visual" pos="-0.00313886 0.0139933 -0.0261654" quat="0.843046 -0.12633 0.225894 0.471471" mesh="femur" material="femur_material"/>
+          <geom type="mesh" class="visual" pos="-0.00313886 -0.0139933 0.0261654" quat="0.12633 0.843046 -0.471471 0.225894" mesh="femur" material="femur_material"/>
           <!-- Part mr63_17 -->
-          <geom type="mesh" class="visual" pos="-0.0958522 0.0588949 0.0052" quat="0.962294 6.0211e-15 9.41679e-15 -0.272012" mesh="mr63" material="mr63_material"/>
+          <geom type="mesh" class="visual" pos="-0.0958522 -0.0588949 -0.0052" quat="2.07593e-15 -0.962294 -0.272012 -3.79136e-15" mesh="mr63" material="mr63_material"/>
           <!-- Part mr63_18 -->
-          <geom type="mesh" class="visual" pos="-0.0958522 0.0588949 0.0032" quat="0.272012 -1.38757e-15 -2.79448e-15 0.962294" mesh="mr63" material="mr63_material"/>
+          <geom type="mesh" class="visual" pos="-0.0958522 -0.0588949 -0.0032" quat="6.07639e-16 0.272012 -0.962294 -1.73525e-15" mesh="mr63" material="mr63_material"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_2 -->
-          <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 0" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
+          <geom type="mesh" class="visual" pos="0.0178642 0.0100559 0" quat="0.5 -0.5 -0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Frame closing_L_1 -->
-          <site group="3" name="closing_L_1" pos="-0.0958522 0.0588949 0.0052" quat="0.872786 -1.89657e-17 -2.57021e-17 0.488103"/>
+          <site group="3" name="closing_L_1" pos="-0.0958522 -0.0588949 -0.0052" quat="1.91334e-16 0.872786 -0.488103 2.81167e-16"/>
           <!-- Frame closing_L_1_z -->
-          <site group="3" name="closing_L_1_z" pos="-0.0958522 0.0588949 0.1052" quat="0.872786 -1.89657e-17 -2.57021e-17 0.488103"/>
+          <site group="3" name="closing_L_1_z" pos="-0.0958522 -0.0588949 -0.1052" quat="1.91334e-16 0.872786 -0.488103 2.81167e-16"/>
         </body>
         <!-- Link output__c331c3826e3aeff78bc4513233f2bf84 -->
         <body name="output__c331c3826e3aeff78bc4513233f2bf84" pos="-0.0175335 -0.00102929 0.0486642" quat="0.0096755 -0.607477 0.3619 0.707041">
           <!-- Joint from lhip to output__c331c3826e3aeff78bc4513233f2bf84 -->
           <joint axis="0 0 1" name="Lknee" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-          <inertial pos="-0.0072873 0.00447757 -0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 -4.62788e-25 -1.13301e-24"/>
+          <inertial pos="-0.0072873 0.00447757 -0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 2.26553e-25 -3.37451e-25"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_3 -->
           <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -0.0024" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Link rod -->
-          <body name="rod" pos="-0.0213005 0.0130878 -0.0022" quat="1 5.49115e-19 7.02984e-18 1.08734e-16">
+          <body name="rod" pos="-0.0213005 0.0130878 -0.0022" quat="1 -1.14387e-18 1.66113e-16 4.9653e-16">
             <!-- Joint from output__c331c3826e3aeff78bc4513233f2bf84 to rod -->
             <joint axis="0 0 1" name="Lpassive1" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
             <inertial pos="-0.0257316 0.0475262 -0.0136715" mass="0.0100309" fullinertia="1.5998e-05 4.93789e-06 2.03094e-05 8.4714e-06 -7.87519e-07 1.45455e-06"/>
             <!-- Part mr63_19 -->
-            <geom type="mesh" class="visual" pos="-0.0535629 0.0989306 -0.0176" quat="0.859103 2.35949e-15 2.6915e-15 -0.511803" mesh="mr63" material="mr63_material"/>
+            <geom type="mesh" class="visual" pos="-0.0535629 0.0989306 -0.0176" quat="0.859103 1.24425e-16 -6.27173e-16 -0.511803" mesh="mr63" material="mr63_material"/>
             <!-- Part mr63_20 -->
-            <geom type="mesh" class="visual" pos="-0.0535629 0.0989306 -0.0176" quat="5.25725e-15 -0.30228 0.953219 1.18485e-15" mesh="mr63" material="mr63_material"/>
+            <geom type="mesh" class="visual" pos="-0.0535629 0.0989306 -0.0176" quat="4.2662e-16 -0.47972 0.877422 -3.08581e-15" mesh="mr63" material="mr63_material"/>
             <!-- Part mr63_21 -->
-            <geom type="mesh" class="visual" pos="-6.93889e-17 -5.55112e-17 -0.002" quat="0.511803 1.82485e-17 -6.68492e-17 0.859103" mesh="mr63" material="mr63_material"/>
+            <geom type="mesh" class="visual" pos="0 -2.77556e-17 -0.002" quat="0.511803 -2.9599e-15 7.83934e-16 0.859103" mesh="mr63" material="mr63_material"/>
             <!-- Part rod -->
-            <geom type="mesh" class="visual" pos="-0.0267457 -0.00310905 -0.0176" quat="0.969377 -6.65566e-16 -8.05647e-16 0.245578" mesh="rod" material="rod_material"/>
+            <geom type="mesh" class="visual" pos="-0.0267457 -0.00310905 -0.0176" quat="0.969377 -7.38924e-16 4.87986e-17 0.245578" mesh="rod" material="rod_material"/>
             <!-- Link tibia -->
-            <body name="tibia" pos="-0.0535629 0.0989306 -0.0176" quat="0.969377 -6.65566e-16 -8.05647e-16 0.245578">
+            <body name="tibia" pos="-0.0535629 0.0989306 -0.0176" quat="0.969377 -7.38924e-16 4.87986e-17 0.245578">
               <!-- Joint from rod to tibia -->
               <joint axis="0 0 1" name="Lpassive2" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-              <inertial pos="0.0272432 -0.0471867 -0.001" mass="0.00455548" fullinertia="4.16834e-06 1.40534e-06 5.57065e-06 2.39283e-06 -1.4521e-20 -7.98668e-21"/>
+              <inertial pos="0.0272432 -0.0471867 -0.001" mass="0.00455548" fullinertia="4.16834e-06 1.40534e-06 5.57065e-06 2.39283e-06 -1.22156e-19 -7.04287e-20"/>
               <!-- Part tibia -->
-              <geom type="mesh" class="visual" pos="-0.0762676 -0.0729006 6.93889e-17" quat="2.41839e-15 -0.5 -0.866025 -6.70316e-16" mesh="tibia" material="tibia_material"/>
-              <geom type="mesh" class="collision" pos="-0.0762676 -0.0729006 6.93889e-17" quat="2.41839e-15 -0.5 -0.866025 -6.70316e-16" mesh="tibia" material="tibia_material" name="left_foot_collision"/>
+              <geom type="mesh" class="visual" pos="-0.0762676 -0.0729006 2.36616e-15" quat="5.09956e-15 -0.5 -0.866025 4.37755e-15" mesh="tibia" material="tibia_material"/>
+              <geom type="mesh" class="collision" pos="-0.0762676 -0.0729006 2.36616e-15" quat="5.09956e-15 -0.5 -0.866025 4.37755e-15" mesh="tibia" material="tibia_material" name="left_foot_collision"/>
               <!-- Frame closing_L_2 -->
-              <site group="3" name="closing_L_2" pos="0.0125 -0.0216506 -0.002" quat="0.5 2.47545e-15 -5.45242e-16 0.866025"/>
+              <site group="3" name="closing_L_2" pos="0.0125 -0.0216506 -0.002" quat="0.5 5.22481e-15 4.30248e-15 0.866025"/>
               <!-- Frame closing_L_2_z -->
-              <site group="3" name="closing_L_2_z" pos="0.0125 -0.0216506 0.098" quat="0.5 2.47545e-15 -5.45242e-16 0.866025"/>
+              <site group="3" name="closing_L_2_z" pos="0.0125 -0.0216506 0.098" quat="0.5 5.22481e-15 4.30248e-15 0.866025"/>
               <!-- Frame left_foot -->
-              <site group="3" name="left_foot" pos="0.0625 -0.108253 -0.001" quat="0.5 2.47545e-15 -5.45242e-16 0.866025"/>
+              <site group="3" name="left_foot" pos="0.0625 -0.108253 -0.001" quat="0.5 5.22481e-15 4.30248e-15 0.866025"/>
             </body>
           </body>
         </body>
@@ -293,7 +293,7 @@
         <joint axis="0 0 1" name="RhipY" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
         <inertial pos="-0.00308576 -0.00299555 -0.0359" mass="0.156072" fullinertia="3.52864e-05 5.07469e-05 3.89915e-05 1.06515e-06 2.59037e-06 -2.11409e-06"/>
         <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_4 -->
-        <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -2.04965e-17" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -3.33642e-16" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part kneelinkr -->
         <geom type="mesh" class="visual" pos="-0.0139015 -0.00352307 -0.0281654" quat="0.845458 -0.121185 0.216693 0.47282" mesh="kneelinkr" material="kneelinkr_material"/>
         <!-- Part gear2__c331c3826e3aeff78bc4513233f2bf84_5 -->
@@ -303,15 +303,15 @@
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_13 -->
         <geom type="mesh" class="visual" pos="-0.00620835 0.0174025 -0.0340218" quat="0.136006 -0.235569 -0.833371 0.481147" mesh="spacer_small__c331c3826e3aeff78bc4513233f2bf84" material="spacer_small__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part enc_magnet_9 -->
-        <geom type="mesh" class="visual" pos="-0.00628681 -0.00793963 -0.0486642" quat="0.483249 -0.692805 -0.141497 0.516208" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="-0.00628681 -0.00793963 -0.0486642" quat="0.482272 -0.693071 -0.140188 0.51712" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part rotor_5 -->
         <geom type="mesh" class="visual" pos="-0.0313679 0.00720889 -0.0281654" quat="0.21229 -0.170068 -0.601649 0.751018" mesh="rotor" material="rotor_material"/>
         <!-- Part output_axis__c331c3826e3aeff78bc4513233f2bf84_5 -->
-        <geom type="mesh" class="visual" pos="-0.0166048 -0.00410235 -0.069053" quat="0.441762 -0.854901 0.241655 -0.124873" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.0166451 -0.00416797 -0.0690448" quat="0.440146 -0.855734 0.241891 -0.124416" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part mr63_23 -->
         <geom type="mesh" class="visual" pos="-0.0137846 -0.00333274 -0.0486642" quat="0.539773 -0.67176 -0.220769 0.456777" mesh="mr63" material="mr63_material"/>
         <!-- Part gear3__c331c3826e3aeff78bc4513233f2bf84_5 -->
-        <geom type="mesh" class="visual" pos="-0.0166048 -0.00410235 -0.069053" quat="0.441762 -0.854901 0.241655 -0.124873" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.0166451 -0.00416797 -0.0690448" quat="0.440146 -0.855734 0.241891 -0.124416" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part short_axe__c331c3826e3aeff78bc4513233f2bf84_9 -->
         <geom type="mesh" class="visual" pos="-0.00767153 0.0104367 -0.0369154" quat="0.680178 -0.680711 0.192417 -0.192266" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_14 -->
@@ -335,11 +335,11 @@
         <!-- Part mr63_25 -->
         <geom type="mesh" class="visual" pos="-0.00816125 -0.00678791 -0.0486642" quat="0.50357 -0.159322 0.688924 -0.496405" mesh="mr63" material="mr63_material"/>
         <!-- Part enc_magnet_10 -->
-        <geom type="mesh" class="visual" pos="-0.0194079 0.000122434 -0.0486642" quat="0.141497 -0.516208 0.483249 -0.692805" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="-0.0194079 0.000122434 -0.0486642" quat="0.140188 -0.51712 0.482272 -0.693071" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part motor_support__c331c3826e3aeff78bc4513233f2bf84_5 -->
         <geom type="mesh" class="visual" pos="-0.0139015 -0.00352307 -0.0281654" quat="0.235569 0.136006 0.481147 0.833371" mesh="motor_support__c331c3826e3aeff78bc4513233f2bf84" material="motor_support__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spring__c331c3826e3aeff78bc4513233f2bf84_5 -->
-        <geom type="mesh" class="visual" pos="-0.0175247 -0.0227911 -0.0574181" quat="0.241655 -0.124873 -0.441762 0.854901" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.017542 -0.0228192 -0.057348" quat="0.241891 -0.124416 -0.440146 0.855734" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer__c331c3826e3aeff78bc4513233f2bf84_10 -->
         <geom type="mesh" class="visual" pos="-0.00657416 -0.00802526 -0.0281654" quat="0.136006 -0.235569 -0.833371 0.481147" mesh="spacer__c331c3826e3aeff78bc4513233f2bf84" material="spacer__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part gear2__c331c3826e3aeff78bc4513233f2bf84_6 -->
@@ -349,15 +349,15 @@
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_16 -->
         <geom type="mesh" class="visual" pos="0.0191116 0.00703607 -0.0148" quat="0.680445 0.680445 -0.192341 -0.192341" mesh="spacer_small__c331c3826e3aeff78bc4513233f2bf84" material="spacer_small__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part enc_magnet_11 -->
-        <geom type="mesh" class="visual" pos="-0.0057756 -0.00825374 -0.0486642" quat="0.237527 -0.443113 0.551046 -0.666019" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="-0.0057756 -0.00825374 -0.0486642" quat="0.236269 -0.444153 0.550207 -0.666466" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part rotor_6 -->
         <geom type="mesh" class="visual" pos="0.0244529 -0.0150248 -0.0308" quat="0.64143 0.717341 -0.202771 -0.181313" mesh="rotor" material="rotor_material"/>
         <!-- Part output_axis__c331c3826e3aeff78bc4513233f2bf84_6 -->
-        <geom type="mesh" class="visual" pos="-0.00461792 -0.0269996 -0.0622341" quat="0.221691 -0.157618 -0.557605 0.784274" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.0046447 -0.0270432 -0.062176" quat="0.221988 -0.157199 -0.556123 0.785326" mesh="output_axis__c331c3826e3aeff78bc4513233f2bf84" material="output_axis__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part mr63_27 -->
         <geom type="mesh" class="visual" pos="0.00172217 -0.0128606 -0.0486642" quat="0.617153 0.617153 0.345141 0.345141" mesh="mr63" material="mr63_material"/>
         <!-- Part gear3__c331c3826e3aeff78bc4513233f2bf84_6 -->
-        <geom type="mesh" class="visual" pos="-0.00461792 -0.0269996 -0.0622341" quat="0.221691 -0.157618 -0.557605 0.784274" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.0046447 -0.0270432 -0.062176" quat="0.221988 -0.157199 -0.556123 0.785326" mesh="gear3__c331c3826e3aeff78bc4513233f2bf84" material="gear3__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part short_axe__c331c3826e3aeff78bc4513233f2bf84_11 -->
         <geom type="mesh" class="visual" pos="0.0132713 0.00211536 -0.0459554" quat="0.192341 0.192341 0.680445 0.680445" mesh="short_axe__c331c3826e3aeff78bc4513233f2bf84" material="short_axe__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer_small__c331c3826e3aeff78bc4513233f2bf84_17 -->
@@ -381,65 +381,65 @@
         <!-- Part mr63_29 -->
         <geom type="mesh" class="visual" pos="-0.00390115 -0.00940546 -0.0486642" quat="0.345141 0.345141 -0.617153 -0.617153" mesh="mr63" material="mr63_material"/>
         <!-- Part enc_magnet_12 -->
-        <geom type="mesh" class="visual" pos="0.0073455 -0.0163158 -0.0486642" quat="0.551046 -0.666019 -0.237527 0.443113" mesh="enc_magnet" material="enc_magnet_material"/>
+        <geom type="mesh" class="visual" pos="0.0073455 -0.0163158 -0.0486642" quat="0.550207 -0.666466 -0.236269 0.444153" mesh="enc_magnet" material="enc_magnet_material"/>
         <!-- Part motor_support__c331c3826e3aeff78bc4513233f2bf84_6 -->
         <geom type="mesh" class="visual" pos="0.0086906 -0.00533981 -0.0308" quat="0.192341 0.192341 0.680445 0.680445" mesh="motor_support__c331c3826e3aeff78bc4513233f2bf84" material="motor_support__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spring__c331c3826e3aeff78bc4513233f2bf84_6 -->
-        <geom type="mesh" class="visual" pos="-0.0023415 -0.00610304 -0.0688402" quat="0.557605 -0.784274 0.221691 -0.157618" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
+        <geom type="mesh" class="visual" pos="-0.00238143 -0.00616801 -0.0688538" quat="0.556123 -0.785326 0.221988 -0.157199" mesh="spring__c331c3826e3aeff78bc4513233f2bf84" material="spring__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Part spacer__c331c3826e3aeff78bc4513233f2bf84_12 -->
         <geom type="mesh" class="visual" pos="-0.000340808 0.000209404 -0.0308" quat="0.680445 0.680445 -0.192341 -0.192341" mesh="spacer__c331c3826e3aeff78bc4513233f2bf84" material="spacer__c331c3826e3aeff78bc4513233f2bf84_material"/>
         <!-- Link rfemur -->
-        <body name="rfemur" pos="0.00547106 -0.0151641 -0.0486642" quat="0.192341 0.680445 -0.192341 0.680445">
+        <body name="rfemur" pos="0.00547106 -0.0151641 -0.0486642" quat="0.680445 -0.192341 -0.680445 -0.192341">
           <!-- Joint from rhip to rfemur -->
           <joint axis="0 0 1" name="RhipX" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-          <inertial pos="-0.056134 0.0344907 -0.00361538" mass="0.00761016" fullinertia="3.61382e-06 9.49536e-06 1.30695e-05 5.80562e-06 -2.9715e-07 1.82579e-07"/>
+          <inertial pos="-0.056134 -0.0344907 0.00361538" mass="0.00761016" fullinertia="3.61382e-06 9.49536e-06 1.30695e-05 -5.80562e-06 2.9715e-07 1.82579e-07"/>
           <!-- Part femur_2 -->
-          <geom type="mesh" class="visual" pos="-0.0139015 -0.00352307 0.0261654" quat="0.225894 0.471471 -0.843046 0.12633" mesh="femur" material="femur_material"/>
+          <geom type="mesh" class="visual" pos="-0.0139015 0.00352307 -0.0261654" quat="0.471471 -0.225894 0.12633 0.843046" mesh="femur" material="femur_material"/>
           <!-- Part mr63_30 -->
-          <geom type="mesh" class="visual" pos="-0.0958522 0.0588949 -0.0052" quat="9.94243e-15 -0.962294 0.272012 2.08064e-14" mesh="mr63" material="mr63_material"/>
+          <geom type="mesh" class="visual" pos="-0.0958522 -0.0588949 0.0052" quat="0.962294 1.53408e-14 -3.18736e-14 0.272012" mesh="mr63" material="mr63_material"/>
           <!-- Part mr63_31 -->
-          <geom type="mesh" class="visual" pos="-0.0958522 0.0588949 -0.0032" quat="1.66139e-14 -0.272012 -0.962294 -1.47285e-14" mesh="mr63" material="mr63_material"/>
+          <geom type="mesh" class="visual" pos="-0.0958522 -0.0588949 0.0032" quat="0.272012 2.74661e-14 2.00506e-14 -0.962294" mesh="mr63" material="mr63_material"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_5 -->
-          <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -0.0024" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
+          <geom type="mesh" class="visual" pos="0.0178642 0.0100559 0.0024" quat="0.5 -0.5 -0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Frame closing_R_1 -->
-          <site group="3" name="closing_R_1" pos="-0.0958522 0.0588949 -0.0052" quat="1.89928e-14 -0.488103 0.872786 2.63076e-14"/>
+          <site group="3" name="closing_R_1" pos="-0.0958522 -0.0588949 0.0052" quat="0.488103 2.90065e-14 -3.14075e-14 0.872786"/>
           <!-- Frame closing_R_1_z -->
-          <site group="3" name="closing_R_1_z" pos="-0.0958522 0.0588949 -0.1052" quat="1.89928e-14 -0.488103 0.872786 2.63076e-14"/>
+          <site group="3" name="closing_R_1_z" pos="-0.0958522 -0.0588949 0.1052" quat="0.488103 2.90065e-14 -3.14075e-14 0.872786"/>
         </body>
         <!-- Link output__c331c3826e3aeff78bc4513233f2bf84_2 -->
         <body name="output__c331c3826e3aeff78bc4513233f2bf84_2" pos="-0.0175335 -0.00102929 -0.0486642" quat="0.0096755 0.607477 -0.3619 0.707041">
           <!-- Joint from rhip to output__c331c3826e3aeff78bc4513233f2bf84_2 -->
           <joint axis="0 0 1" name="Rknee" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-          <inertial pos="-0.0072873 0.00447757 0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 1.8281e-22 3.19821e-22"/>
+          <inertial pos="-0.0072873 0.00447757 0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 -5.39544e-23 -5.98374e-23"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_6 -->
-          <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -1.38778e-17" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
+          <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -4.16334e-17" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Link rod_2 -->
-          <body name="rod_2" pos="-0.0213005 0.0130878 0.0022" quat="8.19588e-16 -1 -3.36628e-11 -2.43814e-16">
+          <body name="rod_2" pos="-0.0213005 0.0130878 0.0022" quat="2.83294e-17 -1 -3.41366e-11 3.96985e-16">
             <!-- Joint from output__c331c3826e3aeff78bc4513233f2bf84_2 to rod_2 -->
             <joint axis="0 0 1" name="Rpassive1" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
             <inertial pos="-0.0257316 -0.0475262 -0.0136715" mass="0.0100309" fullinertia="1.5998e-05 4.93789e-06 2.03094e-05 -8.4714e-06 -7.87519e-07 -1.45455e-06"/>
             <!-- Part mr63_32 -->
-            <geom type="mesh" class="visual" pos="-0.0535629 -0.0989306 -0.0176" quat="0.859103 -1.08865e-15 -2.18285e-16 0.511803" mesh="mr63" material="mr63_material"/>
+            <geom type="mesh" class="visual" pos="-0.0535629 -0.0989306 -0.0176" quat="0.859103 -2.22812e-15 -3.4896e-15 0.511803" mesh="mr63" material="mr63_material"/>
             <!-- Part mr63_33 -->
-            <geom type="mesh" class="visual" pos="-0.0535629 -0.0989306 -0.0176" quat="2.66191e-15 0.983609 -0.180316 5.14869e-15" mesh="mr63" material="mr63_material"/>
+            <geom type="mesh" class="visual" pos="-0.0535629 -0.0989306 -0.0176" quat="2.68049e-16 -0.506906 -0.862001 -1.59675e-16" mesh="mr63" material="mr63_material"/>
             <!-- Part mr63_34 -->
-            <geom type="mesh" class="visual" pos="2.36339e-14 -4.0884e-14 -0.002" quat="0.511803 3.79672e-15 1.47521e-15 -0.859103" mesh="mr63" material="mr63_material"/>
+            <geom type="mesh" class="visual" pos="3.26683e-14 -5.66214e-14 -0.002" quat="0.511803 6.35257e-17 -9.85775e-17 -0.859103" mesh="mr63" material="mr63_material"/>
             <!-- Part rod_2 -->
-            <geom type="mesh" class="visual" pos="0.0172234 -0.0206967 -0.0176" quat="0.245578 -2.74549e-15 -8.65038e-16 0.969377" mesh="rod" material="rod_material"/>
+            <geom type="mesh" class="visual" pos="0.0172234 -0.0206967 -0.0176" quat="0.245578 1.81601e-17 3.38218e-18 0.969377" mesh="rod" material="rod_material"/>
             <!-- Link tibia_2 -->
-            <body name="tibia_2" pos="-0.0535629 -0.0989306 -0.0176" quat="0.272012 -1.14179e-14 2.94201e-14 -0.962294">
+            <body name="tibia_2" pos="-0.0535629 -0.0989306 -0.0176" quat="0.272012 -1.93843e-14 3.83503e-14 -0.962294">
               <!-- Joint from rod_2 to tibia_2 -->
               <joint axis="0 0 1" name="Rpassive2" type="hinge" range="-1.91986 1.91986" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-              <inertial pos="-0.0544865 -1.37654e-17 -0.001" mass="0.00455548" fullinertia="2.38416e-08 5.54985e-06 5.57065e-06 -1.93376e-23 -9.98501e-25 -1.28561e-22"/>
+              <inertial pos="-0.0544865 2.77546e-17 -0.001" mass="0.00455548" fullinertia="2.38416e-08 5.54985e-06 5.57065e-06 -3.85098e-23 2.45999e-24 7.10037e-23"/>
               <!-- Part tibia_2 -->
-              <geom type="mesh" class="visual" pos="-0.025 0.1025 6.93889e-18" quat="0 1 0 0" mesh="tibia" material="tibia_material"/>
-              <geom type="mesh" class="collision" pos="-0.025 0.1025 6.93889e-18" quat="0 1 0 0" mesh="tibia" material="tibia_material" name="right_foot_collision"/>
+              <geom type="mesh" class="visual" pos="-0.025 0.1025 0" quat="0 1 0 0" mesh="tibia" material="tibia_material"/>
+              <geom type="mesh" class="collision" pos="-0.025 0.1025 0" quat="0 1 0 0" mesh="tibia" material="tibia_material" name="right_foot_collision"/>
               <!-- Frame closing_R_2 -->
-              <site group="3" name="closing_R_2" pos="-0.025 -2.77556e-17 -0.002" quat="1 -0 7.3132e-17 9.84707e-17"/>
+              <site group="3" name="closing_R_2" pos="-0.025 2.77556e-17 -0.002" quat="1 -0 -8.60588e-17 -3.67088e-17"/>
               <!-- Frame closing_R_2_z -->
-              <site group="3" name="closing_R_2_z" pos="-0.025 -2.77556e-17 0.098" quat="1 -0 7.3132e-17 9.84707e-17"/>
+              <site group="3" name="closing_R_2_z" pos="-0.025 1.38778e-17 0.098" quat="1 -0 -8.60588e-17 -3.67088e-17"/>
               <!-- Frame right_foot -->
-              <site group="3" name="right_foot" pos="-0.125 -2.77556e-17 -0.001" quat="1 -0 7.3132e-17 9.84707e-17"/>
+              <site group="3" name="right_foot" pos="-0.125 2.77556e-17 -0.001" quat="1 -0 -8.60588e-17 -3.67088e-17"/>
             </body>
           </body>
         </body>
@@ -447,30 +447,30 @@
     </body>
   </worldbody>
   <asset>
-    <mesh file="femur.stl"/>
-    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="rod.stl"/>
-    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="kneelinkl.stl"/>
-    <mesh file="trunclink.stl"/>
-    <mesh file="brd.stl"/>
-    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="antenna.stl"/>
-    <mesh file="kneelinkr.stl"/>
-    <mesh file="mr63.stl"/>
-    <mesh file="rotor.stl"/>
-    <mesh file="tibia.stl"/>
-    <mesh file="gear1__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="stator.stl"/>
-    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="enc_magnet.stl"/>
+    <mesh file="stator.stl"/>
+    <mesh file="rotor.stl"/>
+    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="brd.stl"/>
+    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="kneelinkr.stl"/>
+    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="mr63.stl"/>
+    <mesh file="gear1__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="trunclink.stl"/>
+    <mesh file="tibia.stl"/>
+    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="rod.stl"/>
+    <mesh file="femur.stl"/>
+    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="kneelinkl.stl"/>
+    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <material name="trunclink_material" rgba="0.615686 0.811765 0.929412 1"/>
     <material name="antenna_material" rgba="0.498039 0.498039 0.498039 1"/>
     <material name="brd_material" rgba="0.972549 0.529412 0.00392157 1"/>
