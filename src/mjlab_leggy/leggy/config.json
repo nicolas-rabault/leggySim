@@ -15,13 +15,7 @@
       "kp": 10
     },
     "Lpassive*": { "actuated": false },
-    "Rpassive*": { "actuated": false },
-    "LhipY": { "qpos0": "0.10472" },
-    "LhipX": { "qpos0": "0.523599" },
-    "Lknee": { "qpos0": "0.523599" },
-    "RhipY": { "qpos0": "0.10472" },
-    "RhipX": { "qpos0": "0.523599" },
-    "Rknee": { "qpos0": "0.523599" }
+    "Rpassive*": { "actuated": false }
   },
   "geom_properties": {
     "foot": {

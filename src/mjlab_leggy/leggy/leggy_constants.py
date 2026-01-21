@@ -5,6 +5,7 @@ import mujoco
 from mjlab.actuator import XmlPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 from mjlab.utils.spec_config import CollisionCfg
+import numpy as np
 
 LEGGY_XML: Path = Path(os.path.dirname(__file__)) / "robot.xml"
 assert LEGGY_XML.exists(), f"XML not found: {LEGGY_XML}"
@@ -19,14 +20,9 @@ HOME_FRAME = EntityCfg.InitialStateCfg(
     pos=(0.0, 0.0, 0.18),
     rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
-        # Left leg
-        ".*LhipY.*": 0.10472,
-        ".*LhipX.*": 0.523599,
-        ".*Lknee.*": 0.523599,
-        # Right leg
-        ".*RhipY.*": 0.10472,
-        ".*RhipX.*": 0.523599,
-        ".*Rknee.*": 0.523599,
+        ".*hipY.*": 6 * np.pi / 180.0,
+        ".*hipX.*": 25 * np.pi / 180.0,
+        ".*knee.*": 45 * np.pi / 180.0
     },
     joint_vel={".*": 0.0},
     # Explicitly set root (freejoint) velocities to zero
