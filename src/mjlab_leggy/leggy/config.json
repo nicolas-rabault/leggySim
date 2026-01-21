@@ -24,12 +24,12 @@
     "Rknee": { "qpos0": "0.523599" }
   },
   "geom_properties": {
-    "tibia": {
+    "foot": {
       "collision": {
         "name": "left_foot_collision"
       }
     },
-    "tibia_2": {
+    "foot_2": {
       "collision": {
         "name": "right_foot_collision"
       }
@@ -41,9 +41,9 @@
     "cm4lite": "visual",
     "Intel*": "visual",
 
-    // Ignore everything expect "leg" for collision
+    // Ignore everything expect "Foot" for collision
     "*": "collision",
-    "!Tibia": "collision"
+    "!Foot": "collision"
   },
   // Override equality attributes
   "equalities": {
