@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple script to run ONNX policy inference in MuJoCo with rendering."""
+"""Simple script to run ONNX policy inference in MuJoCo with rendering for Leggy robot."""
 
 import argparse
 import csv
@@ -9,66 +9,72 @@ import mujoco
 import mujoco.viewer
 import onnxruntime as ort
 
-MICRODUCK_XML = "src/mjlab_microduck/robot/microduck/scene.xml"
+from mjlab_leggy.leggy.leggy_constants import HOME_FRAME
 
-# Default pose used by the policy (legs flexed, standing position)
+LEGGY_XML = "src/mjlab_leggy/leggy/scene.xml"
+
+# Default pose used by the policy (standing position)
 # This is the reference pose that:
 # - Actions are offsets from (motor_target = DEFAULT_POSE + action * scale)
 # - Joint observations are relative to (obs_joint_pos = current_pos - DEFAULT_POSE)
+# Imported from HOME_FRAME in leggy_constants.py
+# Joint order: LhipY, LhipX, Lknee, RhipY, RhipX, Rknee
+_hip_y = HOME_FRAME.joint_pos[".*hipY.*"]  # 6°
+_hip_x = HOME_FRAME.joint_pos[".*hipX.*"]  # 25°
+_knee = HOME_FRAME.joint_pos[".*knee.*"]   # 45°
 DEFAULT_POSE = np.array([
-    0.0,   # left_hip_yaw
-    0.0,   # left_hip_roll
-    0.6,   # left_hip_pitch
-    -1.2,  # left_knee
-    0.6,   # left_ankle
-    0.0,   # neck_pitch
-    0.0,   # head_pitch
-    0.0,   # head_yaw
-    0.0,   # head_roll
-    0.0,   # right_hip_yaw
-    0.0,   # right_hip_roll
-    -0.6,  # right_hip_pitch
-    1.2,   # right_knee
-    -0.6,  # right_ankle
+    _hip_y,  # LhipY
+    _hip_x,  # LhipX
+    _knee,   # Lknee
+    _hip_y,  # RhipY
+    _hip_x,  # RhipX
+    _knee,   # Rknee
 ], dtype=np.float32)
 
 
 class PolicyInference:
-    def __init__(self, model, data, onnx_path, action_scale=1.0):
+    def __init__(self, model, data, onnx_path=None, action_scale=1.0, zero_action=False):
         self.model = model
         self.data = data
         self.action_scale = action_scale
-
-        # Load ONNX model
-        print(f"Loading ONNX model from: {onnx_path}")
-        self.ort_session = ort.InferenceSession(onnx_path)
-
-        # Get input/output names
-        self.input_name = self.ort_session.get_inputs()[0].name
-        self.output_name = self.ort_session.get_outputs()[0].name
-
-        input_shape = self.ort_session.get_inputs()[0].shape
-        output_shape = self.ort_session.get_outputs()[0].shape
-        print(f"Policy input: {self.input_name}, shape: {input_shape}")
-        print(f"Policy output: {self.output_name}, shape: {output_shape}")
+        self.zero_action = zero_action
 
         # Get sensor IDs and body IDs
         self.imu_ang_vel_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SENSOR, "imu_ang_vel")
-        self.trunk_base_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "trunk_base")
+        self.boddy_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "boddy")
 
         print(f"Sensors found:")
         print(f"  imu_ang_vel: id={self.imu_ang_vel_id}")
         print(f"Body IDs:")
-        print(f"  trunk_base: id={self.trunk_base_id}")
+        print(f"  boddy: id={self.boddy_id}")
 
         # Joint information
         self.n_joints = model.nu  # Number of actuators
 
-        # Default pose for the policy (flexed legs)
+        # Default pose for the policy
         self.default_pose = DEFAULT_POSE[:self.n_joints]
         print(f"Number of actuators: {self.n_joints}")
         print(f"Default pose: {self.default_pose}")
         print(f"Action scale: {self.action_scale}")
+
+        # Load ONNX model (or use zero action mode)
+        if zero_action:
+            print("Using ZERO ACTION mode (no ONNX policy, actions always 0)")
+            self.ort_session = None
+            self.input_name = None
+            self.output_name = None
+        else:
+            print(f"Loading ONNX model from: {onnx_path}")
+            self.ort_session = ort.InferenceSession(onnx_path)
+
+            # Get input/output names
+            self.input_name = self.ort_session.get_inputs()[0].name
+            self.output_name = self.ort_session.get_outputs()[0].name
+
+            input_shape = self.ort_session.get_inputs()[0].shape
+            output_shape = self.ort_session.get_outputs()[0].shape
+            print(f"Policy input: {self.input_name}, shape: {input_shape}")
+            print(f"Policy output: {self.output_name}, shape: {output_shape}")
 
         # Last action (for observation history)
         self.last_action = np.zeros(self.n_joints, dtype=np.float32)
@@ -98,7 +104,7 @@ class PolicyInference:
         computed from root_link_quat_w (body frame), NOT from sensors.
         """
         # Get body orientation quaternion from xquat (w, x, y, z format in MuJoCo)
-        quat = self.data.xquat[self.trunk_base_id].copy().astype(np.float32)
+        quat = self.data.xquat[self.boddy_id].copy().astype(np.float32)
 
         # World gravity (pointing down)
         world_gravity = np.array([0.0, 0.0, -1.0], dtype=np.float32)
@@ -139,12 +145,12 @@ class PolicyInference:
         Order (from velocity_env_cfg.py after deleting base_lin_vel):
         1. base_ang_vel (3D)
         2. projected_gravity (3D)
-        3. joint_pos (14D) - relative to default
-        4. joint_vel (14D) - relative to default (zero)
-        5. actions (14D) - last action
+        3. joint_pos (6D) - relative to default
+        4. joint_vel (6D) - relative to default (zero)
+        5. actions (6D) - last action
         6. command (3D) - velocity command
 
-        Total: 51D
+        Total: 27D
         """
         obs = []
 
@@ -180,6 +186,12 @@ class PolicyInference:
 
     def infer(self):
         """Run policy inference and return action."""
+        # Zero action mode: always return zeros
+        if self.zero_action:
+            action = np.zeros(self.n_joints, dtype=np.float32)
+            self.last_action = action.copy()
+            return action
+
         # Get observations
         obs = self.get_observations()
 
@@ -210,8 +222,9 @@ class PolicyInference:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run ONNX policy in MuJoCo")
-    parser.add_argument("onnx_path", type=str, help="Path to ONNX policy file")
+    parser = argparse.ArgumentParser(description="Run ONNX policy in MuJoCo for Leggy robot")
+    parser.add_argument("onnx_path", type=str, nargs="?", default=None, help="Path to ONNX policy file")
+    parser.add_argument("--zero-action", action="store_true", help="Use zero actions (no policy, just hold default pose)")
     parser.add_argument("--lin-vel-x", type=float, default=0.0, help="Linear velocity X command (m/s)")
     parser.add_argument("--lin-vel-y", type=float, default=0.0, help="Linear velocity Y command (m/s)")
     parser.add_argument("--ang-vel-z", type=float, default=0.0, help="Angular velocity Z command (rad/s)")
@@ -220,26 +233,30 @@ def main():
     parser.add_argument("--save-csv", type=str, default=None, help="Save observations and actions to CSV file")
     args = parser.parse_args()
 
+    # Validate arguments
+    if not args.zero_action and args.onnx_path is None:
+        parser.error("onnx_path is required unless --zero-action is specified")
+
     # Load MuJoCo model
-    print(f"Loading MuJoCo model from: {MICRODUCK_XML}")
-    model = mujoco.MjModel.from_xml_path(MICRODUCK_XML)
+    print(f"Loading MuJoCo model from: {LEGGY_XML}")
+    model = mujoco.MjModel.from_xml_path(LEGGY_XML)
     data = mujoco.MjData(model)
 
     # Initialize policy
-    policy = PolicyInference(model, data, args.onnx_path, action_scale=args.action_scale)
+    policy = PolicyInference(model, data, args.onnx_path, action_scale=args.action_scale, zero_action=args.zero_action)
     policy.set_command(args.lin_vel_x, args.lin_vel_y, args.ang_vel_z)
 
     # Set initial position to default pose
-    freejoint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "trunk_base_freejoint")
+    freejoint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "boddy_freejoint")
     qpos_adr = model.jnt_qposadr[freejoint_id]
 
-    # Set base position (match training config: z=0.12-0.13)
+    # Set base position (match training config from HOME_FRAME)
     data.qpos[qpos_adr + 0] = 0.0  # x
     data.qpos[qpos_adr + 1] = 0.0  # y
-    data.qpos[qpos_adr + 2] = 0.125  # z (height) - middle of training range
+    data.qpos[qpos_adr + 2] = 0.18  # z (height) - from HOME_FRAME
     data.qpos[qpos_adr + 3:qpos_adr + 7] = [1, 0, 0, 0]  # identity quaternion
 
-    # Set joint positions to default pose (flexed legs)
+    # Set joint positions to default pose
     data.qpos[7:7 + policy.n_joints] = policy.default_pose
 
     # Set controls to default pose (important for initial state)
@@ -259,7 +276,10 @@ def main():
         print()
 
     print("\n" + "="*80)
-    print("MicroDuck Policy Inference (NO delays, NO noise for sim2sim)")
+    if args.zero_action:
+        print("Leggy ZERO ACTION Mode (holding default pose)")
+    else:
+        print("Leggy Policy Inference (NO delays, NO noise for sim2sim)")
     print("="*80)
     print(f"Control frequency: 50 Hz (decimation: 4)")
     print(f"Simulation timestep: {model.opt.timestep}s")
@@ -294,7 +314,7 @@ def main():
             if csv_data is not None:
                 obs = policy.get_observations()
 
-                # Create row: step, time, obs(51), action(14)
+                # Create row: step, time, obs, action
                 row = {
                     'step': control_step_count,
                     'time': control_step_count * control_dt,
@@ -329,15 +349,14 @@ def main():
                     print(f"\nObservation (shape {obs.shape}, total {obs.size}):")
                     print(f"  Ang vel [0:3]:        {obs[0:3]}")
                     print(f"  Proj grav [3:6]:      {obs[3:6]}")
-                    print(f"  Joint pos [6:20]:     {obs[6:6+policy.n_joints]}")
-                    print(f"  Joint vel [20:34]:    {obs[6+policy.n_joints:6+2*policy.n_joints]}")
-                    print(f"  Last action [34:48]:  {obs[6+2*policy.n_joints:6+3*policy.n_joints]}")
-                    print(f"  Command [48:51]:      {obs[6+3*policy.n_joints:]}")
+                    print(f"  Joint pos [6:12]:     {obs[6:6+policy.n_joints]}")
+                    print(f"  Joint vel [12:18]:    {obs[6+policy.n_joints:6+2*policy.n_joints]}")
+                    print(f"  Last action [18:24]:  {obs[6+2*policy.n_joints:6+3*policy.n_joints]}")
+                    print(f"  Command [24:27]:      {obs[6+3*policy.n_joints:]}")
                     print(f"\nAction output:")
                     print(f"  Raw action: {action}")
                     print(f"  Action min/max: [{action.min():.4f}, {action.max():.4f}]")
-                    print(f"  Applied ctrl (first 5): {data.ctrl[:5]}")
-                    print(f"  Applied ctrl (last 5):  {data.ctrl[-5:]}")
+                    print(f"  Applied ctrl: {data.ctrl[:]}")
 
             # Step simulation 'decimation' times (matches mjlab env.step behavior)
             for _ in range(decimation):
