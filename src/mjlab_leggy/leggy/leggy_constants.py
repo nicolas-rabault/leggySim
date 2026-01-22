@@ -14,15 +14,38 @@ assert LEGGY_XML.exists(), f"XML not found: {LEGGY_XML}"
 def get_spec() -> mujoco.MjSpec:
     return mujoco.MjSpec.from_file(str(LEGGY_XML))
 
+zero_pose = {
+    "hipY": 0.0,
+    "hipX": 0.0,
+    "knee": 0.0,
+    "Lpassive1": 298.4319731 * np.pi / 180.0,
+    "Rpassive1": 61.5680313 * np.pi / 180.0,
+    "Lpassive2": 30 * np.pi / 180.0,
+    "Rpassive2": 60 * np.pi / 180.0
+}
+
+stand_pose = {
+    "hipY": 6 * np.pi / 180.0,
+    "hipX": 25 * np.pi / 180.0,
+    "knee": 45 * np.pi / 180.0,
+    "Lpassive1": 228.4319731 * np.pi / 180.0,
+    "Rpassive1": 131.5680313 * np.pi / 180.0,
+    "Lpassive2": 100 * np.pi / 180.0,
+    "Rpassive2": -10 * np.pi / 180.0
+}
 
 HOME_FRAME = EntityCfg.InitialStateCfg(
     # Starting position (robot body center height)
     pos=(0.0, 0.0, 0.18),
     rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
-        ".*hipY.*": 6 * np.pi / 180.0,
-        ".*hipX.*": 25 * np.pi / 180.0,
-        ".*knee.*": 45 * np.pi / 180.0
+        ".*hipY.*": stand_pose["hipY"],
+        ".*hipX.*": stand_pose["hipX"],
+        ".*knee.*": stand_pose["knee"],
+        "Lpassive1": stand_pose["Lpassive1"] - zero_pose["Lpassive1"],
+        "Rpassive1": stand_pose["Rpassive1"] - zero_pose["Rpassive1"],
+        "Lpassive2": stand_pose["Lpassive2"] - zero_pose["Lpassive2"],
+        "Rpassive2": stand_pose["Rpassive2"] - zero_pose["Rpassive2"]
     },
     joint_vel={".*": 0.0},
     # Explicitly set root (freejoint) velocities to zero
