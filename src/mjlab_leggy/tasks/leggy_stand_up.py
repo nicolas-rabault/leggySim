@@ -5,7 +5,7 @@ It defines reward functions, observation spaces, and training hyperparameters.
 """
 
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
-
+from copy import deepcopy
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp import terminations as mdp_terminations
 from mjlab.managers.termination_manager import TerminationTermCfg
@@ -160,6 +160,38 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Disable terrain curriculum
     del cfg.curriculum["terrain_levels"]
     del cfg.curriculum["command_vel"]
+
+    # -------------------------------------------------------------------------
+    # Robot noise configuration
+    # -------------------------------------------------------------------------
+    # Robot noise is used to add noise to the robot's actions to encourage
+    # exploration.
+    cfg.observations["policy"].enable_corruption = True
+    cfg.observations["policy"].corruption_std = 0.01
+
+    cfg.observations["policy"].terms["projected_gravity"] = deepcopy(
+    cfg.observations["policy"].terms["projected_gravity"]
+    )
+    cfg.observations["policy"].terms["base_ang_vel"] = deepcopy(
+        cfg.observations["policy"].terms["base_ang_vel"]
+    )
+
+    cfg.observations["policy"].terms["base_ang_vel"].delay_min_lag = 1
+    cfg.observations["policy"].terms["base_ang_vel"].delay_max_lag = 2
+    cfg.observations["policy"].terms["base_ang_vel"].delay_update_period = 64
+
+    cfg.observations["policy"].terms["projected_gravity"].delay_min_lag = 1
+    cfg.observations["policy"].terms["projected_gravity"].delay_max_lag = 2
+    cfg.observations["policy"].terms["projected_gravity"].delay_update_period = 64
+
+    cfg.commands["twist"].ranges.ang_vel_z = (-1.0, 1.0)
+    cfg.commands["twist"].ranges.lin_vel_y = (-0.3, 0.3)
+    cfg.commands["twist"].ranges.lin_vel_x = (-0.3, 0.3)
+
+    cfg.events["push_robot"].params["velocity_range"] = {
+        "x": (-0.8, 0.8),
+        "y": (-0.8, 0.8),
+    }
 
     # -------------------------------------------------------------------------
     # Termination conditions
