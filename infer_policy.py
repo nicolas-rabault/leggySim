@@ -9,7 +9,14 @@ import mujoco
 import mujoco.viewer
 import onnxruntime as ort
 
-from mjlab_leggy.leggy.leggy_constants import HOME_FRAME
+from mjlab_leggy.leggy.leggy_constants import (
+    HOME_FRAME,
+    enable_passive_joint_callback,
+    KneeToMotor,
+    MotorToKnee,
+)
+
+enable_passive_joint_callback()
 
 LEGGY_XML = "src/mjlab_leggy/leggy/scene.xml"
 
@@ -123,11 +130,17 @@ class PolicyInference:
     def get_joint_pos_relative(self):
         """Get joint positions relative to default pose.
 
-        Returns: current_pos - default_pose
+        Returns: current_pos - default_pose (with knee converted to motor values)
         This matches mdp.joint_pos_rel.
         """
         # Skip freejoint (7 qpos DOFs: x, y, z, qw, qx, qy, qz)
         current_pos = self.data.qpos[7:7 + self.n_joints].copy().astype(np.float32)
+        
+        # Convert knee angles to motor values for observation
+        # Joint order: LhipY(0), LhipX(1), Lknee(2), RhipY(3), RhipX(4), Rknee(5)
+        current_pos[2] = KneeToMotor(current_pos[2], current_pos[1])  # Lknee with LhipX
+        current_pos[5] = KneeToMotor(current_pos[5], current_pos[4])  # Rknee with RhipX
+        
         return current_pos - self.default_pose
 
     def get_joint_vel(self):
@@ -213,9 +226,15 @@ class PolicyInference:
         """Apply action to MuJoCo controls (NO delay for sim2sim).
 
         Motor targets = default_pose + action * action_scale
+        Then convert motor values back to knee angles for physics.
         """
         # Process action: default_pose + action * scale
         target_positions = self.default_pose + action * self.action_scale
+        
+        # Convert motor values to knee angles for physics
+        # Joint order: LhipY(0), LhipX(1), Lknee(2), RhipY(3), RhipX(4), Rknee(5)
+        target_positions[2] = MotorToKnee(target_positions[2], target_positions[1])  # Lknee
+        target_positions[5] = MotorToKnee(target_positions[5], target_positions[4])  # Rknee
 
         # Set control targets (no delay for sim2sim testing)
         self.data.ctrl[:] = target_positions

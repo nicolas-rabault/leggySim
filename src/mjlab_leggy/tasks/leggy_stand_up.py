@@ -1,21 +1,32 @@
-"""Leggy stand up environment.
+"""Leggy stand up environment."""
 
-This module configures the RL environment for training Leggy to stand and walk.
-It defines reward functions, observation spaces, and training hyperparameters.
-"""
-
-from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
 from copy import deepcopy
+
+import torch
+
 from mjlab.envs import ManagerBasedRlEnvCfg
+from mjlab.envs.mdp import observations as mdp_obs
 from mjlab.envs.mdp import terminations as mdp_terminations
+from mjlab.managers.observation_manager import ObservationTermCfg
+from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
-from mjlab.rl import (
-    RslRlOnPolicyRunnerCfg,
-    RslRlPpoActorCriticCfg,
-    RslRlPpoAlgorithmCfg,
-)
+from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
+
+from mjlab_leggy.leggy.leggy_constants import (
+    LEGGY_ROBOT_CFG, enable_passive_joint_callback, KneeToMotor,
+)
+
+enable_passive_joint_callback()
+
+
+def joint_pos_rel_motor(env, asset_cfg=SceneEntityCfg("robot")) -> torch.Tensor:
+    """Joint positions with knee→motor conversion."""
+    obs = mdp_obs.joint_pos_rel(env, asset_cfg=asset_cfg).clone()
+    obs[:, 2] = KneeToMotor(obs[:, 2], obs[:, 1])
+    obs[:, 5] = KneeToMotor(obs[:, 5], obs[:, 4])
+    return obs
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -24,6 +35,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # Set leggy robot
     cfg.scene.entities = {"robot": LEGGY_ROBOT_CFG}
+
+    # Custom observation: knee→motor conversion
+    cfg.observations["policy"].terms["joint_pos"] = ObservationTermCfg(func=joint_pos_rel_motor)
+    cfg.observations["critic"].terms["joint_pos"] = ObservationTermCfg(func=joint_pos_rel_motor)
 
     # -------------------------------------------------------------------------
     # Contact sensors

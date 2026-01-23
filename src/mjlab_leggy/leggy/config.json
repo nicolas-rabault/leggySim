@@ -40,11 +40,12 @@
     "!Foot": "collision"
   },
   // Override equality attributes
-  "equalities": {
-    "closing_*": {
-      "solref": "0.002 1",
-      "solimp": "0.99 0.999 0.0005 0.5 2"
-    }
-  },
+  //   "equalities": {
+  //     "closing_*": {
+  //       "solref": "0.002 1",
+  //       "solimp": "0.99 0.999 0.0005 0.5 2"
+  //     }
+  //   },
+  // I removed the equalities and recompute the passive joints values at each frame.
   "additional_xml": ["sensors.xml"]
 }
