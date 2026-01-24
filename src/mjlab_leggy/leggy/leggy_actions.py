@@ -146,24 +146,10 @@ class LeggyJointAction(ActionTerm):
             self._offset = torch.zeros(self._num_envs, self._action_dim, device=self._device)
 
         # =====================================================================
-        # Debug counters
+        # Debug counters (set to 0 to disable debug prints)
         # =====================================================================
         self._step_count = 0
-        self._debug_interval = 50  # Print every N steps
-
-        # Print initialization info
-        print("\n" + "="*80)
-        print("LeggyJointAction Initialization")
-        print("="*80)
-        print(f"Default positions (actuated joints): {default_pos[0].cpu().numpy() if cfg.use_default_offset else 'N/A'}")
-        print(f"  [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]")
-        if cfg.use_default_offset:
-            print(f"  Degrees: {[f'{x:.2f}°' for x in (default_pos[0].cpu().numpy() * 180 / 3.14159)]}")
-        print(f"\nOffset (motor space for indices 2,5): {self._offset[0].cpu().numpy()}")
-        print(f"  [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]")
-        print(f"  Degrees: {[f'{x:.2f}°' for x in (self._offset[0].cpu().numpy() * 180 / 3.14159)]}")
-        print(f"\nScale: {self._scale}")
-        print("="*80 + "\n")
+        self._debug_interval = 0  # Set to >0 to enable debug prints (e.g., 50 for every 50 steps)
 
     @property
     def action_dim(self) -> int:
@@ -194,9 +180,9 @@ class LeggyJointAction(ActionTerm):
 
         # Debug printing
         self._step_count += 1
-        if self._step_count % self._debug_interval == 0:
+        if self._debug_interval > 0 and (self._step_count <= 5 or self._step_count % self._debug_interval == 0):
             env_id = 0
-            print(f"\n--- Step {self._step_count} (Env {env_id}) process_actions ---")
+            print(f"\n========== Step {self._step_count} (Env {env_id}) process_actions ==========")
             print(f"Raw actions: {self._raw_actions[env_id].cpu().numpy()}")
             print(f"  [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]")
             print(f"Processed actions (motor space): {self._processed_actions[env_id].cpu().numpy()}")
@@ -272,9 +258,9 @@ class LeggyJointAction(ActionTerm):
         )
 
         # Debug printing (only on the first decimation step of each debug interval)
-        if self._step_count % self._debug_interval == 0:
+        if self._debug_interval > 0 and (self._step_count <= 5 or self._step_count % self._debug_interval == 0):
             env_id = 0
-            print(f"\n--- Step {self._step_count} (Env {env_id}) apply_actions ---")
+            print(f"\n========== Step {self._step_count} (Env {env_id}) apply_actions ==========")
             print(f"TARGET hipX_left: {hipX_left_target[env_id].item():.6f} rad = {hipX_left_target[env_id].item() * 180/3.14159:.2f}°")
             print(f"TARGET motor_left: {motor_left[env_id].item():.6f} rad = {motor_left[env_id].item() * 180/3.14159:.2f}°")
             print(f"TARGET knee_left (computed): {target_positions[env_id, 2].item():.6f} rad = {target_positions[env_id, 2].item() * 180/3.14159:.2f}°")
@@ -314,68 +300,45 @@ class LeggyJointActionCfg(ActionTermCfg):
 
 
 # =============================================================================
-# Observation Helper Function
+# Observation Helper Functions
 # =============================================================================
 
-def joint_pos_rel_motor(env, asset_cfg=None) -> torch.Tensor:
-    """Get joint positions with knee→motor conversion for observations.
+def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
+    """Get actuator torques in motor-space representation.
 
-    This converts the actual knee angles in the observation to motor representation,
-    which is the inverse of what the action term does. This ensures the policy
-    sees consistent motor-space representations.
+    Since Leggy has torque sensors at the motor outputs, we want to observe
+    torques as the robot would measure them:
+    - Hip torques: directly from hip actuators
+    - Motor torques: from knee actuators (which drive the motors through the mechanism)
 
     Args:
         env: The environment instance
-        asset_cfg: Asset configuration (default: SceneEntityCfg("robot") with actuated joints only)
+        asset_cfg: Asset configuration (not used, kept for API compatibility)
 
     Returns:
-        Joint positions with motor representation [num_envs, 6]
-        Layout: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
+        Actuator torques [num_envs, 6]
+        Layout: [LhipY_torque, LhipX_torque, Lmotor_torque, RhipY_torque, RhipX_torque, Rmotor_torque]
     """
-    from mjlab.envs.mdp import observations as mdp_obs
-    from mjlab.managers.scene_entity_config import SceneEntityCfg
+    # Get the robot asset
+    asset = env.scene["robot"]
 
-    if asset_cfg is None:
-        # IMPORTANT: Explicitly specify actuated joints only, in correct order!
-        # Without this, joint_pos_rel returns ALL joints (including passive),
-        # which would make indices 4,5 point to LpassiveMotor,RhipY instead of RhipX,Rknee
-        asset_cfg = SceneEntityCfg(
-            "robot",
-            joint_names=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee")
-        )
+    # Find actuator indices in the order: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
+    actuator_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
+    actuator_ids = asset.find_actuators(actuator_names)[0]
 
-    # Get regular joint positions observation (relative to default)
-    obs = mdp_obs.joint_pos_rel(env, asset_cfg=asset_cfg).clone()
+    # Read actuator forces (torques) from simulation
+    # data.actuator_force contains the force/torque each actuator is producing
+    actuator_torques = asset.data.actuator_force[:, actuator_ids]
 
-    # Debug printing
-    if hasattr(env, '_leggy_obs_counter'):
-        env._leggy_obs_counter += 1
-    else:
-        env._leggy_obs_counter = 1
+    # The layout matches our observation joints perfectly:
+    # - Index 0: LhipY actuator → LhipY torque
+    # - Index 1: LhipX actuator → LhipX torque
+    # - Index 2: Lknee actuator → Lmotor torque (knee drives motor through mechanism)
+    # - Index 3: RhipY actuator → RhipY torque
+    # - Index 4: RhipX actuator → RhipX torque
+    # - Index 5: Rknee actuator → Rmotor torque (knee drives motor through mechanism)
 
-    if env._leggy_obs_counter % 50 == 0:
-        env_id = 0
-        print(f"\n--- Observation {env._leggy_obs_counter} (Env {env_id}) ---")
-        print(f"RELATIVE obs (knee space): {obs[env_id].cpu().numpy()}")
-        print(f"  [LhipY, LhipX, Lknee_rel, RhipY, RhipX, Rknee_rel]")
-        print(f"  Degrees: {[f'{x:.2f}°' for x in (obs[env_id].cpu().numpy() * 180 / 3.14159)]}")
-        print(f"  LhipX_rel={obs[env_id, 1].item() * 180/3.14159:.2f}°, Lknee_rel={obs[env_id, 2].item() * 180/3.14159:.2f}°")
-
-    # Convert knee angles to motor representation
-    # obs layout: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-    # Index 1 = LhipX, Index 2 = Lknee
-    # Index 4 = RhipX, Index 5 = Rknee
-    obs[:, 2] = knee_to_motor(obs[:, 2], obs[:, 1])  # Lknee → Lmotor
-    obs[:, 5] = knee_to_motor(obs[:, 5], obs[:, 4])  # Rknee → Rmotor
-
-    if env._leggy_obs_counter % 50 == 0:
-        env_id = 0
-        print(f"RELATIVE obs (motor space): {obs[env_id].cpu().numpy()}")
-        print(f"  [LhipY, LhipX, Lmotor_rel, RhipY, RhipX, Rmotor_rel]")
-        print(f"  Degrees: {[f'{x:.2f}°' for x in (obs[env_id].cpu().numpy() * 180 / 3.14159)]}")
-        print(f"  Lmotor_rel={obs[env_id, 2].item() * 180/3.14159:.2f}° (should be Lknee_rel - LhipX_rel)")
-
-    return obs
+    return actuator_torques
 
 
 # =============================================================================
@@ -385,7 +348,7 @@ def joint_pos_rel_motor(env, asset_cfg=None) -> torch.Tensor:
 __all__ = [
     "motor_to_knee",
     "knee_to_motor",
-    "joint_pos_rel_motor",
+    "joint_torques_motor",
     "LeggyJointAction",
     "LeggyJointActionCfg",
 ]

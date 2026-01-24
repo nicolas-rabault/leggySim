@@ -15,7 +15,7 @@ from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
-from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg, joint_pos_rel_motor
+from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg, joint_torques_motor
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -37,10 +37,46 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     }
 
     # -------------------------------------------------------------------------
-    # Custom Observations: Knee→motor conversion for policy
+    # Custom Observations: Observe passive motor joints directly (already in motor space!)
     # -------------------------------------------------------------------------
-    cfg.observations["policy"].terms["joint_pos"] = ObservationTermCfg(func=joint_pos_rel_motor)
-    cfg.observations["critic"].terms["joint_pos"] = ObservationTermCfg(func=joint_pos_rel_motor)
+    # Instead of observing knee joints and converting, we observe the passive motor joints
+    # which are automatically computed at each simulation step to match the knee angles.
+    # This gives us motor-space observations without any conversion needed!
+
+    # Define the joint configuration for consistency
+    motor_joints_cfg = SceneEntityCfg(
+        "robot",
+        joint_names=("LhipY", "LhipX", "LpassiveMotor", "RhipY", "RhipX", "RpassiveMotor")
+    )
+
+    cfg.observations["policy"].terms["joint_pos"] = ObservationTermCfg(
+        func=mdp_obs.joint_pos_rel,
+        params={"asset_cfg": motor_joints_cfg}
+    )
+    cfg.observations["critic"].terms["joint_pos"] = ObservationTermCfg(
+        func=mdp_obs.joint_pos_rel,
+        params={"asset_cfg": motor_joints_cfg}
+    )
+
+    # Also update joint velocities to match (observe same joints for consistency)
+    cfg.observations["policy"].terms["joint_vel"] = ObservationTermCfg(
+        func=mdp_obs.joint_vel_rel,
+        params={"asset_cfg": motor_joints_cfg}
+    )
+    cfg.observations["critic"].terms["joint_vel"] = ObservationTermCfg(
+        func=mdp_obs.joint_vel_rel,
+        params={"asset_cfg": motor_joints_cfg}
+    )
+
+    # Add motor torques (measured at motor outputs via torque sensors)
+    # For passiveMotor torques, we use the knee actuator forces since the knee
+    # drives the motor through the parallel differential mechanism
+    cfg.observations["policy"].terms["joint_torques"] = ObservationTermCfg(
+        func=joint_torques_motor
+    )
+    cfg.observations["critic"].terms["joint_torques"] = ObservationTermCfg(
+        func=joint_torques_motor
+    )
 
     # -------------------------------------------------------------------------
     # Contact sensors
