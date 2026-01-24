@@ -113,7 +113,8 @@ class LeggyJointAction(ActionTerm):
         self._actuated_joint_ids = self._asset.find_joints(actuated_names)[0]
 
         # Find joint indices for passive joints
-        passive_names = ["LpassiveMotor", "Lpassive2", "RpassiveMotor", "Rpassive2"]
+        # NOTE: Order must match the XML order (Lpassive2 comes before LpassiveMotor in the kinematic tree)
+        passive_names = ["Lpassive2", "LpassiveMotor", "Rpassive2", "RpassiveMotor"]
         self._passive_joint_ids = self._asset.find_joints(passive_names)[0]
 
         # =====================================================================
@@ -165,7 +166,7 @@ class LeggyJointAction(ActionTerm):
         # Debug counters (set to 0 to disable debug prints)
         # =====================================================================
         self._step_count = 0
-        self._debug_interval = 0  # Set to >0 to enable debug prints (e.g., 50 for every 50 steps)
+        self._debug_interval = 0  # Set to >0 to enable debug prints (e.g., 50 for every 50 steps, 0 to disable)
 
         # Print scale factors once for debugging
         if self._debug_interval > 0:
@@ -260,10 +261,10 @@ class LeggyJointAction(ActionTerm):
         hipX_right_current = current_joint_pos[:, 4]   # Current RhipX position
 
         passive_positions = torch.stack([
-            knee_to_motor(knee_left_current, hipX_left_current),   # LpassiveMotor follows current Lknee
-            knee_left_current,   # Lpassive2 follows current Lknee
-            knee_to_motor(knee_right_current, hipX_right_current),  # RpassiveMotor follows current Rknee
-            knee_right_current,  # Rpassive2 follows current Rknee
+            knee_left_current,   # Lpassive2 follows current Lknee (index 0)
+            knee_to_motor(knee_left_current, hipX_left_current),   # LpassiveMotor follows current Lknee (index 1)
+            knee_right_current,  # Rpassive2 follows current Rknee (index 2)
+            knee_to_motor(knee_right_current, hipX_right_current),  # RpassiveMotor follows current Rknee (index 3)
         ], dim=1)
 
         # Directly write passive joint positions to simulation (not targets)
@@ -277,15 +278,40 @@ class LeggyJointAction(ActionTerm):
         if self._debug_interval > 0 and (self._step_count <= 5 or self._step_count % self._debug_interval == 0):
             env_id = 0
             print(f"\n========== Step {self._step_count} (Env {env_id}) apply_actions ==========")
-            print(f"TARGET positions: {self._processed_actions[env_id].cpu().numpy()}")
-            print(f"  [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]")
-            print(f"  Degrees: {[f'{x:.2f}°' for x in (self._processed_actions[env_id].cpu().numpy() * 180 / 3.14159)]}")
-            print(f"\nCURRENT hipX_left: {hipX_left_current[env_id].item():.6f} rad = {hipX_left_current[env_id].item() * 180/3.14159:.2f}°")
-            print(f"CURRENT knee_left: {knee_left_current[env_id].item():.6f} rad = {knee_left_current[env_id].item() * 180/3.14159:.2f}°")
-            print(f"CURRENT motor_left (computed from current): {passive_positions[env_id, 0].item():.6f} rad = {passive_positions[env_id, 0].item() * 180/3.14159:.2f}°")
-            print(f"  Computation: motor = knee - hipX = {knee_left_current[env_id].item():.6f} - {hipX_left_current[env_id].item():.6f} = {passive_positions[env_id, 0].item():.6f}")
-            print(f"\nPassive joints (LEFT): LpassiveMotor={passive_positions[env_id, 0].item() * 180/3.14159:.2f}°, Lpassive2={passive_positions[env_id, 1].item() * 180/3.14159:.2f}°")
-            print(f"Passive joints (RIGHT): RpassiveMotor={passive_positions[env_id, 2].item() * 180/3.14159:.2f}°, Rpassive2={passive_positions[env_id, 3].item() * 180/3.14159:.2f}°")
+
+            # Show actuated joint info
+            print(f"\n--- ACTUATED JOINTS ---")
+            print(f"Actuated joint IDs: {self._actuated_joint_ids}")
+            print(f"Actuated joint names: {['LhipY', 'LhipX', 'Lknee', 'RhipY', 'RhipX', 'Rknee']}")
+            print(f"TARGET positions:  {self._processed_actions[env_id].cpu().numpy()}")
+            print(f"CURRENT positions: {current_joint_pos[env_id].cpu().numpy()}")
+            print(f"\nDegrees:")
+            print(f"  TARGET:  {[f'{x:.2f}°' for x in (self._processed_actions[env_id].cpu().numpy() * 180 / 3.14159)]}")
+            print(f"  CURRENT: {[f'{x:.2f}°' for x in (current_joint_pos[env_id].cpu().numpy() * 180 / 3.14159)]}")
+
+            # Show passive joint computation details
+            print(f"\n--- PASSIVE JOINT COMPUTATION ---")
+            print(f"LEFT LEG:")
+            print(f"  Current LhipX: {hipX_left_current[env_id].item():.6f} rad = {hipX_left_current[env_id].item() * 180/3.14159:.2f}°")
+            print(f"  Current Lknee: {knee_left_current[env_id].item():.6f} rad = {knee_left_current[env_id].item() * 180/3.14159:.2f}°")
+            print(f"  → Lpassive2 = knee = {passive_positions[env_id, 0].item():.6f} rad ({passive_positions[env_id, 0].item() * 180/3.14159:.2f}°)")
+            print(f"  → LpassiveMotor = knee - hipX = {knee_left_current[env_id].item():.6f} - {hipX_left_current[env_id].item():.6f} = {passive_positions[env_id, 1].item():.6f} rad ({passive_positions[env_id, 1].item() * 180/3.14159:.2f}°)")
+
+            print(f"\nRIGHT LEG:")
+            print(f"  Current RhipX: {hipX_right_current[env_id].item():.6f} rad = {hipX_right_current[env_id].item() * 180/3.14159:.2f}°")
+            print(f"  Current Rknee: {knee_right_current[env_id].item():.6f} rad = {knee_right_current[env_id].item() * 180/3.14159:.2f}°")
+            print(f"  → Rpassive2 = knee = {passive_positions[env_id, 2].item():.6f} rad ({passive_positions[env_id, 2].item() * 180/3.14159:.2f}°)")
+            print(f"  → RpassiveMotor = knee - hipX = {knee_right_current[env_id].item():.6f} - {hipX_right_current[env_id].item():.6f} = {passive_positions[env_id, 3].item():.6f} rad ({passive_positions[env_id, 3].item() * 180/3.14159:.2f}°)")
+
+            # Show passive joint mapping
+            print(f"\n--- PASSIVE JOINT MAPPING TO MUJOCO ---")
+            print(f"Passive joint IDs: {self._passive_joint_ids}")
+            print(f"Passive joint names (XML order): {['Lpassive2', 'LpassiveMotor', 'Rpassive2', 'RpassiveMotor']}")
+            print(f"Values being written: {passive_positions[env_id].cpu().numpy()}")
+            print(f"Values in degrees: {[f'{x:.2f}°' for x in (passive_positions[env_id].cpu().numpy() * 180 / 3.14159)]}")
+            print(f"\nMapping:")
+            for i, (joint_id, name) in enumerate(zip(self._passive_joint_ids, ['Lpassive2', 'LpassiveMotor', 'Rpassive2', 'RpassiveMotor'])):
+                print(f"  passive_positions[{i}] = {passive_positions[env_id, i].item():.6f} rad ({passive_positions[env_id, i].item() * 180/3.14159:.2f}°) → MuJoCo joint_id {joint_id} ({name})")
 
 
 # =============================================================================
