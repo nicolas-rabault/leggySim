@@ -6,6 +6,7 @@ from mjlab.actuator import XmlPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 from mjlab.utils.spec_config import CollisionCfg
 import numpy as np
+from mjlab_leggy.leggy.leggy_actions import motor_to_knee, knee_to_motor
 
 LEGGY_XML: Path = Path(os.path.dirname(__file__)) / "robot.xml"
 assert LEGGY_XML.exists(), f"XML not found: {LEGGY_XML}"
@@ -15,37 +16,18 @@ def get_spec() -> mujoco.MjSpec:
     return mujoco.MjSpec.from_file(str(LEGGY_XML))
 
 
-def update_passive_joints(model: mujoco.MjModel, data: mujoco.MjData) -> None:
-    """Convert motor→knee for actuators, then set passive joint angles."""
-    # Actuator order: LhipY(0), LhipX(1), Lknee(2), RhipY(3), RhipX(4), Rknee(5)
-    # Convert motor commands to knee angles
-    data.ctrl[2] = MotorToKnee(data.ctrl[2], data.ctrl[1])
-    data.ctrl[5] = MotorToKnee(data.ctrl[5], data.ctrl[4])
-    
-    # Set passive joints based on knee angles
-    lknee = data.qpos[model.joint("Lknee").qposadr[0]]
-    rknee = data.qpos[model.joint("Rknee").qposadr[0]]
-    data.qpos[model.joint("Lpassive1").qposadr[0]] = lknee
-    data.qpos[model.joint("Lpassive2").qposadr[0]] = lknee
-    data.qpos[model.joint("Rpassive1").qposadr[0]] = rknee
-    data.qpos[model.joint("Rpassive2").qposadr[0]] = rknee
-
-
-def KneeToMotor(knee: float, hipX: float) -> float:
-    return knee - hipX
-
-def MotorToKnee(motor: float, hipX: float) -> float:
-    return motor + hipX
-
-def enable_passive_joint_callback() -> None:
-    """Register MuJoCo control callback. Call once before training/running."""
-    mujoco.set_mjcb_control(update_passive_joints)
+# NOTE: Motor-to-knee conversion and passive joint handling is now done via
+# the LeggyJointAction action term in leggy_actions.py. This avoids global
+# MuJoCo callbacks and works correctly with parallel environments.
+#
+# For usage in tasks, see: from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 
 
 stand_pose = {
     "hipY": 6 * np.pi / 180.0,
     "hipX": 25 * np.pi / 180.0,
-    "knee": 45 * np.pi / 180.0
+    "kneeMotor": 45 * np.pi / 180.0,
+    "knee": (25+45) * np.pi / 180.0
 }
 
 HOME_FRAME = EntityCfg.InitialStateCfg(
@@ -53,13 +35,21 @@ HOME_FRAME = EntityCfg.InitialStateCfg(
     pos=(0.0, 0.0, 0.18),
     rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
+        # ".*hipY.*": stand_pose["hipY"],
+        # ".*hipX.*": stand_pose["hipX"],#25
+        # ".*knee.*": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]),# so delta is 45+25=70
+        # "LpassiveMotor": stand_pose["kneeMotor"], #this one is the actual motor knee
+        # "RpassiveMotor": stand_pose["kneeMotor"],#this one is the actual motor knee
+        # "Lpassive2": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]), #70
+        # "Rpassive2": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]) #70
+
         ".*hipY.*": stand_pose["hipY"],
         ".*hipX.*": stand_pose["hipX"],#25
-        ".*knee.*": stand_pose["knee"],#45 so delta is 45+25=70
-        "Lpassive1": stand_pose["hipX"] + stand_pose["knee"], #70
-        "Rpassive1": stand_pose["hipX"] + stand_pose["knee"],#70
-        "Lpassive2": stand_pose["hipX"] + stand_pose["knee"], #70
-        "Rpassive2": stand_pose["hipX"] + stand_pose["knee"] #70
+        ".*knee.*": stand_pose["knee"],# so delta is 45+25=70
+        "LpassiveMotor": knee_to_motor(stand_pose["knee"], stand_pose["hipX"]), #this one is the actual motor knee
+        "RpassiveMotor": knee_to_motor(stand_pose["knee"], stand_pose["hipX"]),#this one is the actual motor knee
+        "Lpassive2": stand_pose["knee"], #70
+        "Rpassive2": stand_pose["knee"] #70
     },
     joint_vel={".*": 0.0},
     # Explicitly set root (freejoint) velocities to zero
@@ -105,7 +95,11 @@ if __name__ == "__main__":
 
     scene = Scene(SCENE_CFG, device=device)
     model = scene.compile()
-    enable_passive_joint_callback()
+
+    # NOTE: For proper simulation with motor conversion and passive joints,
+    # use the full environment with LeggyJointActionCfg instead of this viewer.
+    print("Launching basic viewer. Passive joints will not be automatically updated.")
+    print("For full functionality, run the environment with LeggyJointActionCfg.")
 
     with viewer.launch_passive(model, scene.data) as v:
         while v.is_running():

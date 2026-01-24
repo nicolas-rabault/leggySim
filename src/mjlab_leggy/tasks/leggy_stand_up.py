@@ -14,19 +14,8 @@ from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
-from mjlab_leggy.leggy.leggy_constants import (
-    LEGGY_ROBOT_CFG, enable_passive_joint_callback, KneeToMotor,
-)
-
-enable_passive_joint_callback()
-
-
-def joint_pos_rel_motor(env, asset_cfg=SceneEntityCfg("robot")) -> torch.Tensor:
-    """Joint positions with knee→motor conversion."""
-    obs = mdp_obs.joint_pos_rel(env, asset_cfg=asset_cfg).clone()
-    obs[:, 2] = KneeToMotor(obs[:, 2], obs[:, 1])
-    obs[:, 5] = KneeToMotor(obs[:, 5], obs[:, 4])
-    return obs
+from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
+from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg, joint_pos_rel_motor
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -36,7 +25,20 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Set leggy robot
     cfg.scene.entities = {"robot": LEGGY_ROBOT_CFG}
 
-    # Custom observation: knee→motor conversion
+    # -------------------------------------------------------------------------
+    # Custom Actions: Motor-to-knee conversion and passive joint handling
+    # -------------------------------------------------------------------------
+    cfg.actions = {
+        "joint_pos": LeggyJointActionCfg(
+            asset_name="robot",
+            scale=0.5,
+            use_default_offset=True,
+        )
+    }
+
+    # -------------------------------------------------------------------------
+    # Custom Observations: Knee→motor conversion for policy
+    # -------------------------------------------------------------------------
     cfg.observations["policy"].terms["joint_pos"] = ObservationTermCfg(func=joint_pos_rel_motor)
     cfg.observations["critic"].terms["joint_pos"] = ObservationTermCfg(func=joint_pos_rel_motor)
 
