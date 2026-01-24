@@ -303,6 +303,89 @@ class LeggyJointActionCfg(ActionTermCfg):
 # Observation Helper Functions
 # =============================================================================
 
+def base_lin_acc(env, asset_cfg=None) -> torch.Tensor:
+    """Get linear acceleration from IMU (accelerometer reading).
+
+    This matches what a real IMU accelerometer measures, including gravity.
+    We compute acceleration by finite difference of velocity and add gravity.
+
+    Args:
+        env: The environment instance
+        asset_cfg: Asset configuration (default: "robot")
+
+    Returns:
+        Linear acceleration in body frame [num_envs, 3] (m/s²)
+    """
+    if asset_cfg is None:
+        from mjlab.managers.scene_entity_config import SceneEntityCfg
+        asset_cfg = SceneEntityCfg("robot")
+
+    asset = env.scene[asset_cfg.name]
+
+    # Get current velocity in body frame
+    lin_vel_b = asset.data.root_link_lin_vel_b
+
+    # Store previous velocity for finite difference (per-environment state)
+    if not hasattr(env, '_prev_lin_vel_b'):
+        env._prev_lin_vel_b = torch.zeros_like(lin_vel_b)
+
+    # Compute acceleration by finite difference: a = (v - v_prev) / dt
+    dt = env.step_dt
+    lin_acc_b = (lin_vel_b - env._prev_lin_vel_b) / dt
+    env._prev_lin_vel_b = lin_vel_b.clone()
+
+    # Add gravity in body frame (what accelerometer measures)
+    # projected_gravity_b is gravity rotated to body frame (points down in body frame)
+    gravity_b = asset.data.projected_gravity_b
+
+    # Accelerometer reading = computed_acc - gravity_b (since projected_gravity_b points up relative to body)
+    # Actually, projected_gravity_b gives the direction, so we multiply by magnitude
+    accelerometer_reading = lin_acc_b - gravity_b * 9.81
+
+    return accelerometer_reading
+
+
+def base_ang_pos(env, asset_cfg=None) -> torch.Tensor:
+    """Get orientation as Euler angles (roll, pitch, yaw) from IMU sensor fusion.
+
+    This matches what a real IMU outputs after sensor fusion (gyro + accel + mag).
+    We compute Euler angles from the projected gravity and angular velocity.
+    Euler angles are in XYZ (roll-pitch-yaw) convention.
+
+    Args:
+        env: The environment instance
+        asset_cfg: Asset configuration (default: "robot")
+
+    Returns:
+        Orientation as Euler angles [num_envs, 3] (rad)
+        Order: [roll, pitch, yaw]
+    """
+    if asset_cfg is None:
+        from mjlab.managers.scene_entity_config import SceneEntityCfg
+        asset_cfg = SceneEntityCfg("robot")
+
+    asset = env.scene[asset_cfg.name]
+
+    # Get projected gravity (normalized gravity vector in body frame)
+    gravity_b = asset.data.projected_gravity_b
+
+    # Compute roll and pitch from gravity vector
+    # When robot is upright, gravity points to [0, 0, -1] in body frame
+    # roll = atan2(gy, gz)
+    # pitch = atan2(-gx, sqrt(gy^2 + gz^2))
+
+    roll = torch.atan2(gravity_b[:, 1], -gravity_b[:, 2])
+    pitch = torch.atan2(gravity_b[:, 0], torch.sqrt(gravity_b[:, 1]**2 + gravity_b[:, 2]**2))
+
+    # Yaw cannot be determined from gravity alone - would need magnetometer
+    # For now, return zero (or could integrate angular velocity)
+    yaw = torch.zeros_like(roll)
+
+    euler_angles = torch.stack([roll, pitch, yaw], dim=1)
+
+    return euler_angles
+
+
 def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
     """Get actuator torques in motor-space representation.
 
@@ -348,6 +431,8 @@ def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
 __all__ = [
     "motor_to_knee",
     "knee_to_motor",
+    "base_lin_acc",
+    "base_ang_pos",
     "joint_torques_motor",
     "LeggyJointAction",
     "LeggyJointActionCfg",
