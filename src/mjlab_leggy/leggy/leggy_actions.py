@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 
 # =============================================================================
 # Kinematic Conversion Functions
+# those 2 functions are validated by there usage in leggy_constants.py
 # =============================================================================
 
 def motor_to_knee(motor: torch.Tensor | float, hipX: torch.Tensor | float) -> torch.Tensor | float:
@@ -80,19 +81,20 @@ class LeggyJointAction(ActionTerm):
 
     1. **process_actions()** - Called once per environment step:
        - Receives raw policy actions: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
-       - Applies scale and offset transformations
+       - Applies per-joint scale and offset transformations
+       - Converts Lmotor → Lknee and Rmotor → Rknee using target hipX values
+       - Stores result as [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
 
     2. **apply_actions()** - Called every physics step (decimation times):
-       - Reads current hipX angles from robot state
-       - Converts Lmotor → Lknee and Rmotor → Rknee using hipX
-       - Sets actuated joint targets (6 joints)
-       - Sets passive joint targets (4 joints) to match knee angles
+       - Sets actuated joint targets directly from processed actions
+       - Reads current knee and hipX positions from simulator state
+       - Updates passive joint positions to match current knee angles (mechanical coupling)
 
     This approach:
     - Avoids global MuJoCo callbacks (no race conditions)
     - Works correctly with parallel environments
     - Maintains per-environment state properly
-    - Uses real-time hipX values for accurate conversion
+    - Computes motor-to-knee conversion only once per step (efficient)
     """
 
     cfg: LeggyJointActionCfg
@@ -125,7 +127,21 @@ class LeggyJointAction(ActionTerm):
         # =====================================================================
         # Action Scaling and Offset
         # =====================================================================
-        self._scale = cfg.scale
+        # Read joint limits from the asset
+        # Shape: [num_envs, num_joints, 2] where last dim is [min, max]
+        joint_limits_all = self._asset.data.joint_pos_limits
+        joint_limits_actuated = joint_limits_all[:, self._actuated_joint_ids, :]  # [num_envs, 6, 2]
+
+        # Compute per-joint scale factors based on usable range
+        # Scale = (max - min) * soft_limit_factor / 2
+        # This maps policy actions from [-1, 1] to the usable joint range
+        self._soft_limit_factor = cfg.soft_joint_pos_limit_factor
+        joint_ranges = (joint_limits_actuated[:, :, 1] - joint_limits_actuated[:, :, 0]) * self._soft_limit_factor
+        self._scale = joint_ranges / 2.0  # [num_envs, 6]
+
+        # Override with global scale if specified (for backward compatibility)
+        if cfg.scale != 0.5:  # If user explicitly set a non-default scale
+            self._scale = torch.full_like(self._scale, cfg.scale)
 
         if cfg.use_default_offset:
             # Use default joint positions for the 6 actuated joints as offset
@@ -151,6 +167,17 @@ class LeggyJointAction(ActionTerm):
         self._step_count = 0
         self._debug_interval = 0  # Set to >0 to enable debug prints (e.g., 50 for every 50 steps)
 
+        # Print scale factors once for debugging
+        if self._debug_interval > 0:
+            env_id = 0
+            print(f"\n========== LeggyJointAction Initialization ==========")
+            print(f"Per-joint scale factors (Env {env_id}):")
+            joint_names = ["LhipY", "LhipX", "Lmotor", "RhipY", "RhipX", "Rmotor"]
+            for i, name in enumerate(joint_names):
+                print(f"  {name}: {self._scale[env_id, i].item():.6f} rad = {self._scale[env_id, i].item() * 180/3.14159:.2f}°")
+            print(f"Soft limit factor: {self._soft_limit_factor}")
+            print(f"Action mapping: policy_output [-1, 1] → joint_target [default - scale, default + scale]")
+
     @property
     def action_dim(self) -> int:
         """Policy outputs 6 actions: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]."""
@@ -162,11 +189,10 @@ class LeggyJointAction(ActionTerm):
         return self._raw_actions
 
     def process_actions(self, actions: torch.Tensor) -> None:
-        """Preprocess actions: apply scale and offset.
+        """Preprocess actions: apply scale, offset, and motor-to-knee conversion.
 
         This is called ONCE per environment step (before decimation loop).
-        The actual motor-to-knee conversion happens in apply_actions() using
-        the current hipX state, since hipX may change during decimation.
+        Converts motor commands to knee commands using target hipX values.
 
         Args:
             actions: Raw actions from policy with shape [num_envs, 6]
@@ -178,6 +204,14 @@ class LeggyJointAction(ActionTerm):
         # Note: Still in "motor space" for knee joints at indices 2 and 5
         self._processed_actions[:] = self._raw_actions * self._scale + self._offset
 
+        # Convert motor commands to knee commands (indices 2 and 5)
+        # Use target hipX values (indices 1 and 4) for the conversion
+        # After this, _processed_actions contains: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
+        hipX_left_target = self._processed_actions[:, 1]
+        hipX_right_target = self._processed_actions[:, 4]
+        self._processed_actions[:, 2] = motor_to_knee(self._processed_actions[:, 2], hipX_left_target)
+        self._processed_actions[:, 5] = motor_to_knee(self._processed_actions[:, 5], hipX_right_target)
+
         # Debug printing
         self._step_count += 1
         if self._debug_interval > 0 and (self._step_count <= 5 or self._step_count % self._debug_interval == 0):
@@ -185,51 +219,33 @@ class LeggyJointAction(ActionTerm):
             print(f"\n========== Step {self._step_count} (Env {env_id}) process_actions ==========")
             print(f"Raw actions: {self._raw_actions[env_id].cpu().numpy()}")
             print(f"  [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]")
-            print(f"Processed actions (motor space): {self._processed_actions[env_id].cpu().numpy()}")
+            print(f"Processed actions (knee space): {self._processed_actions[env_id].cpu().numpy()}")
+            print(f"  [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]")
             print(f"  Degrees: {[f'{x:.2f}°' for x in (self._processed_actions[env_id].cpu().numpy() * 180 / 3.14159)]}")
 
     def apply_actions(self) -> None:
-        """Apply actions to actuators with motor-to-knee conversion and passive joint updates.
+        """Apply actions to actuators and update passive joints.
 
         This is called EVERY physics step (decimation times per environment step).
 
         Processing pipeline:
-        1. Extract target hipX from action vector (policy's commanded hipX)
-        2. Convert motor commands → knee commands using target hipX values
-        3. Set actuated joint targets: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-        4. Read CURRENT knee positions from simulator state
-        5. Set passive joint targets to match CURRENT knee positions (mechanical coupling)
+        1. Set actuated joint targets: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
+           (already computed in process_actions, stored in _processed_actions)
+        2. Read CURRENT knee positions from simulator state
+        3. Set passive joint targets to match CURRENT knee positions (mechanical coupling)
         """
         # =====================================================================
-        # Step 1: Extract target hipX and motor commands from action vector
+        # Step 1: Set actuated joint targets
         # =====================================================================
-        # Use the target hipX from the action for motor-to-knee conversion.
-        # This ensures the commanded knee angle is consistent with the policy's
-        # expectation for the motor command.
-        hipX_left_target = self._processed_actions[:, 1]   # LhipX target from policy
-        hipX_right_target = self._processed_actions[:, 4]  # RhipX target from policy
-        motor_left = self._processed_actions[:, 2]  # Lmotor target from policy
-        motor_right = self._processed_actions[:, 5]  # Rmotor target from policy
-
-        # =====================================================================
-        # Step 2: Convert motor commands to knee angle targets
-        # =====================================================================
-        # processed_actions layout: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
-        # target_positions layout:  [LhipY, LhipX, Lknee,  RhipY, RhipX, Rknee]
-        target_positions = self._processed_actions.clone()
-        target_positions[:, 2] = motor_to_knee(motor_left, hipX_left_target)   # Lmotor → Lknee target
-        target_positions[:, 5] = motor_to_knee(motor_right, hipX_right_target)  # Rmotor → Rknee target
-
-        # =====================================================================
-        # Step 3: Set actuated joint targets
-        # =====================================================================
+        # _processed_actions already contains: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
+        # Motor-to-knee conversion was done once in process_actions()
         self._asset.set_joint_position_target(
-            target_positions,
+            self._processed_actions,
             joint_ids=self._actuated_joint_ids,
         )
 
         # =====================================================================
-        # Step 4: Update passive joints based on CURRENT knee positions
+        # Step 2: Update passive joints based on CURRENT knee positions
         # =====================================================================
         # The passive joints are mechanically coupled to the knee joints.
         # They should follow the ACTUAL knee position in the simulator,
@@ -261,10 +277,9 @@ class LeggyJointAction(ActionTerm):
         if self._debug_interval > 0 and (self._step_count <= 5 or self._step_count % self._debug_interval == 0):
             env_id = 0
             print(f"\n========== Step {self._step_count} (Env {env_id}) apply_actions ==========")
-            print(f"TARGET hipX_left: {hipX_left_target[env_id].item():.6f} rad = {hipX_left_target[env_id].item() * 180/3.14159:.2f}°")
-            print(f"TARGET motor_left: {motor_left[env_id].item():.6f} rad = {motor_left[env_id].item() * 180/3.14159:.2f}°")
-            print(f"TARGET knee_left (computed): {target_positions[env_id, 2].item():.6f} rad = {target_positions[env_id, 2].item() * 180/3.14159:.2f}°")
-            print(f"  Computation: knee = motor + hipX = {motor_left[env_id].item():.6f} + {hipX_left_target[env_id].item():.6f} = {target_positions[env_id, 2].item():.6f}")
+            print(f"TARGET positions: {self._processed_actions[env_id].cpu().numpy()}")
+            print(f"  [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]")
+            print(f"  Degrees: {[f'{x:.2f}°' for x in (self._processed_actions[env_id].cpu().numpy() * 180 / 3.14159)]}")
             print(f"\nCURRENT hipX_left: {hipX_left_current[env_id].item():.6f} rad = {hipX_left_current[env_id].item() * 180/3.14159:.2f}°")
             print(f"CURRENT knee_left: {knee_left_current[env_id].item():.6f} rad = {knee_left_current[env_id].item() * 180/3.14159:.2f}°")
             print(f"CURRENT motor_left (computed from current): {passive_positions[env_id, 0].item():.6f} rad = {passive_positions[env_id, 0].item() * 180/3.14159:.2f}°")
@@ -290,12 +305,16 @@ class LeggyJointActionCfg(ActionTermCfg):
     Attributes:
         class_type: The action term class (automatically set to LeggyJointAction)
         asset_name: Name of the robot asset (default: "robot")
-        scale: Action scaling factor applied to policy outputs (default: 0.5)
+        scale: Global action scaling factor (default: 0.5). If set to 0.5 (default),
+               per-joint scaling based on joint limits is used. Otherwise, applies
+               uniform scaling to all joints for backward compatibility.
+        soft_joint_pos_limit_factor: Fraction of joint range to use (default: 0.9)
         use_default_offset: If True, add default joint positions as offset (default: True)
     """
     class_type: type[ActionTerm] = LeggyJointAction
     asset_name: str = "robot"
     scale: float = 0.5
+    soft_joint_pos_limit_factor: float = 0.9
     use_default_offset: bool = True
 
 
