@@ -270,8 +270,8 @@ def leggy_stand_up_rl_cfg() -> RslRlOnPolicyRunnerCfg:
         # ---------------------------------------------------------------------
         policy=RslRlPpoActorCriticCfg(
             init_noise_std=1.0,  # Initial std for action noise during exploration
-            actor_obs_normalization=False,
-            critic_obs_normalization=False,
+            actor_obs_normalization=True,  # Enable normalization for numerical stability
+            critic_obs_normalization=True,  # Enable normalization for numerical stability
             actor_hidden_dims=(512, 256, 128),  # Actor (policy) network layers
             critic_hidden_dims=(512, 256, 128),  # Critic (value) network layers
             activation="elu",

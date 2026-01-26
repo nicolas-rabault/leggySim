@@ -129,9 +129,6 @@ class LeggyJointActionCfg(JointPositionActionCfg):
     class_type: type[JointPositionAction] = LeggyJointAction
     asset_name: str = "robot"
     actuator_names: tuple[str, ...] = ("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee")
-    scale: float = 1.0  # No scaling
-    offset: float = 0.0  # No offset
-    use_default_offset: bool = False  # Don't use default offsets
 
 
 # =============================================================================
