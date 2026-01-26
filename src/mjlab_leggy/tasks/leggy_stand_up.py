@@ -245,7 +245,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Reset if body goes below the floor - prevents exploiting floor penetration
     cfg.terminations["body_below_floor"] = TerminationTermCfg(
         func=mdp_terminations.root_height_below_minimum,
-        params={"minimum_height": 0.08},  # meters
+        params={"minimum_height": 0.00},  # meters
     )
 
     # -------------------------------------------------------------------------

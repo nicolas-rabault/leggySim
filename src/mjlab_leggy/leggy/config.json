@@ -6,11 +6,19 @@
 
   // Don't create actuators for passive joints
   "joint_properties": {
-    "*hip*|*knee": {
+    "*hip*": {
       "damping": 0.008824,
       "armature": 0.00006499,
       "forcerange": 0.236,
-      "limits": [-1.91986, 1.91986],
+      "limits": [-1.57, 1.57],
+      "frictionloss": 0.01,
+      "kp": 10
+    },
+    "*knee": {
+      "damping": 0.008824,
+      "armature": 0.00006499,
+      "forcerange": 0.236,
+      "limits": [0, 3.14],
       "frictionloss": 0.01,
       "kp": 10
     },
@@ -46,12 +54,11 @@
     "!Foot": "collision"
   },
   // Override equality attributes
-  //   "equalities": {
-  //     "closing_*": {
-  //       "solref": "0.002 1",
-  //       "solimp": "0.99 0.999 0.0005 0.5 2"
-  //     }
-  //   },
-  // I removed the equalities and recompute the passive joints values at each frame.
+  "equalities": {
+    "closing_*": {
+      "solref": "0.002 1",
+      "solimp": "0.99 0.999 0.0005 0.5 2"
+    }
+  },
   "additional_xml": ["sensors.xml"]
 }
