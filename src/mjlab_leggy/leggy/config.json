@@ -19,7 +19,8 @@
       "frictionloss": 0.0001,
       "damping": 0.0001,
       "stiffness": 0,
-      "armature": 0.00001
+      "armature": 0.00001,
+      "limits": [-4, 4] // no limits
     }
   },
   "geom_properties": {

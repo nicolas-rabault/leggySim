@@ -259,7 +259,7 @@
             <!-- Link rod -->
             <body name="rod" pos="-0.0125 0.0216506 0.002" quat="1.6284e-15 -1 2.39219e-09 1.56445e-15">
               <!-- Joint from tibia to rod -->
-              <joint axis="0 0 1" name="Lpassive2" type="hinge" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
+              <joint axis="0 0 1" name="Lpassive2" type="hinge" range="-4 4" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
               <inertial pos="-1.8541e-17 0.058455 -0.00392853" mass="0.0100309" fullinertia="2.05845e-05 3.51312e-07 2.03094e-05 -7.87128e-22 -9.08215e-23 1.65405e-06"/>
               <!-- Part mr63_19 -->
               <geom type="mesh" class="visual" pos="-2.77556e-17 -1.38778e-17 -1.38778e-17" quat="1.48705e-15 0.707107 0.707107 6.69118e-16" mesh="mr63" material="mr63_material"/>
@@ -279,7 +279,7 @@
         <!-- Link output__c331c3826e3aeff78bc4513233f2bf84 -->
         <body name="output__c331c3826e3aeff78bc4513233f2bf84" pos="-0.0175335 -0.00102929 0.0486642" quat="0.0096755 -0.607477 0.3619 0.707041">
           <!-- Joint from lhip to output__c331c3826e3aeff78bc4513233f2bf84 -->
-          <joint axis="0 0 1" name="LpassiveMotor" type="hinge" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
+          <joint axis="0 0 1" name="LpassiveMotor" type="hinge" range="-4 4" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
           <inertial pos="-0.0072873 0.00447757 -0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 8.87329e-26 2.94521e-25"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_3 -->
           <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -0.0024" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
@@ -418,7 +418,7 @@
             <!-- Link rod_2 -->
             <body name="rod_2" pos="0.0125 -0.0216506 -0.002" quat="1.48266e-17 -0.866025 0.5 1.05343e-16">
               <!-- Joint from tibia_2 to rod_2 -->
-              <joint axis="0 0 1" name="Rpassive2" type="hinge" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
+              <joint axis="0 0 1" name="Rpassive2" type="hinge" range="-4 4" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
               <inertial pos="-0.0506236 -0.0292275 0.00392853" mass="0.0100309" fullinertia="5.40962e-06 1.55262e-05 2.03094e-05 -8.76125e-06 1.43245e-06 8.27026e-07"/>
               <!-- Part mr63_32 -->
               <geom type="mesh" class="visual" pos="-3.29424e-15 -1.19932e-13 1.38223e-14" quat="0.258819 -9.6019e-17 6.78858e-17 -0.965926" mesh="mr63" material="mr63_material"/>
@@ -438,7 +438,7 @@
         <!-- Link output__c331c3826e3aeff78bc4513233f2bf84_2 -->
         <body name="output__c331c3826e3aeff78bc4513233f2bf84_2" pos="-0.0175335 -0.00102929 -0.0486642" quat="0.0096755 0.607477 -0.3619 0.707041">
           <!-- Joint from rhip to output__c331c3826e3aeff78bc4513233f2bf84_2 -->
-          <joint axis="0 0 1" name="RpassiveMotor" type="hinge" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
+          <joint axis="0 0 1" name="RpassiveMotor" type="hinge" range="-4 4" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
           <inertial pos="-0.0072873 0.00447757 0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 2.4244e-22 4.62087e-22"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_6 -->
           <geom type="mesh" class="visual" pos="0.0178642 -0.0100559 -4.85723e-17" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
@@ -452,30 +452,30 @@
   </worldbody>
   <asset>
     <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="foot.stl"/>
-    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="femur.stl"/>
-    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="stator.stl"/>
-    <mesh file="kneelinkl.stl"/>
-    <mesh file="tibia.stl"/>
-    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="rod.stl"/>
+    <mesh file="antenna.stl"/>
     <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="trunclink.stl"/>
-    <mesh file="rotor.stl"/>
-    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="antenna.stl"/>
-    <mesh file="kneelinkr.stl"/>
-    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="mr63.stl"/>
-    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="brd.stl"/>
-    <mesh file="rod.stl"/>
-    <mesh file="enc_magnet.stl"/>
+    <mesh file="femur.stl"/>
     <mesh file="gear1__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="kneelinkl.stl"/>
+    <mesh file="enc_magnet.stl"/>
+    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="stator.stl"/>
+    <mesh file="foot.stl"/>
+    <mesh file="brd.stl"/>
+    <mesh file="kneelinkr.stl"/>
+    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="mr63.stl"/>
+    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="tibia.stl"/>
+    <mesh file="rotor.stl"/>
     <material name="trunclink_material" rgba="0.615686 0.811765 0.929412 1"/>
     <material name="antenna_material" rgba="0.498039 0.498039 0.498039 1"/>
     <material name="brd_material" rgba="0.972549 0.529412 0.00392157 1"/>
