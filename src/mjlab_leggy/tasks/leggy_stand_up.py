@@ -17,8 +17,6 @@ from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
 from mjlab_leggy.leggy.leggy_actions import (
     LeggyJointActionCfg,
-    base_lin_acc,
-    base_ang_pos,
     joint_pos_motor,
     joint_vel_motor,
     joint_torques_motor,
@@ -71,46 +69,6 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     )
     cfg.observations["critic"].terms["joint_torques"] = ObservationTermCfg(
         func=joint_torques_motor
-    )
-
-    # -------------------------------------------------------------------------
-    # IMU Observations: Match Real 9-DOF IMU Sensor
-    # -------------------------------------------------------------------------
-    # The real robot has a 9-DOF IMU providing:
-    # - Accelerometer: Linear acceleration (m/s²)
-    # - Gyroscope: Angular velocity (rad/s)
-    # - Magnetometer + Fusion: Orientation (roll, pitch, yaw)
-    #
-    # We replace simulation-only observations with real sensor equivalents:
-
-    # POLICY: Uses actual sensor readings (sim-to-real)
-    # Replace base_lin_vel with base_lin_acc (accelerometer reading)
-    cfg.observations["policy"].terms["base_lin_acc"] = ObservationTermCfg(
-        func=base_lin_acc
-    )
-    del cfg.observations["policy"].terms["base_lin_vel"]  # Not available on real robot
-
-    # Keep base_ang_vel (gyroscope reading) - already correct
-    # It's already in the default config
-
-    # Add base_ang_pos (orientation from sensor fusion: roll, pitch, yaw)
-    cfg.observations["policy"].terms["base_ang_pos"] = ObservationTermCfg(
-        func=base_ang_pos
-    )
-
-    # Remove projected_gravity (redundant with orientation)
-    del cfg.observations["policy"].terms["projected_gravity"]
-
-    # CRITIC: Keep privileged ground-truth information
-    # Critic can use true velocity (not available on real robot but helps learning)
-    cfg.observations["critic"].terms["base_lin_vel"] = ObservationTermCfg(
-        func=mdp_obs.base_lin_vel
-    )
-    cfg.observations["critic"].terms["base_lin_acc"] = ObservationTermCfg(
-        func=base_lin_acc
-    )
-    cfg.observations["critic"].terms["base_ang_pos"] = ObservationTermCfg(
-        func=base_ang_pos
     )
 
     # -------------------------------------------------------------------------
@@ -250,39 +208,27 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     del cfg.curriculum["command_vel"]
 
     # -------------------------------------------------------------------------
-    # IMU noise and delay configuration (sim-to-real)
+    # Observation noise and delay configuration (sim-to-real)
     # -------------------------------------------------------------------------
-    # Add realistic sensor noise and delays to match real IMU behavior
+    # Add realistic sensor noise and delays
     cfg.observations["policy"].enable_corruption = True
     cfg.observations["policy"].corruption_std = 0.01
 
-    # Configure IMU sensor delays (sensor update rate)
-    # Real IMU typically runs at 100-200Hz, simulation at 200Hz
-    # Add small delay to simulate sensor latency
-
-    # Linear acceleration (accelerometer)
-    cfg.observations["policy"].terms["base_lin_acc"] = deepcopy(
-        cfg.observations["policy"].terms["base_lin_acc"]
+    # Configure sensor delays
+    cfg.observations["policy"].terms["projected_gravity"] = deepcopy(
+        cfg.observations["policy"].terms["projected_gravity"]
     )
-    cfg.observations["policy"].terms["base_lin_acc"].delay_min_lag = 1
-    cfg.observations["policy"].terms["base_lin_acc"].delay_max_lag = 2
-    cfg.observations["policy"].terms["base_lin_acc"].delay_update_period = 64
-
-    # Angular velocity (gyroscope)
     cfg.observations["policy"].terms["base_ang_vel"] = deepcopy(
         cfg.observations["policy"].terms["base_ang_vel"]
     )
+
     cfg.observations["policy"].terms["base_ang_vel"].delay_min_lag = 1
     cfg.observations["policy"].terms["base_ang_vel"].delay_max_lag = 2
     cfg.observations["policy"].terms["base_ang_vel"].delay_update_period = 64
 
-    # Orientation (sensor fusion output)
-    cfg.observations["policy"].terms["base_ang_pos"] = deepcopy(
-        cfg.observations["policy"].terms["base_ang_pos"]
-    )
-    cfg.observations["policy"].terms["base_ang_pos"].delay_min_lag = 1
-    cfg.observations["policy"].terms["base_ang_pos"].delay_max_lag = 2
-    cfg.observations["policy"].terms["base_ang_pos"].delay_update_period = 64
+    cfg.observations["policy"].terms["projected_gravity"].delay_min_lag = 1
+    cfg.observations["policy"].terms["projected_gravity"].delay_max_lag = 2
+    cfg.observations["policy"].terms["projected_gravity"].delay_update_period = 64
 
     cfg.commands["twist"].ranges.ang_vel_z = (-1.0, 1.0)
     cfg.commands["twist"].ranges.lin_vel_y = (-0.3, 0.3)
