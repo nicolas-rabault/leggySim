@@ -27,6 +27,8 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     """Create Leggy stand up environment configuration."""
     cfg = make_velocity_env_cfg()
 
+    # Set control frequency to 100Hz (was 50Hz with decimation=4)                                                                                                                                               
+    cfg.decimation = 2
     # Set leggy robot
     cfg.scene.entities = {"robot": LEGGY_ROBOT_CFG}
 
@@ -222,12 +224,12 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.observations["policy"].terms["base_ang_vel"]
     )
 
-    cfg.observations["policy"].terms["base_ang_vel"].delay_min_lag = 1
-    cfg.observations["policy"].terms["base_ang_vel"].delay_max_lag = 2
+    cfg.observations["policy"].terms["base_ang_vel"].delay_min_lag = 2
+    cfg.observations["policy"].terms["base_ang_vel"].delay_max_lag = 4
     cfg.observations["policy"].terms["base_ang_vel"].delay_update_period = 64
 
-    cfg.observations["policy"].terms["projected_gravity"].delay_min_lag = 1
-    cfg.observations["policy"].terms["projected_gravity"].delay_max_lag = 2
+    cfg.observations["policy"].terms["projected_gravity"].delay_min_lag = 2
+    cfg.observations["policy"].terms["projected_gravity"].delay_max_lag = 4
     cfg.observations["policy"].terms["projected_gravity"].delay_update_period = 64
 
     cfg.commands["twist"].ranges.ang_vel_z = (-1.0, 1.0)
