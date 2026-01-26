@@ -29,6 +29,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # Set control frequency to 100Hz (was 50Hz with decimation=4)                                                                                                                                               
     cfg.decimation = 2
+
     # Set leggy robot
     cfg.scene.entities = {"robot": LEGGY_ROBOT_CFG}
 
@@ -141,15 +142,15 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         )
         # Standing mode: tight constraints for balance (robot mostly stationary)
         cfg.rewards["pose"].params["std_standing"] = {
-            ".*hipY.*": 0.1,  # HipY needs tight control for balance
-            ".*hipX.*": 0.2,  # HipX needs tight control for balance
-            ".*knee.*": 0.2,  # Knee slightly more relaxed
+            ".*hipY.*": 0.2,  # HipY needs tight control for balance
+            ".*hipX.*": 0.4,  # HipX needs tight control for balance
+            ".*knee.*": 0.4,  # Knee slightly more relaxed
         }
         # Walking mode: medium constraints for locomotion
         cfg.rewards["pose"].params["std_walking"] = {
-            ".*hipY.*": 0.1,
-            ".*hipX.*": 0.3,
-            ".*knee.*": 0.4,
+            ".*hipY.*": 0.2,
+            ".*hipX.*": 0.6,
+            ".*knee.*": 0.8,
         }
         # Running mode: relaxed constraints for dynamic motion
         cfg.rewards["pose"].params["std_running"] = {
