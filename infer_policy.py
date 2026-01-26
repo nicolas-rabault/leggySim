@@ -9,14 +9,8 @@ import mujoco
 import mujoco.viewer
 import onnxruntime as ort
 
-from mjlab_leggy.leggy.leggy_constants import (
-    HOME_FRAME,
-    enable_passive_joint_callback,
-    KneeToMotor,
-    MotorToKnee,
-)
-
-enable_passive_joint_callback()
+from mjlab_leggy.leggy.leggy_constants import HOME_FRAME
+from mjlab_leggy.leggy.leggy_actions import knee_to_motor, motor_to_knee
 
 LEGGY_XML = "src/mjlab_leggy/leggy/scene.xml"
 
@@ -138,8 +132,8 @@ class PolicyInference:
         
         # Convert knee angles to motor values for observation
         # Joint order: LhipY(0), LhipX(1), Lknee(2), RhipY(3), RhipX(4), Rknee(5)
-        current_pos[2] = KneeToMotor(current_pos[2], current_pos[1])  # Lknee with LhipX
-        current_pos[5] = KneeToMotor(current_pos[5], current_pos[4])  # Rknee with RhipX
+        current_pos[2] = knee_to_motor(current_pos[2], current_pos[1])  # Lknee with LhipX
+        current_pos[5] = knee_to_motor(current_pos[5], current_pos[4])  # Rknee with RhipX
         
         return current_pos - self.default_pose
 
@@ -233,8 +227,8 @@ class PolicyInference:
         
         # Convert motor values to knee angles for physics
         # Joint order: LhipY(0), LhipX(1), Lknee(2), RhipY(3), RhipX(4), Rknee(5)
-        target_positions[2] = MotorToKnee(target_positions[2], target_positions[1])  # Lknee
-        target_positions[5] = MotorToKnee(target_positions[5], target_positions[4])  # Rknee
+        target_positions[2] = motor_to_knee(target_positions[2], target_positions[1])  # Lknee
+        target_positions[5] = motor_to_knee(target_positions[5], target_positions[4])  # Rknee
 
         # Set control targets (no delay for sim2sim testing)
         self.data.ctrl[:] = target_positions

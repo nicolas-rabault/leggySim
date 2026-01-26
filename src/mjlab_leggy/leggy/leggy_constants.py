@@ -16,9 +16,9 @@ def get_spec() -> mujoco.MjSpec:
     return mujoco.MjSpec.from_file(str(LEGGY_XML))
 
 
-# NOTE: Motor-to-knee conversion and passive joint handling is now done via
-# the LeggyJointAction action term in leggy_actions.py. This avoids global
-# MuJoCo callbacks and works correctly with parallel environments.
+# NOTE: Motor-to-knee conversion is done via the LeggyJointAction action term.
+# Passive joints are handled automatically by MuJoCo's constraint solver.
+# Observations compute motor space from knee angles using joint_pos_motor/joint_vel_motor.
 #
 # For usage in tasks, see: from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 

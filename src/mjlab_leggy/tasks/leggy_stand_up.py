@@ -19,6 +19,8 @@ from mjlab_leggy.leggy.leggy_actions import (
     LeggyJointActionCfg,
     base_lin_acc,
     base_ang_pos,
+    joint_pos_motor,
+    joint_vel_motor,
     joint_torques_motor,
 )
 
@@ -31,46 +33,34 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.scene.entities = {"robot": LEGGY_ROBOT_CFG}
 
     # -------------------------------------------------------------------------
-    # Custom Actions: Motor-to-knee conversion and passive joint handling
+    # Custom Actions: Motor-to-knee conversion
     # -------------------------------------------------------------------------
+    # LeggyJointAction converts motor commands to knee angles.
+    # Passive joints are handled automatically by MuJoCo's constraint solver.
     cfg.actions = {
-        "joint_pos": LeggyJointActionCfg(
-            asset_name="robot",
-            scale=0.5,
-            use_default_offset=True,
-        )
+        "joint_pos": LeggyJointActionCfg()
     }
 
     # -------------------------------------------------------------------------
-    # Custom Observations: Observe passive motor joints directly (already in motor space!)
+    # Custom Observations: Compute motor space positions from knee angles
     # -------------------------------------------------------------------------
-    # Instead of observing knee joints and converting, we observe the passive motor joints
-    # which are automatically computed at each simulation step to match the knee angles.
-    # This gives us motor-space observations without any conversion needed!
-
-    # Define the joint configuration for consistency
-    motor_joints_cfg = SceneEntityCfg(
-        "robot",
-        joint_names=("LhipY", "LhipX", "LpassiveMotor", "RhipY", "RhipX", "RpassiveMotor")
-    )
+    # Instead of observing passive motor joints, we compute motor space knee angles
+    # directly from current knee positions using knee_to_motor conversion.
+    # This allows MuJoCo to handle the passive joint loop automatically.
 
     cfg.observations["policy"].terms["joint_pos"] = ObservationTermCfg(
-        func=mdp_obs.joint_pos_rel,
-        params={"asset_cfg": motor_joints_cfg}
+        func=joint_pos_motor
     )
     cfg.observations["critic"].terms["joint_pos"] = ObservationTermCfg(
-        func=mdp_obs.joint_pos_rel,
-        params={"asset_cfg": motor_joints_cfg}
+        func=joint_pos_motor
     )
 
-    # Also update joint velocities to match (observe same joints for consistency)
+    # Also update joint velocities to use motor space computation
     cfg.observations["policy"].terms["joint_vel"] = ObservationTermCfg(
-        func=mdp_obs.joint_vel_rel,
-        params={"asset_cfg": motor_joints_cfg}
+        func=joint_vel_motor
     )
     cfg.observations["critic"].terms["joint_vel"] = ObservationTermCfg(
-        func=mdp_obs.joint_vel_rel,
-        params={"asset_cfg": motor_joints_cfg}
+        func=joint_vel_motor
     )
 
     # Add motor torques (measured at motor outputs via torque sensors)

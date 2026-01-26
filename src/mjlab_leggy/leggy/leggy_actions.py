@@ -1,19 +1,16 @@
-"""Custom action term for Leggy robot with motor-to-knee conversion and passive joint handling.
+"""Custom action term for Leggy robot with motor-to-knee conversion.
 
-This module provides an action term that handles Leggy's unique kinematic chain:
-- Converts motor commands to knee angles using hipX offset
-- Automatically updates passive joints to follow knee positions
-- Works correctly with parallel environments (no global state)
+This module provides a simplified action term that only handles motor-to-knee conversion:
+- Inherits from JointPositionAction for standard joint control
+- Overrides process_actions to convert motor commands → knee angles
+- Passive joints are handled automatically by MuJoCo's constraint solver
+- Observations compute motor space using joint_pos_motor/joint_vel_motor
 
 Usage in your task configuration:
     from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 
     cfg.actions = {
-        "joint_pos": LeggyJointActionCfg(
-            asset_name="robot",
-            scale=0.5,
-            use_default_offset=True,
-        )
+        "joint_pos": LeggyJointActionCfg()
     }
 """
 
@@ -24,9 +21,8 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from mjlab.managers.action_manager import ActionTerm
-from mjlab.managers.manager_term_config import ActionTermCfg
-import time
+from mjlab.envs.mdp.actions.joint_actions import JointPositionAction
+from mjlab.envs.mdp.actions.actions_config import JointPositionActionCfg
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv
@@ -74,136 +70,31 @@ def knee_to_motor(knee: torch.Tensor | float, hipX: torch.Tensor | float) -> tor
 # Action Term Implementation
 # =============================================================================
 
-class LeggyJointAction(ActionTerm):
-    """Action term that handles Leggy's motor-to-knee conversion and passive joints.
+class LeggyJointAction(JointPositionAction):
+    """Action term that handles Leggy's motor-to-knee conversion.
 
-    This action term processes policy actions through the following pipeline:
+    Inherits from JointPositionAction and only overrides process_actions to convert
+    motor commands to knee angles. The parent class handles apply_actions.
 
-    1. **process_actions()** - Called once per environment step:
-       - Receives raw policy actions: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
-       - Applies per-joint scale and offset transformations
-       - Converts Lmotor → Lknee and Rmotor → Rknee using target hipX values
-       - Stores result as [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
+    Policy outputs: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
+    Converted to: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
 
-    2. **apply_actions()** - Called every physics step (decimation times):
-       - Sets actuated joint targets directly from processed actions
-       - Reads current knee and hipX positions from simulator state
-       - Updates passive joint positions to match current knee angles (mechanical coupling)
-
-    This approach:
-    - Avoids global MuJoCo callbacks (no race conditions)
-    - Works correctly with parallel environments
-    - Maintains per-environment state properly
-    - Computes motor-to-knee conversion only once per step (efficient)
+    Note: Passive joints are handled automatically by MuJoCo's constraint solver.
+    Observations compute motor space from knee angles using joint_pos_motor/joint_vel_motor.
     """
 
     cfg: LeggyJointActionCfg
 
-    def __init__(self, cfg: LeggyJointActionCfg, env: ManagerBasedRlEnv):
-        super().__init__(cfg, env)
-        self._asset = env.scene[cfg.asset_name]
-        self._num_envs = env.num_envs
-        self._device = env.device
-
-        # =====================================================================
-        # Joint Index Resolution
-        # =====================================================================
-        # Find joint indices for actuated joints in canonical order
-        actuated_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
-        self._actuated_joint_ids = self._asset.find_joints(actuated_names)[0]
-
-        # Find joint indices for passive joints
-        # NOTE: Order must match the XML order (Lpassive2 comes before LpassiveMotor in the kinematic tree)
-        passive_names = ["Lpassive2", "LpassiveMotor", "Rpassive2", "RpassiveMotor"]
-        self._passive_joint_ids = self._asset.find_joints(passive_names)[0]
-
-        # =====================================================================
-        # Action Buffers
-        # =====================================================================
-        # Policy action dimension is 6 (doesn't directly control passive joints)
-        self._action_dim = 6
-        self._raw_actions = torch.zeros(self._num_envs, self._action_dim, device=self._device)
-        self._processed_actions = torch.zeros(self._num_envs, self._action_dim, device=self._device)
-
-        # =====================================================================
-        # Action Scaling and Offset
-        # =====================================================================
-        # Read joint limits from the asset
-        # Shape: [num_envs, num_joints, 2] where last dim is [min, max]
-        joint_limits_all = self._asset.data.joint_pos_limits
-        joint_limits_actuated = joint_limits_all[:, self._actuated_joint_ids, :]  # [num_envs, 6, 2]
-
-        # Compute per-joint scale factors based on usable range
-        # Scale = (max - min) * soft_limit_factor / 2
-        # This maps policy actions from [-1, 1] to the usable joint range
-        self._soft_limit_factor = cfg.soft_joint_pos_limit_factor
-        joint_ranges = (joint_limits_actuated[:, :, 1] - joint_limits_actuated[:, :, 0]) * self._soft_limit_factor
-        self._scale = joint_ranges / 2.0  # [num_envs, 6]
-
-        # Override with global scale if specified (for backward compatibility)
-        if cfg.scale != 0.5:  # If user explicitly set a non-default scale
-            self._scale = torch.full_like(self._scale, cfg.scale)
-
-        if cfg.use_default_offset:
-            # Use default joint positions for the 6 actuated joints as offset
-            # This allows the policy to output small deltas around the default pose
-            default_pos = self._asset.data.default_joint_pos[:, self._actuated_joint_ids]
-            self._offset = default_pos.clone()
-
-            # IMPORTANT: Convert knee defaults to motor defaults for indices 2 and 5
-            # The policy works in motor space, but default_joint_pos contains knee angles.
-            # This matches the joint_pos computation in leggy_constants.py where:
-            #   - ".*knee.*": stand_pose["knee"]  (knee space)
-            #   - "LpassiveMotor": knee_to_motor(stand_pose["knee"], stand_pose["hipX"])  (motor space)
-            default_hipX_left = default_pos[:, 1]   # LhipX
-            default_hipX_right = default_pos[:, 4]  # RhipX
-            self._offset[:, 2] = knee_to_motor(default_pos[:, 2], default_hipX_left)   # Lknee → Lmotor
-            self._offset[:, 5] = knee_to_motor(default_pos[:, 5], default_hipX_right)  # Rknee → Rmotor
-        else:
-            self._offset = torch.zeros(self._num_envs, self._action_dim, device=self._device)
-
-        # =====================================================================
-        # Debug counters (set to 0 to disable debug prints)
-        # =====================================================================
-        self._step_count = 0
-        self._debug_interval = 0  # Set to >0 to enable debug prints (e.g., 50 for every 50 steps, 0 to disable)
-
-        # Print scale factors once for debugging
-        if self._debug_interval > 0:
-            env_id = 0
-            print(f"\n========== LeggyJointAction Initialization ==========")
-            print(f"Per-joint scale factors (Env {env_id}):")
-            joint_names = ["LhipY", "LhipX", "Lmotor", "RhipY", "RhipX", "Rmotor"]
-            for i, name in enumerate(joint_names):
-                print(f"  {name}: {self._scale[env_id, i].item():.6f} rad = {self._scale[env_id, i].item() * 180/3.14159:.2f}°")
-            print(f"Soft limit factor: {self._soft_limit_factor}")
-            print(f"Action mapping: policy_output [-1, 1] → joint_target [default - scale, default + scale]")
-
-    @property
-    def action_dim(self) -> int:
-        """Policy outputs 6 actions: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]."""
-        return self._action_dim
-
-    @property
-    def raw_action(self) -> torch.Tensor:
-        """Raw actions from policy before any processing."""
-        return self._raw_actions
-
     def process_actions(self, actions: torch.Tensor) -> None:
-        """Preprocess actions: apply scale, offset, and motor-to-knee conversion.
-
-        This is called ONCE per environment step (before decimation loop).
-        Converts motor commands to knee commands using target hipX values.
+        """Convert motor commands to knee angles and store in processed_actions.
 
         Args:
             actions: Raw actions from policy with shape [num_envs, 6]
                      Columns: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
         """
+        # Store raw actions and copy to processed (no scaling/offset)
         self._raw_actions[:] = actions
-
-        # Apply scale and offset to get target joint positions
-        # Note: Still in "motor space" for knee joints at indices 2 and 5
-        self._processed_actions[:] = self._raw_actions * self._scale + self._offset
+        self._processed_actions[:] = actions
 
         # Convert motor commands to knee commands (indices 2 and 5)
         # Use target hipX values (indices 1 and 4) for the conversion
@@ -213,135 +104,34 @@ class LeggyJointAction(ActionTerm):
         self._processed_actions[:, 2] = motor_to_knee(self._processed_actions[:, 2], hipX_left_target)
         self._processed_actions[:, 5] = motor_to_knee(self._processed_actions[:, 5], hipX_right_target)
 
-        # Debug printing
-        self._step_count += 1
-        if self._debug_interval > 0 and (self._step_count <= 5 or self._step_count % self._debug_interval == 0):
-            env_id = 0
-            print(f"\n========== Step {self._step_count} (Env {env_id}) process_actions ==========")
-            print(f"Raw actions: {self._raw_actions[env_id].cpu().numpy()}")
-            print(f"  [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]")
-            print(f"Processed actions (knee space): {self._processed_actions[env_id].cpu().numpy()}")
-            print(f"  [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]")
-            print(f"  Degrees: {[f'{x:.2f}°' for x in (self._processed_actions[env_id].cpu().numpy() * 180 / 3.14159)]}")
-
-    def apply_actions(self) -> None:
-        """Apply actions to actuators and update passive joints.
-
-        This is called EVERY physics step (decimation times per environment step).
-
-        Processing pipeline:
-        1. Set actuated joint targets: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-           (already computed in process_actions, stored in _processed_actions)
-        2. Read CURRENT knee positions from simulator state
-        3. Set passive joint targets to match CURRENT knee positions (mechanical coupling)
-        """
-        # =====================================================================
-        # Step 1: Set actuated joint targets
-        # =====================================================================
-        # _processed_actions already contains: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-        # Motor-to-knee conversion was done once in process_actions()
-        self._asset.set_joint_position_target(
-            self._processed_actions,
-            joint_ids=self._actuated_joint_ids,
-        )
-
-        # =====================================================================
-        # Step 2: Update passive joints based on CURRENT knee positions
-        # =====================================================================
-        # The passive joints are mechanically coupled to the knee joints.
-        # They should follow the ACTUAL knee position in the simulator,
-        # not the commanded target. This correctly simulates the mechanical linkage.
-        #
-        # Since passive joints don't have actuators, we directly write their
-        # positions to the simulation state (qpos) rather than setting targets.
-        current_joint_pos = self._asset.data.joint_pos[:, self._actuated_joint_ids]
-        knee_left_current = current_joint_pos[:, 2]   # Current Lknee position
-        hipX_left_current = current_joint_pos[:, 1]   # Current LhipX position
-        knee_right_current = current_joint_pos[:, 5]  # Current Rknee position
-        hipX_right_current = current_joint_pos[:, 4]   # Current RhipX position
-
-        passive_positions = torch.stack([
-            knee_left_current,   # Lpassive2 follows current Lknee (index 0)
-            knee_to_motor(knee_left_current, hipX_left_current),   # LpassiveMotor follows current Lknee (index 1)
-            knee_right_current,  # Rpassive2 follows current Rknee (index 2)
-            knee_to_motor(knee_right_current, hipX_right_current),  # RpassiveMotor follows current Rknee (index 3)
-        ], dim=1)
-
-        # Directly write passive joint positions to simulation (not targets)
-        # This is necessary because passive joints don't have actuators
-        self._asset.write_joint_position_to_sim(
-            passive_positions,
-            joint_ids=self._passive_joint_ids,
-        )
-
-        # Debug printing (only on the first decimation step of each debug interval)
-        if self._debug_interval > 0 and (self._step_count <= 5 or self._step_count % self._debug_interval == 0):
-            env_id = 0
-            print(f"\n========== Step {self._step_count} (Env {env_id}) apply_actions ==========")
-
-            # Show actuated joint info
-            print(f"\n--- ACTUATED JOINTS ---")
-            print(f"Actuated joint IDs: {self._actuated_joint_ids}")
-            print(f"Actuated joint names: {['LhipY', 'LhipX', 'Lknee', 'RhipY', 'RhipX', 'Rknee']}")
-            print(f"TARGET positions:  {self._processed_actions[env_id].cpu().numpy()}")
-            print(f"CURRENT positions: {current_joint_pos[env_id].cpu().numpy()}")
-            print(f"\nDegrees:")
-            print(f"  TARGET:  {[f'{x:.2f}°' for x in (self._processed_actions[env_id].cpu().numpy() * 180 / 3.14159)]}")
-            print(f"  CURRENT: {[f'{x:.2f}°' for x in (current_joint_pos[env_id].cpu().numpy() * 180 / 3.14159)]}")
-
-            # Show passive joint computation details
-            print(f"\n--- PASSIVE JOINT COMPUTATION ---")
-            print(f"LEFT LEG:")
-            print(f"  Current LhipX: {hipX_left_current[env_id].item():.6f} rad = {hipX_left_current[env_id].item() * 180/3.14159:.2f}°")
-            print(f"  Current Lknee: {knee_left_current[env_id].item():.6f} rad = {knee_left_current[env_id].item() * 180/3.14159:.2f}°")
-            print(f"  → Lpassive2 = knee = {passive_positions[env_id, 0].item():.6f} rad ({passive_positions[env_id, 0].item() * 180/3.14159:.2f}°)")
-            print(f"  → LpassiveMotor = knee - hipX = {knee_left_current[env_id].item():.6f} - {hipX_left_current[env_id].item():.6f} = {passive_positions[env_id, 1].item():.6f} rad ({passive_positions[env_id, 1].item() * 180/3.14159:.2f}°)")
-
-            print(f"\nRIGHT LEG:")
-            print(f"  Current RhipX: {hipX_right_current[env_id].item():.6f} rad = {hipX_right_current[env_id].item() * 180/3.14159:.2f}°")
-            print(f"  Current Rknee: {knee_right_current[env_id].item():.6f} rad = {knee_right_current[env_id].item() * 180/3.14159:.2f}°")
-            print(f"  → Rpassive2 = knee = {passive_positions[env_id, 2].item():.6f} rad ({passive_positions[env_id, 2].item() * 180/3.14159:.2f}°)")
-            print(f"  → RpassiveMotor = knee - hipX = {knee_right_current[env_id].item():.6f} - {hipX_right_current[env_id].item():.6f} = {passive_positions[env_id, 3].item():.6f} rad ({passive_positions[env_id, 3].item() * 180/3.14159:.2f}°)")
-
-            # Show passive joint mapping
-            print(f"\n--- PASSIVE JOINT MAPPING TO MUJOCO ---")
-            print(f"Passive joint IDs: {self._passive_joint_ids}")
-            print(f"Passive joint names (XML order): {['Lpassive2', 'LpassiveMotor', 'Rpassive2', 'RpassiveMotor']}")
-            print(f"Values being written: {passive_positions[env_id].cpu().numpy()}")
-            print(f"Values in degrees: {[f'{x:.2f}°' for x in (passive_positions[env_id].cpu().numpy() * 180 / 3.14159)]}")
-            print(f"\nMapping:")
-            for i, (joint_id, name) in enumerate(zip(self._passive_joint_ids, ['Lpassive2', 'LpassiveMotor', 'Rpassive2', 'RpassiveMotor'])):
-                print(f"  passive_positions[{i}] = {passive_positions[env_id, i].item():.6f} rad ({passive_positions[env_id, i].item() * 180/3.14159:.2f}°) → MuJoCo joint_id {joint_id} ({name})")
-
 
 # =============================================================================
 # Action Term Configuration
 # =============================================================================
 
 @dataclass(kw_only=True)
-class LeggyJointActionCfg(ActionTermCfg):
-    """Configuration for Leggy joint action with motor conversion and passive joints.
+class LeggyJointActionCfg(JointPositionActionCfg):
+    """Configuration for Leggy joint action with motor conversion.
 
     The policy outputs 6 actions for: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
     This action term automatically:
     - Converts motor commands → knee angles using current hipX
-    - Updates passive joints (LpassiveMotor, Lpassive2, RpassiveMotor, Rpassive2) to match knees
-    - Handles all joint targets per environment
+    - Sets actuated joint targets (via parent JointPositionAction)
+
+    Passive joints are handled by MuJoCo's constraint solver.
+    Use joint_pos_motor/joint_vel_motor for observations in motor space.
 
     Attributes:
         class_type: The action term class (automatically set to LeggyJointAction)
         asset_name: Name of the robot asset (default: "robot")
-        scale: Global action scaling factor (default: 0.5). If set to 0.5 (default),
-               per-joint scaling based on joint limits is used. Otherwise, applies
-               uniform scaling to all joints for backward compatibility.
-        soft_joint_pos_limit_factor: Fraction of joint range to use (default: 0.9)
-        use_default_offset: If True, add default joint positions as offset (default: True)
+        actuator_names: Names of the actuators (defaults to the 6 knee actuators)
     """
-    class_type: type[ActionTerm] = LeggyJointAction
+    class_type: type[JointPositionAction] = LeggyJointAction
     asset_name: str = "robot"
-    scale: float = 0.5
-    soft_joint_pos_limit_factor: float = 0.9
-    use_default_offset: bool = True
+    actuator_names: tuple[str, ...] = ("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee")
+    scale: float = 1.0  # No scaling
+    offset: float = 0.0  # No offset
+    use_default_offset: bool = False  # Don't use default offsets
 
 
 # =============================================================================
@@ -431,6 +221,89 @@ def base_ang_pos(env, asset_cfg=None) -> torch.Tensor:
     return euler_angles
 
 
+def joint_pos_motor(env, asset_cfg=None) -> torch.Tensor:
+    """Get joint positions in motor-space representation.
+
+    Computes motor space knee angles from current knee positions using knee_to_motor conversion.
+    This allows MuJoCo to handle the passive joint loop automatically.
+
+    Args:
+        env: The environment instance
+        asset_cfg: Asset configuration (not used, kept for API compatibility)
+
+    Returns:
+        Joint positions [num_envs, 6]
+        Layout: [LhipY_pos, LhipX_pos, Lmotor_pos, RhipY_pos, RhipX_pos, Rmotor_pos]
+    """
+    # Get the robot asset
+    asset = env.scene["robot"]
+
+    # Find joint indices in the order: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
+    joint_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
+    joint_ids = asset.find_joints(joint_names)[0]
+
+    # Read current joint positions
+    joint_positions = asset.data.joint_pos[:, joint_ids]
+
+    # Extract components
+    LhipY = joint_positions[:, 0]
+    LhipX = joint_positions[:, 1]
+    Lknee = joint_positions[:, 2]
+    RhipY = joint_positions[:, 3]
+    RhipX = joint_positions[:, 4]
+    Rknee = joint_positions[:, 5]
+
+    # Convert knee positions to motor space
+    Lmotor = knee_to_motor(Lknee, LhipX)
+    Rmotor = knee_to_motor(Rknee, RhipX)
+
+    # Return in motor space layout
+    motor_positions = torch.stack([LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor], dim=1)
+
+    return motor_positions
+
+
+def joint_vel_motor(env, asset_cfg=None) -> torch.Tensor:
+    """Get joint velocities in motor-space representation.
+
+    Computes motor space knee velocities from current knee and hipX velocities.
+
+    Args:
+        env: The environment instance
+        asset_cfg: Asset configuration (not used, kept for API compatibility)
+
+    Returns:
+        Joint velocities [num_envs, 6]
+        Layout: [LhipY_vel, LhipX_vel, Lmotor_vel, RhipY_vel, RhipX_vel, Rmotor_vel]
+    """
+    # Get the robot asset
+    asset = env.scene["robot"]
+
+    # Find joint indices in the order: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
+    joint_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
+    joint_ids = asset.find_joints(joint_names)[0]
+
+    # Read current joint velocities
+    joint_velocities = asset.data.joint_vel[:, joint_ids]
+
+    # Extract components
+    LhipY_vel = joint_velocities[:, 0]
+    LhipX_vel = joint_velocities[:, 1]
+    Lknee_vel = joint_velocities[:, 2]
+    RhipY_vel = joint_velocities[:, 3]
+    RhipX_vel = joint_velocities[:, 4]
+    Rknee_vel = joint_velocities[:, 5]
+
+    # Motor velocity = d/dt(knee - hipX) = knee_vel - hipX_vel
+    Lmotor_vel = Lknee_vel - LhipX_vel
+    Rmotor_vel = Rknee_vel - RhipX_vel
+
+    # Return in motor space layout
+    motor_velocities = torch.stack([LhipY_vel, LhipX_vel, Lmotor_vel, RhipY_vel, RhipX_vel, Rmotor_vel], dim=1)
+
+    return motor_velocities
+
+
 def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
     """Get actuator torques in motor-space representation.
 
@@ -478,6 +351,8 @@ __all__ = [
     "knee_to_motor",
     "base_lin_acc",
     "base_ang_pos",
+    "joint_pos_motor",
+    "joint_vel_motor",
     "joint_torques_motor",
     "LeggyJointAction",
     "LeggyJointActionCfg",

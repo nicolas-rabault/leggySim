@@ -184,6 +184,54 @@ def run_export(task_id: str, cfg: ExportConfig):
         runner.load(str(resume_path), map_location=device)
         policy = runner.get_inference_policy(device=device)
 
+    # Monkey-patch get_base_metadata to support custom action types
+    # We need to patch it in the exporter_utils module before it's imported elsewhere
+    from mjlab.rl import exporter_utils
+
+    def patched_get_base_metadata(env, run_path):
+        """Modified version that works with custom action types like LeggyJointAction."""
+        from mjlab.entity import Entity
+
+        robot: Entity = env.scene["robot"]
+        joint_action = env.action_manager.get_term("joint_pos")
+
+        # Skip the isinstance check - trust that the action has the right interface
+        # Build mapping from joint name to actuator ID
+        joint_name_to_ctrl_id = {}
+        for actuator in robot.spec.actuators:
+            joint_name = actuator.target.split("/")[-1]
+            joint_name_to_ctrl_id[joint_name] = actuator.id
+
+        # Filter to only actuated joints (passive joints don't have actuators)
+        actuated_joint_names = [jname for jname in robot.joint_names if jname in joint_name_to_ctrl_id]
+
+        # Get actuator IDs in natural joint order (only for actuated joints)
+        ctrl_ids_natural = [joint_name_to_ctrl_id[jname] for jname in actuated_joint_names]
+        joint_stiffness = env.sim.mj_model.actuator_gainprm[ctrl_ids_natural, 0]
+        joint_damping = -env.sim.mj_model.actuator_biasprm[ctrl_ids_natural, 2]
+
+        return {
+            "run_path": run_path,
+            "joint_names": actuated_joint_names,  # Only actuated joints
+            "joint_stiffness": joint_stiffness.tolist(),
+            "joint_damping": joint_damping.tolist(),
+            "default_joint_pos": robot.data.default_joint_pos[0, [robot.joint_names.index(jname) for jname in actuated_joint_names]].cpu().tolist(),
+            "command_names": list(env.command_manager.active_terms),
+            "observation_names": env.observation_manager.active_terms["policy"],
+            "action_scale": joint_action._scale[0].cpu().tolist()
+            if isinstance(joint_action._scale, torch.Tensor)
+            else joint_action._scale,
+        }
+
+    # Patch the function in the module
+    exporter_utils.get_base_metadata = patched_get_base_metadata
+
+    # Now import the exporter - it will get the patched version
+    from mjlab.tasks.velocity.rl import exporter
+
+    # Also patch it directly in the exporter module since it may have already imported it
+    exporter.get_base_metadata = patched_get_base_metadata
+
     from mjlab.tasks.velocity.rl.exporter import (
         export_velocity_policy_as_onnx,
         attach_onnx_metadata,
