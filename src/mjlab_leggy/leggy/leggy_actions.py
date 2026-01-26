@@ -92,9 +92,11 @@ class LeggyJointAction(JointPositionAction):
             actions: Raw actions from policy with shape [num_envs, 6]
                      Columns: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
         """
-        # Store raw actions and copy to processed (no scaling/offset)
+        # Store raw actions
         self._raw_actions[:] = actions
-        self._processed_actions[:] = actions
+
+        # Apply scale and offset (from parent class - includes HOME_FRAME default offset)
+        self._processed_actions[:] = self._raw_actions * self._scale + self._offset
 
         # Convert motor commands to knee commands (indices 2 and 5)
         # Use target hipX values (indices 1 and 4) for the conversion
