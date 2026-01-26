@@ -6,7 +6,7 @@
 
   // Don't create actuators for passive joints
   "joint_properties": {
-    "*": {
+    "*hip*|*knee": {
       "damping": 0.008824,
       "armature": 0.00006499,
       "forcerange": 0.236,
@@ -14,8 +14,13 @@
       "frictionloss": 0.01,
       "kp": 10
     },
-    "Lpassive*": { "actuated": false },
-    "Rpassive*": { "actuated": false }
+    "*passive*": {
+      "actuated": false,
+      "frictionloss": 0.0001,
+      "damping": 0.0001,
+      "stiffness": 0,
+      "armature": 0.00001
+    }
   },
   "geom_properties": {
     "foot": {
