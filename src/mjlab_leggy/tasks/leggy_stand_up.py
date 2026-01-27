@@ -155,9 +155,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         }
         # Running mode: relaxed constraints for dynamic motion
         cfg.rewards["pose"].params["std_running"] = {
-            ".*hipY.*": 0.2,
-            ".*hipX.*": 0.5,
-            ".*knee.*": 0.6,
+            ".*hipY.*": 0.4,
+            ".*hipX.*": 1.0,
+            ".*knee.*": 1.2,
         }
 
     # -------------------------------------------------------------------------
