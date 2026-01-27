@@ -180,15 +180,15 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Energy efficiency --
     # Penalty for rapid action changes between timesteps - reduces jittery motion
-    cfg.rewards["action_rate_l2"].weight = -0.01
+    cfg.rewards["action_rate_l2"].weight = -0.05
 
     # -- Gait and foot behavior --
     # Foot clearance during swing phase - promotes proper stepping
-    cfg.rewards["foot_clearance"].weight = 0.5
+    cfg.rewards["foot_clearance"].weight = 1.0
     cfg.rewards["foot_clearance"].params["target_height"] = 0.03
     cfg.rewards["foot_clearance"].params["command_threshold"] = 0.01
     # Minimum swing height - ensures feet lift properly
-    cfg.rewards["foot_swing_height"].weight = 0.5
+    cfg.rewards["foot_swing_height"].weight = 1.0
     cfg.rewards["foot_swing_height"].params["target_height"] = 0.03
     cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
     # Air time tracking disabled for standing focus
@@ -266,6 +266,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.episode_length_s = int(1e9)  # Effectively infinite episode length
         cfg.observations["policy"].enable_corruption = False
         cfg.events.pop("push_robot", None)
+        cfg.events.pop("foot_friction", None)
 
     return cfg
 
