@@ -117,6 +117,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # Foot geoms for friction randomization
     cfg.events["foot_friction"].params["asset_cfg"].geom_names = foot_geom_names
+    cfg.events["foot_friction"].params["ranges"] = (0.4, 1.5)  # min, max friction
 
     # Foot sites for gait rewards
     for reward_name in ["foot_clearance", "foot_swing_height", "foot_slip"]:
@@ -204,6 +205,13 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Walking on plane only (no rough terrain)
     assert cfg.scene.terrain is not None
     cfg.scene.terrain.terrain_type = "plane"
+    # Higher friction for better grip
+    cfg.scene.terrain.friction = "1.5 0.005 0.0001"
+    # Smaller timeconst (0.005) = stiffer contact, less bouncing
+    cfg.scene.terrain.solref = "0.005 1"
+    # Higher dmin/dmax (0.995, 0.9995) = less penetration, more precise collision
+    cfg.scene.terrain.solimp = "0.995 0.9995 0.001 0.5 2"
+    cfg.scene.terrain.contact = "enable"
     cfg.scene.terrain.terrain_generator = None
 
     # Disable terrain curriculum
