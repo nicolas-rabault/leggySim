@@ -314,6 +314,6 @@ def leggy_stand_up_rl_cfg() -> RslRlOnPolicyRunnerCfg:
         # ---------------------------------------------------------------------
         experiment_name="leggy_stand_up",
         save_interval=500,  # Checkpoint saving interval (iterations)
-        num_steps_per_env=24,  # Simulation steps before each policy update
+        num_steps_per_env=12,  # Simulation steps before each policy update
         max_iterations=50_000,
     )
