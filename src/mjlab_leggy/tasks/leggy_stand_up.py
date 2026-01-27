@@ -168,9 +168,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Velocity tracking --
     # Reward for matching commanded linear velocity (forward/backward, left/right)
-    cfg.rewards["track_linear_velocity"].weight = 2.0
+    cfg.rewards["track_linear_velocity"].weight = 4.0
     # Reward for matching commanded angular velocity (turning rate)
-    cfg.rewards["track_angular_velocity"].weight = 2.0
+    cfg.rewards["track_angular_velocity"].weight = 4.0
 
     # -- Pose and orientation --
     # Reward for keeping body upright (gravity aligned with body Z axis)
