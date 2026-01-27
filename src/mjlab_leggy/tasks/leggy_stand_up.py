@@ -196,11 +196,11 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["air_time"].params["command_threshold"] = 0.01
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -0.5
-    cfg.rewards["foot_slip"].params["command_threshold"] = 0.01
+    cfg.rewards["foot_slip"].params["command_threshold"] = 0.001
 
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling
-    cfg.rewards["body_ang_vel"].weight = -0.5
+    cfg.rewards["body_ang_vel"].weight = -0.05
 
     # -------------------------------------------------------------------------
     # Terrain configuration
