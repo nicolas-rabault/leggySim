@@ -143,15 +143,15 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         )
         # Standing mode: tight constraints for balance (robot mostly stationary)
         cfg.rewards["pose"].params["std_standing"] = {
-            ".*hipY.*": 0.2,  # HipY needs tight control for balance
-            ".*hipX.*": 0.4,  # HipX needs tight control for balance
-            ".*knee.*": 0.4,  # Knee slightly more relaxed
+            ".*hipY.*": 0.1,  # HipY needs tight control for balance
+            ".*hipX.*": 0.2,  # HipX needs tight control for balance
+            ".*knee.*": 0.2,  # Knee slightly more relaxed
         }
         # Walking mode: medium constraints for locomotion
         cfg.rewards["pose"].params["std_walking"] = {
-            ".*hipY.*": 0.2,
-            ".*hipX.*": 0.6,
-            ".*knee.*": 0.8,
+            ".*hipY.*": 0.1,
+            ".*hipX.*": 0.3,
+            ".*knee.*": 0.4,
         }
         # Running mode: relaxed constraints for dynamic motion
         cfg.rewards["pose"].params["std_running"] = {
@@ -267,6 +267,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.observations["policy"].enable_corruption = False
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
+        # Disable velocity commands
+        cfg.commands["twist"].ranges.ang_vel_z = (0.0, 0.0)
+        cfg.commands["twist"].ranges.lin_vel_y = (0.0, 0.0)
+        cfg.commands["twist"].ranges.lin_vel_x = (0.0, 0.0)
 
     return cfg
 
@@ -310,6 +314,6 @@ def leggy_stand_up_rl_cfg() -> RslRlOnPolicyRunnerCfg:
         # ---------------------------------------------------------------------
         experiment_name="leggy_stand_up",
         save_interval=500,  # Checkpoint saving interval (iterations)
-        num_steps_per_env=24,  # Simulation steps before each policy update
+        num_steps_per_env=12,  # Simulation steps before each policy update
         max_iterations=50_000,
     )
