@@ -180,7 +180,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Energy efficiency --
     # Penalty for rapid action changes between timesteps - reduces jittery motion
-    cfg.rewards["action_rate_l2"].weight = -0.1
+    cfg.rewards["action_rate_l2"].weight = -1.0
 
     # -- Gait and foot behavior --
     # Foot clearance during swing phase - promotes proper stepping
@@ -195,8 +195,8 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["air_time"].weight = 0.0
     cfg.rewards["air_time"].params["command_threshold"] = 0.01
     # Penalty for foot slipping on ground during contact
-    cfg.rewards["foot_slip"].weight = -0.5
-    cfg.rewards["foot_slip"].params["command_threshold"] = 0.001
+    cfg.rewards["foot_slip"].weight = -4.0
+    cfg.rewards["foot_slip"].params["command_threshold"] = 0.0001
 
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling
