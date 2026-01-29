@@ -168,9 +168,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Velocity tracking --
     # Reward for matching commanded linear velocity (forward/backward, left/right)
-    cfg.rewards["track_linear_velocity"].weight = 4.0
+    cfg.rewards["track_linear_velocity"].weight = 8.0
     # Reward for matching commanded angular velocity (turning rate)
-    cfg.rewards["track_angular_velocity"].weight = 4.0
+    cfg.rewards["track_angular_velocity"].weight = 8.0
 
     # -- Pose and orientation --
     # Reward for keeping body upright (gravity aligned with body Z axis)
@@ -180,7 +180,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Energy efficiency --
     # Penalty for rapid action changes between timesteps - reduces jittery motion
-    cfg.rewards["action_rate_l2"].weight = -1.0
+    cfg.rewards["action_rate_l2"].weight = -2.0
 
     # -- Gait and foot behavior --
     # Foot clearance during swing phase - promotes proper stepping
@@ -189,14 +189,14 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["foot_clearance"].params["command_threshold"] = 0.01
     # Minimum swing height - ensures feet lift properly
     cfg.rewards["foot_swing_height"].weight = 1.0
-    cfg.rewards["foot_swing_height"].params["target_height"] = 0.03
+    cfg.rewards["foot_swing_height"].params["target_height"] = 0.1
     cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
-    # Air time tracking disabled for standing focus
-    cfg.rewards["air_time"].weight = 0.0
+    # Air time tracking - encourages slower gait with feet spending time in air
+    cfg.rewards["air_time"].weight = 6.0
     cfg.rewards["air_time"].params["command_threshold"] = 0.01
     # Penalty for foot slipping on ground during contact
-    cfg.rewards["foot_slip"].weight = -4.0
-    cfg.rewards["foot_slip"].params["command_threshold"] = 0.0001
+    cfg.rewards["foot_slip"].weight = -6.0
+    cfg.rewards["foot_slip"].params["command_threshold"] = 0.001
 
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling

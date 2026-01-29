@@ -24,7 +24,7 @@ def get_spec() -> mujoco.MjSpec:
 
 
 stand_pose = {
-    "hipY": 6 * np.pi / 180.0,
+    "hipY": 15 * np.pi / 180.0,
     "hipX": 25 * np.pi / 180.0,
     "kneeMotor": 45 * np.pi / 180.0,
     "knee": (25+45) * np.pi / 180.0
