@@ -32,14 +32,18 @@
     }
   },
   "geom_properties": {
-    "foot": {
+    "collider": {
       "collision": {
-        "name": "left_foot_collision"
+        "name": "left_foot_collision",
+        "contype": 5,
+        "conaffinity": 5
       }
     },
-    "foot_2": {
+    "collider_2": {
       "collision": {
-        "name": "right_foot_collision"
+        "name": "right_foot_collision",
+        "contype": 5,
+        "conaffinity": 5
       }
     }
   },
@@ -48,10 +52,11 @@
     // Ignore visual
     "cm4lite": "visual",
     "Intel*": "visual",
+    "Collider": "visual",
 
-    // Ignore everything expect "Foot" for collision
+    // Ignore everything expect "Collider" for collision
     "*": "collision",
-    "!Foot": "collision"
+    "!Collider": "collision"
   },
   // Override equality attributes
   "equalities": {
