@@ -20,6 +20,7 @@
     <framequat name="orientation" objtype="site" noise="0.001" objname="imu"/>
     <gyro name="imu_ang_vel" site="imu"/>
     <velocimeter name="imu_lin_vel" site="imu"/>
+    <subtreeangmom name="root_angmom" body="boddy"/>
   </sensor>
   <worldbody>
     <!-- Link boddy -->
@@ -455,32 +456,32 @@
     </body>
   </worldbody>
   <asset>
-    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="mr63.stl"/>
-    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="foot.stl"/>
-    <mesh file="kneelinkl.stl"/>
-    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="gear1__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="trunclink.stl"/>
-    <mesh file="rotor.stl"/>
-    <mesh file="antenna.stl"/>
-    <mesh file="kneelinkr.stl"/>
-    <mesh file="stator.stl"/>
-    <mesh file="rod.stl"/>
-    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="tibia.stl"/>
     <mesh file="femur.stl"/>
-    <mesh file="collider.stl"/>
-    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="brd.stl"/>
+    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="mr63.stl"/>
+    <mesh file="kneelinkl.stl"/>
+    <mesh file="foot.stl"/>
+    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="enc_magnet.stl"/>
-    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="kneelinkr.stl"/>
     <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="trunclink.stl"/>
+    <mesh file="collider.stl"/>
+    <mesh file="brd.stl"/>
+    <mesh file="rod.stl"/>
+    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="tibia.stl"/>
+    <mesh file="antenna.stl"/>
+    <mesh file="rotor.stl"/>
+    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="stator.stl"/>
+    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <material name="trunclink_material" rgba="0.615686 0.811765 0.929412 1"/>
     <material name="antenna_material" rgba="0.498039 0.498039 0.498039 1"/>
     <material name="brd_material" rgba="0.972549 0.529412 0.00392157 1"/>

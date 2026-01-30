@@ -201,6 +201,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling
     cfg.rewards["body_ang_vel"].weight = -0.05
+    cfg.rewards["angular_momentum"].weight = -0.02
 
     # -------------------------------------------------------------------------
     # Terrain configuration
