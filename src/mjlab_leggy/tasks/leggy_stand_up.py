@@ -13,6 +13,7 @@ from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
+from mjlab.tasks.velocity import mdp
 
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
 from mjlab_leggy.leggy.leggy_actions import (
@@ -21,7 +22,8 @@ from mjlab_leggy.leggy.leggy_actions import (
     joint_vel_motor,
     joint_torques_motor,
 )
-
+from mjlab.managers.manager_term_config import RewardTermCfg
+from mjlab.entity import Entity
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     """Create Leggy stand up environment configuration."""
@@ -177,6 +179,12 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["upright"].weight = 1.0
     # Reward for staying close to default joint angles - prevents drift from home pose
     cfg.rewards["pose"].weight = 3.5
+    # Penalize low base height.
+    cfg.rewards["base_height_low"] = RewardTermCfg(
+        func=mdp.root_height_below_minimum,
+        weight=-5.0,
+        params={"minimum_height": 0.13},
+    )
 
     # -- Energy efficiency --
     # Penalty for rapid action changes between timesteps - reduces jittery motion
@@ -189,10 +197,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["foot_clearance"].params["command_threshold"] = 0.01
     # Minimum swing height - ensures feet lift properly
     cfg.rewards["foot_swing_height"].weight = 1.0
-    cfg.rewards["foot_swing_height"].params["target_height"] = 0.1
+    cfg.rewards["foot_swing_height"].params["target_height"] = 0.03
     cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
     # Air time tracking - encourages slower gait with feet spending time in air
-    cfg.rewards["air_time"].weight = 6.0
+    cfg.rewards["air_time"].weight = 3.0
     cfg.rewards["air_time"].params["command_threshold"] = 0.01
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -6.0
@@ -201,6 +209,8 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling
     cfg.rewards["body_ang_vel"].weight = -0.05
+    # Penalty for angular momentum - reduces unwanted spinning/wobbling
+    cfg.rewards["angular_momentum"].weight = -0.02
 
     # -------------------------------------------------------------------------
     # Terrain configuration
@@ -248,9 +258,14 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.commands["twist"].ranges.lin_vel_y = (-0.3, 0.3)
     cfg.commands["twist"].ranges.lin_vel_x = (-0.3, 0.3)
 
+    # cfg.events["push_robot"].interval_range_s = (3.0, 5.0)
     cfg.events["push_robot"].params["velocity_range"] = {
         "x": (-0.8, 0.8),
         "y": (-0.8, 0.8),
+        # "z": (-0.1, 0.1),
+        # "roll": (-0.5, 0.5),
+        # "pitch": (-0.5, 0.5),
+        # "yaw": (-0.8, 0.8),
     }
 
     # -------------------------------------------------------------------------
