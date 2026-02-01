@@ -59,6 +59,9 @@ HOME_FRAME = EntityCfg.InitialStateCfg(
 
 FULL_COLLISION = CollisionCfg(
     geom_names_expr=[".*_collision"],
+    # Collision groups: foot spheres (group 1) collide with floor, collider meshes (group 4) collide with each other only
+    contype={r"^(left|right)_foot_collision$": 4, ".*_collision": 1},
+    conaffinity={r"^(left|right)_foot_collision$": 4, ".*_collision": 1},
     condim={r"^(left|right)_foot_collision$": 3, ".*_collision": 1},
     priority={r"^(left|right)_foot_collision$": 1},
     # Friction: (sliding, torsional, rolling) - higher sliding = less slip
