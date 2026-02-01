@@ -34,12 +34,14 @@
   "geom_properties": {
     "collider": {
       "collision": {
+        "name": "left_tibia_collision",
         "contype": 4,
         "conaffinity": 4
       }
     },
     "collider_2": {
       "collision": {
+        "name": "right_tibia_collision",
         "contype": 4,
         "conaffinity": 4
       }
