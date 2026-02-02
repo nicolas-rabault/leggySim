@@ -27,6 +27,11 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     """Create Leggy stand up environment configuration."""
     cfg = make_velocity_env_cfg()
 
+    # Set mujoco sim parameters to improve stability and collision detection
+    cfg.sim.mujoco.ccd_iterations = 500
+    cfg.sim.contact_sensor_maxmatch = 500
+    cfg.sim.nconmax = 45
+
     # Set control frequency to 100Hz (was 50Hz with decimation=4)                                                                                                                                               
     cfg.decimation = 2
 
