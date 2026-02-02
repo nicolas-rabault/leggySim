@@ -1,6 +1,9 @@
 """Leggy stand up environment."""
 
+from __future__ import annotations
+
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import torch
 
@@ -21,6 +24,107 @@ from mjlab_leggy.leggy.leggy_actions import (
     joint_vel_motor,
     joint_torques_motor,
 )
+
+if TYPE_CHECKING:
+    from mjlab.envs import ManagerBasedRlEnv
+    from mjlab.entity import Entity
+
+
+def foot_height_terrain_relative(
+    env: ManagerBasedRlEnv, asset_cfg: SceneEntityCfg
+) -> torch.Tensor:
+    """Foot height relative to terrain origin (terrain-invariant)."""
+    asset: Entity = env.scene[asset_cfg.name]
+    foot_z_world = asset.data.site_pos_w[:, asset_cfg.site_ids, 2]
+    terrain_z = env.scene.env_origins[:, 2].unsqueeze(1)
+    return foot_z_world - terrain_z
+
+
+def feet_clearance_terrain_relative(
+    env: ManagerBasedRlEnv,
+    target_height: float,
+    command_name: str | None = None,
+    command_threshold: float = 0.01,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Foot clearance reward - terrain-relative."""
+    from mjlab.tasks.velocity.mdp.rewards import feet_clearance
+    asset: Entity = env.scene[asset_cfg.name]
+
+    # Compute terrain-relative foot heights
+    foot_z_world = asset.data.site_pos_w[:, asset_cfg.site_ids, 2]
+    terrain_z = env.scene.env_origins[:, 2].unsqueeze(1)
+    foot_z_relative = foot_z_world - terrain_z
+
+    # Use the same logic as standard feet_clearance but with relative heights
+    foot_vel_xy = asset.data.site_lin_vel_w[:, asset_cfg.site_ids, :2]
+    vel_norm = torch.norm(foot_vel_xy, dim=-1)
+    delta = torch.abs(foot_z_relative - target_height)
+    cost = torch.sum(delta * vel_norm, dim=1)
+
+    if command_name is not None:
+        command = env.command_manager.get_command(command_name)
+        if command is not None:
+            linear_norm = torch.norm(command[:, :2], dim=1)
+            angular_norm = torch.abs(command[:, 2])
+            total_command = linear_norm + angular_norm
+            active = (total_command > command_threshold).float()
+            cost = cost * active
+    return cost
+
+
+class feet_swing_height_terrain_relative:
+    """Swing height reward - terrain-relative."""
+
+    def __init__(self, cfg, env):
+        from mjlab.managers.manager_term_config import RewardTermCfg
+        self.sensor_name = cfg.params["sensor_name"]
+        self.site_names = cfg.params["asset_cfg"].site_names
+        self.peak_heights = torch.zeros(
+            (env.num_envs, len(self.site_names)), device=env.device, dtype=torch.float32
+        )
+        self.step_dt = env.step_dt
+
+    def __call__(self, env, sensor_name: str, target_height: float, command_name: str,
+                 command_threshold: float, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+        from mjlab.sensor import ContactSensor
+        from mjlab.entity import Entity
+
+        asset: Entity = env.scene[asset_cfg.name]
+        contact_sensor: ContactSensor = env.scene[sensor_name]
+        command = env.command_manager.get_command(command_name)
+        assert command is not None
+
+        # Terrain-relative heights
+        foot_z_world = asset.data.site_pos_w[:, asset_cfg.site_ids, 2]
+        terrain_z = env.scene.env_origins[:, 2].unsqueeze(1)
+        foot_heights = foot_z_world - terrain_z
+
+        in_air = contact_sensor.data.found == 0
+        self.peak_heights = torch.where(
+            in_air,
+            torch.maximum(self.peak_heights, foot_heights),
+            self.peak_heights,
+        )
+        first_contact = contact_sensor.compute_first_contact(dt=self.step_dt)
+        linear_norm = torch.norm(command[:, :2], dim=1)
+        angular_norm = torch.abs(command[:, 2])
+        total_command = linear_norm + angular_norm
+        active = (total_command > command_threshold).float()
+        error = self.peak_heights / target_height - 1.0
+        cost = torch.sum(torch.square(error) * first_contact.float(), dim=1) * active
+        num_landings = torch.sum(first_contact.float())
+        peak_heights_at_landing = self.peak_heights * first_contact.float()
+        mean_peak_height = torch.sum(peak_heights_at_landing) / torch.clamp(
+            num_landings, min=1
+        )
+        env.extras["log"]["Metrics/peak_height_mean"] = mean_peak_height
+        self.peak_heights = torch.where(
+            first_contact,
+            torch.zeros_like(self.peak_heights),
+            self.peak_heights,
+        )
+        return cost
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -117,17 +221,19 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -------------------------------------------------------------------------
     # Update asset references for Leggy's geometry
     # -------------------------------------------------------------------------
-    # Foot sites for observations
-    cfg.observations["critic"].terms["foot_height"].params["asset_cfg"].site_names = foot_site_names
+    # Foot height observation - terrain-relative for height-invariant behavior
+    cfg.observations["critic"].terms["foot_height"] = ObservationTermCfg(
+        func=foot_height_terrain_relative,
+        params={"asset_cfg": SceneEntityCfg("robot", site_names=foot_site_names)},
+    )
 
     # Foot geoms for friction randomization
     cfg.events["foot_friction"].params["asset_cfg"].geom_names = foot_geom_names
     cfg.events["foot_friction"].params["ranges"] = (0.4, 1.5)  # min, max friction
 
-    # Foot sites for gait rewards
-    for reward_name in ["foot_clearance", "foot_swing_height", "foot_slip"]:
-        if reward_name in cfg.rewards:
-            cfg.rewards[reward_name].params["asset_cfg"].site_names = foot_site_names
+    # Foot sites for foot_slip reward (clearance and swing_height are set below with custom functions)
+    if "foot_slip" in cfg.rewards:
+        cfg.rewards["foot_slip"].params["asset_cfg"].site_names = foot_site_names
 
     # Body name for orientation rewards (main body is "boddy", not "trunclink")
     for reward_name in ["upright", "body_ang_vel"]:
@@ -188,14 +294,29 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["action_rate_l2"].weight = -2.0
 
     # -- Gait and foot behavior --
-    # Foot clearance during swing phase - promotes proper stepping
-    cfg.rewards["foot_clearance"].weight = 1.0
-    cfg.rewards["foot_clearance"].params["target_height"] = 0.03
-    cfg.rewards["foot_clearance"].params["command_threshold"] = 0.01
-    # Minimum swing height - ensures feet lift properly
-    cfg.rewards["foot_swing_height"].weight = 1.0
-    cfg.rewards["foot_swing_height"].params["target_height"] = 0.1
-    cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
+    # Use terrain-relative rewards for terrain-invariant behavior
+    from mjlab.managers.manager_term_config import RewardTermCfg
+    cfg.rewards["foot_clearance"] = RewardTermCfg(
+        func=feet_clearance_terrain_relative,
+        weight=1.0,
+        params={
+            "target_height": 0.03,
+            "command_name": "twist",
+            "command_threshold": 0.01,
+            "asset_cfg": SceneEntityCfg("robot", site_names=foot_site_names),
+        },
+    )
+    cfg.rewards["foot_swing_height"] = RewardTermCfg(
+        func=feet_swing_height_terrain_relative,
+        weight=1.0,
+        params={
+            "sensor_name": "feet_ground_contact",
+            "target_height": 0.1,
+            "command_name": "twist",
+            "command_threshold": 0.01,
+            "asset_cfg": SceneEntityCfg("robot", site_names=foot_site_names),
+        },
+    )
     # Air time tracking - encourages slower gait with feet spending time in air
     cfg.rewards["air_time"].weight = 6.0
     cfg.rewards["air_time"].params["command_threshold"] = 0.05
