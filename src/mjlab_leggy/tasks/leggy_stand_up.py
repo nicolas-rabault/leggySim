@@ -8,6 +8,7 @@ from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp import observations as mdp_obs
 from mjlab.envs.mdp import terminations as mdp_terminations
 from mjlab.managers.observation_manager import ObservationTermCfg
+from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
@@ -21,6 +22,7 @@ from mjlab_leggy.leggy.leggy_actions import (
     joint_vel_motor,
     joint_torques_motor,
 )
+from mjlab_leggy.leggy.leggy_rewards import joint_pos_limits_motor
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -164,6 +166,17 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             ".*hipX.*": 1.0,
             ".*knee.*": 1.2,
         }
+
+    # -------------------------------------------------------------------------
+    # Motor limit reward - custom for Leggy
+    # -------------------------------------------------------------------------
+    # Override the default joint_pos_limits with motor-space version
+    # The motor limits must be checked in motor space (motor = knee - hipX)
+    # not directly on knee positions
+    cfg.rewards["dof_pos_limits"] = RewardTermCfg(
+        func=joint_pos_limits_motor,
+        weight=-1.0
+    )
 
     # -------------------------------------------------------------------------
     # Reward weights
