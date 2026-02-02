@@ -30,6 +30,11 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Set control frequency to 100Hz (was 50Hz with decimation=4)                                                                                                                                               
     cfg.decimation = 2
 
+    # Set mujoco sim parameters to improve stability and collision detection
+    cfg.sim.mujoco.ccd_iterations = 500
+    cfg.sim.contact_sensor_maxmatch = 500
+    cfg.sim.nconmax = 45
+
     # Set leggy robot
     cfg.scene.entities = {"robot": LEGGY_ROBOT_CFG}
 
@@ -107,7 +112,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     twist_cmd.ranges.lin_vel_y = (-0.8, 0.3)  # Forward velocity in m/s
     twist_cmd.ranges.lin_vel_x = (-0.2, 0.2)  # Lateral velocity in m/s - side-stepping
     twist_cmd.rel_standing_envs = 0.5  # Fraction with zero velocity command
-    twist_cmd.rel_heading_envs = 0.0
+    twist_cmd.rel_heading_envs = 0.5
 
     # -------------------------------------------------------------------------
     # Update asset references for Leggy's geometry
@@ -207,9 +212,20 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -------------------------------------------------------------------------
     # Terrain configuration
     # -------------------------------------------------------------------------
-    # Walking on plane only (no rough terrain)
     assert cfg.scene.terrain is not None
-    cfg.scene.terrain.terrain_type = "plane"
+    assert cfg.scene.terrain.terrain_generator is not None
+    cfg.scene.terrain.terrain_generator.curriculum = True
+    cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 0.3)
+    for sub_cfg in cfg.scene.terrain.terrain_generator.sub_terrains.values():
+        if hasattr(sub_cfg, "step_height_range"):
+            sub_cfg.step_height_range = (0.0, 0.03)
+        if hasattr(sub_cfg, "slope_range"):
+            sub_cfg.slope_range = (0.0, 0.3)
+        if hasattr(sub_cfg, "noise_range"):
+            sub_cfg.noise_range = (0.01, 0.03)
+        if hasattr(sub_cfg, "amplitude_range"):
+            sub_cfg.amplitude_range = (0.0, 0.05)
+
     # Higher friction for better grip
     cfg.scene.terrain.friction = "1.5 0.005 0.0001"
     # Smaller timeconst (0.005) = stiffer contact, less bouncing
@@ -217,10 +233,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Higher dmin/dmax (0.995, 0.9995) = less penetration, more precise collision
     cfg.scene.terrain.solimp = "0.995 0.9995 0.001 0.5 2"
     cfg.scene.terrain.contact = "enable"
-    cfg.scene.terrain.terrain_generator = None
 
     # Disable terrain curriculum
-    del cfg.curriculum["terrain_levels"]
+    # del cfg.curriculum["terrain_levels"]
     # del cfg.curriculum["command_vel"]
 
     # -------------------------------------------------------------------------
