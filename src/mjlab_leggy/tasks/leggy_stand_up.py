@@ -287,6 +287,14 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.observations["policy"].enable_corruption = False
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
+
+        # Disable terrain curriculum for play mode
+        assert cfg.scene.terrain is not None
+        assert cfg.scene.terrain.terrain_generator is not None
+        cfg.scene.terrain.terrain_generator.curriculum = False
+        cfg.scene.terrain.terrain_generator.num_cols = 5
+        cfg.scene.terrain.terrain_generator.num_rows = 5
+        cfg.scene.terrain.terrain_generator.border_width = 10.0
         # Disable velocity commands
         # cfg.commands["twist"].ranges.ang_vel_z = (0.0, 0.0)
         # cfg.commands["twist"].ranges.lin_vel_y = (0.0, 0.0)
