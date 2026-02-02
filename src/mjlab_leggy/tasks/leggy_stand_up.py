@@ -104,9 +104,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     twist_cmd = cfg.commands["twist"]
     twist_cmd.viz.z_offset = 1.0
     twist_cmd.ranges.ang_vel_z = (-0.2, 0.2)  # Yaw rate in rad/s - controls turning
-    twist_cmd.ranges.lin_vel_y = (-0.1, 0.1)  # Lateral velocity in m/s - side-stepping
-    twist_cmd.ranges.lin_vel_x = (-0.1, 0.1)  # Forward velocity in m/s
-    twist_cmd.rel_standing_envs = 0.8  # Fraction with zero velocity command
+    twist_cmd.ranges.lin_vel_y = (-0.8, 0.3)  # Forward velocity in m/s
+    twist_cmd.ranges.lin_vel_x = (-0.2, 0.2)  # Lateral velocity in m/s - side-stepping
+    twist_cmd.rel_standing_envs = 0.5  # Fraction with zero velocity command
     twist_cmd.rel_heading_envs = 0.0
 
     # -------------------------------------------------------------------------
@@ -193,14 +193,15 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
     # Air time tracking - encourages slower gait with feet spending time in air
     cfg.rewards["air_time"].weight = 6.0
-    cfg.rewards["air_time"].params["command_threshold"] = 0.01
+    cfg.rewards["air_time"].params["command_threshold"] = 0.05
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -6.0
-    cfg.rewards["foot_slip"].params["command_threshold"] = 0.001
+    cfg.rewards["foot_slip"].params["command_threshold"] = 0
 
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling
     cfg.rewards["body_ang_vel"].weight = -0.05
+    # Penalty for angular momentum - reduces unwanted spinning/wobbling
     cfg.rewards["angular_momentum"].weight = -0.02
 
     # -------------------------------------------------------------------------
@@ -220,7 +221,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # Disable terrain curriculum
     del cfg.curriculum["terrain_levels"]
-    del cfg.curriculum["command_vel"]
+    # del cfg.curriculum["command_vel"]
 
     # -------------------------------------------------------------------------
     # Observation noise and delay configuration (sim-to-real)
@@ -272,9 +273,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
         # Disable velocity commands
-        cfg.commands["twist"].ranges.ang_vel_z = (0.0, 0.0)
-        cfg.commands["twist"].ranges.lin_vel_y = (0.0, 0.0)
-        cfg.commands["twist"].ranges.lin_vel_x = (0.0, 0.0)
+        # cfg.commands["twist"].ranges.ang_vel_z = (0.0, 0.0)
+        # cfg.commands["twist"].ranges.lin_vel_y = (0.0, 0.0)
+        # cfg.commands["twist"].ranges.lin_vel_x = (0.0, 0.0)
 
     return cfg
 
