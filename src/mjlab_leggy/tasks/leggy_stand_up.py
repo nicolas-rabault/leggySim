@@ -221,10 +221,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["foot_clearance"].params["command_threshold"] = 0.01
     # Minimum swing height - ensures feet lift properly
     cfg.rewards["foot_swing_height"].weight = 1.0
-    cfg.rewards["foot_swing_height"].params["target_height"] = 0.1
+    cfg.rewards["foot_swing_height"].params["target_height"] = 0.05
     cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
     # Air time tracking - encourages slower gait with feet spending time in air
-    cfg.rewards["air_time"].weight = 6.0
+    cfg.rewards["air_time"].weight = 1.0
     cfg.rewards["air_time"].params["command_threshold"] = 0.05
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -6.0
