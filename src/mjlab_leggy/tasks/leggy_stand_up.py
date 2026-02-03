@@ -6,6 +6,7 @@ import torch
 
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp import observations as mdp_obs
+from mjlab.envs.mdp import rewards as mdp_rewards
 from mjlab.envs.mdp import terminations as mdp_terminations
 from mjlab.managers.observation_manager import ObservationTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
@@ -111,7 +112,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         num_slots=1,
         track_air_time=True,
     )
-    # Note: Leggy only has foot collision geoms so we skip the nonfoot ground contact sensor
+
+    # Note: Leggy only has foot collision geoms, so we rely on orientation
+    # and height checks for hard constraints instead of contact sensors
     cfg.scene.sensors = (feet_ground_cfg,)
 
     # Configure viewer (main body is called "boddy" in robot.xml)
@@ -237,6 +240,41 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["angular_momentum"].weight = -0.02
 
     # -------------------------------------------------------------------------
+    # Soft Constraints (Penalties)
+    # -------------------------------------------------------------------------
+    # These act as soft constraints similar to Bolt's max_p=0.25 constraints
+    # They penalize behavior without causing termination
+
+    # Joint torque limits - prevents excessive motor torque
+    cfg.rewards["joint_torques"] = RewardTermCfg(
+        func=mdp_rewards.joint_torques_l2,
+        weight=-1e-4,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"))},
+    )
+
+    # Joint velocity limits - prevents unrealistic joint speeds
+    cfg.rewards["joint_vel_limits"] = RewardTermCfg(
+        func=mdp_rewards.joint_vel_l2,
+        weight=-1e-4,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"))},
+    )
+
+    # Joint acceleration limits - smooths motion and prevents simulation artifacts
+    cfg.rewards["joint_acc_limits"] = RewardTermCfg(
+        func=mdp_rewards.joint_acc_l2,
+        weight=-2.5e-7,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"))},
+    )
+
+    # Flat orientation constraint - tighter than the upright reward
+    # This acts as a soft constraint on base orientation similar to Bolt's 0.1 rad limit
+    cfg.rewards["flat_orientation_penalty"] = RewardTermCfg(
+        func=mdp_rewards.flat_orientation_l2,
+        weight=-0.5,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=("boddy",))},
+    )
+
+    # -------------------------------------------------------------------------
     # Terrain configuration
     # -------------------------------------------------------------------------
     # Walking on plane only (no rough terrain)
@@ -288,13 +326,17 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     }
 
     # -------------------------------------------------------------------------
-    # Termination conditions
+    # Termination conditions (Hard Constraints)
     # -------------------------------------------------------------------------
-    # Reset if body goes below the floor - prevents exploiting floor penetration
+    # Hard constraint: Body below floor - prevents floor penetration exploitation
     cfg.terminations["body_below_floor"] = TerminationTermCfg(
         func=mdp_terminations.root_height_below_minimum,
         params={"minimum_height": 0.00},  # meters
     )
+
+    # Hard constraint: Bad orientation (fell_over) - already configured by default
+    # This terminates if the robot tips more than 70 degrees from upright
+    # Acts as the primary safety constraint preventing invalid states
 
     # -------------------------------------------------------------------------
     # Play mode overrides
