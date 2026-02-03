@@ -294,8 +294,13 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # del cfg.curriculum["command_vel"]
 
     # -------------------------------------------------------------------------
-    # Observation noise and delay configuration (sim-to-real)
+    # Observation history and corruption (sim-to-real)
     # -------------------------------------------------------------------------
+    # Add observation history to help policy understand dynamics and trajectories
+    # 5-step history provides temporal context for reactive behaviors
+    cfg.observations["policy"].history_length = 5
+    cfg.observations["policy"].flatten_history_dim = True  # Flatten into observation vector
+
     # Add realistic sensor noise and delays
     cfg.observations["policy"].enable_corruption = True
     cfg.observations["policy"].corruption_std = 0.01
