@@ -254,7 +254,7 @@
             <geom class="visual" type="mesh" pos="-0.0887676 -0.05125 0.002" quat="3.70621e-15 0.5 0.866025 -8.05872e-16" mesh="foot" material="foot_material"/>
             <geom class="collision" type="sphere" pos="0.049 -0.0848705 0.001" quat="3.70621e-15 0.5 0.866025 -8.05872e-16" name="left_foot_collision" size="0.0025" contype="1" conaffinity="1"/>
             <!-- Part collider -->
-            <geom class="collision" type="mesh" pos="-0.0887676 -0.05125 0.002" quat="4.15171e-15 0.5 0.866025 -2.46078e-16" mesh="collider" material="collider_material" name="left_tibia_collision" contype="4" conaffinity="4"/>
+            <geom class="collision" type="mesh" pos="-0.0887676 -0.05125 0.002" quat="4.15171e-15 0.5 0.866025 -2.46078e-16" mesh="collider" material="collider_material" contype="4" conaffinity="4"/>
             <!-- Part tibia -->
             <geom class="visual" type="mesh" pos="-0.0887676 -0.05125 0.002" quat="1.35432e-15 0.5 0.866025 -1.19178e-15" mesh="tibia" material="tibia_material"/>
             <!-- Frame left_foot -->
@@ -272,6 +272,7 @@
               <geom class="visual" type="mesh" pos="-1.38778e-17 0.1125 -0.0156" quat="6.03818e-16 0.707107 -0.707107 -1.5059e-15" mesh="mr63" material="mr63_material"/>
               <!-- Part rod -->
               <geom class="visual" type="mesh" pos="-0.025 0.1025 0" quat="0 1 0 0" mesh="rod" material="rod_material"/>
+              <geom class="collision" type="mesh" pos="-0.025 0.1025 0" quat="0 1 0 0" mesh="rod" material="rod_material" contype="4" conaffinity="4"/>
               <!-- Frame closing_L_2 -->
               <site group="3" name="closing_L_2" pos="-0 0.1125 -0.0176" quat="0.707107 -0 -0 0.707107"/>
               <!-- Frame closing_L_2_z -->
@@ -412,7 +413,7 @@
             <joint axis="0 0 1" name="Rknee" type="hinge" range="-4 4" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
             <inertial pos="-0.0149636 0.0259177 -0.001" mass="0.00458484" fullinertia="4.27206e-06 1.44e-06 5.70887e-06 2.45264e-06 0 0"/>
             <!-- Part collider_2 -->
-            <geom class="collision" type="mesh" pos="-0.0887676 -0.05125 -0.002" quat="0.866025 6.65693e-17 -5.9862e-17 -0.5" mesh="collider" material="collider_material" name="right_tibia_collision" contype="4" conaffinity="4"/>
+            <geom class="collision" type="mesh" pos="-0.0887676 -0.05125 -0.002" quat="0.866025 6.65693e-17 -5.9862e-17 -0.5" mesh="collider" material="collider_material" contype="4" conaffinity="4"/>
             <!-- Part tibia_2 -->
             <geom class="visual" type="mesh" pos="-0.0887676 -0.05125 -0.002" quat="0.866025 6.57049e-17 -1.16771e-18 -0.5" mesh="tibia" material="tibia_material"/>
             <!-- Part foot_2 -->
@@ -433,6 +434,7 @@
               <geom class="visual" type="mesh" pos="-0.0974279 -0.05625 0.0156" quat="0.965926 1.0105e-13 8.00953e-15 0.258819" mesh="mr63" material="mr63_material"/>
               <!-- Part rod_2 -->
               <geom class="visual" type="mesh" pos="-0.101268 -0.0295994 1.75381e-14" quat="0.866025 6.59738e-14 7.91589e-14 -0.5" mesh="rod" material="rod_material"/>
+              <geom class="collision" type="mesh" pos="-0.101268 -0.0295994 1.75381e-14" quat="0.866025 6.59738e-14 7.91589e-14 -0.5" mesh="rod" material="rod_material" contype="4" conaffinity="4"/>
               <!-- Frame closing_R_2 -->
               <site group="3" name="closing_R_2" pos="-0.0974279 -0.05625 0.0176" quat="0 0.258819 -0.965926 -0"/>
               <!-- Frame closing_R_2_z -->
@@ -456,32 +458,32 @@
     </body>
   </worldbody>
   <asset>
-    <mesh file="antenna.stl"/>
-    <mesh file="gear1__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="kneelinkl.stl"/>
-    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="stator.stl"/>
-    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="trunclink.stl"/>
-    <mesh file="femur.stl"/>
-    <mesh file="tibia.stl"/>
-    <mesh file="rod.stl"/>
-    <mesh file="enc_magnet.stl"/>
-    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="kneelinkr.stl"/>
-    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="rotor.stl"/>
-    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="collider.stl"/>
-    <mesh file="foot.stl"/>
-    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="brd.stl"/>
-    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="gear1__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="kneelinkr.stl"/>
+    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="rotor.stl"/>
+    <mesh file="rod.stl"/>
+    <mesh file="collider.stl"/>
+    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="antenna.stl"/>
+    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="trunclink.stl"/>
+    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="femur.stl"/>
+    <mesh file="enc_magnet.stl"/>
+    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="kneelinkl.stl"/>
+    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="stator.stl"/>
+    <mesh file="tibia.stl"/>
+    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="mr63.stl"/>
+    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="foot.stl"/>
     <material name="trunclink_material" rgba="0.615686 0.811765 0.929412 1"/>
     <material name="antenna_material" rgba="0.498039 0.498039 0.498039 1"/>
     <material name="brd_material" rgba="0.972549 0.529412 0.00392157 1"/>
