@@ -295,6 +295,29 @@ def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
     return actuator_torques
 
 
+def body_quat(env, asset_cfg=None) -> torch.Tensor:
+    """Get body orientation quaternion in world frame.
+
+    Returns the body orientation as a quaternion (w, x, y, z) that would be
+    available from a real IMU sensor. This provides clean orientation information
+    that complements the projected gravity vector.
+
+    Args:
+        env: The environment instance
+        asset_cfg: Asset configuration (not used, kept for API compatibility)
+
+    Returns:
+        Body quaternion [num_envs, 4]
+        Layout: [qw, qx, qy, qz] - quaternion in world frame
+    """
+    # Get the robot asset
+    asset = env.scene["robot"]
+
+    # Return the root link quaternion (body orientation in world frame)
+    # This corresponds to what an IMU would measure
+    return asset.data.root_link_quat_w
+
+
 # =============================================================================
 # Convenience Exports
 # =============================================================================
@@ -305,6 +328,7 @@ __all__ = [
     "joint_pos_motor",
     "joint_vel_motor",
     "joint_torques_motor",
+    "body_quat",
     "LeggyJointAction",
     "LeggyJointActionCfg",
 ]

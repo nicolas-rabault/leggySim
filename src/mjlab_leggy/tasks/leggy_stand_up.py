@@ -21,6 +21,7 @@ from mjlab_leggy.leggy.leggy_actions import (
     joint_pos_motor,
     joint_vel_motor,
     joint_torques_motor,
+    body_quat,
 )
 from mjlab_leggy.leggy.leggy_rewards import joint_pos_limits_motor
 
@@ -69,6 +70,14 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     )
     cfg.observations["critic"].terms["joint_vel"] = ObservationTermCfg(
         func=joint_vel_motor
+    )
+
+    # Add body orientation quaternion (available from real IMU)
+    cfg.observations["policy"].terms["body_quat"] = ObservationTermCfg(
+        func=body_quat
+    )
+    cfg.observations["critic"].terms["body_quat"] = ObservationTermCfg(
+        func=body_quat
     )
 
     # Add motor torques (measured at motor outputs via torque sensors)
@@ -255,6 +264,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.observations["policy"].terms["base_ang_vel"] = deepcopy(
         cfg.observations["policy"].terms["base_ang_vel"]
     )
+    cfg.observations["policy"].terms["body_quat"] = deepcopy(
+        cfg.observations["policy"].terms["body_quat"]
+    )
 
     cfg.observations["policy"].terms["base_ang_vel"].delay_min_lag = 2
     cfg.observations["policy"].terms["base_ang_vel"].delay_max_lag = 4
@@ -263,6 +275,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.observations["policy"].terms["projected_gravity"].delay_min_lag = 2
     cfg.observations["policy"].terms["projected_gravity"].delay_max_lag = 4
     cfg.observations["policy"].terms["projected_gravity"].delay_update_period = 64
+
+    cfg.observations["policy"].terms["body_quat"].delay_min_lag = 2
+    cfg.observations["policy"].terms["body_quat"].delay_max_lag = 4
+    cfg.observations["policy"].terms["body_quat"].delay_update_period = 64
 
     cfg.commands["twist"].ranges.ang_vel_z = (-1.0, 1.0)
     cfg.commands["twist"].ranges.lin_vel_y = (-0.3, 0.3)
