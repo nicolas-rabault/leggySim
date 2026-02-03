@@ -47,8 +47,9 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -------------------------------------------------------------------------
     # LeggyJointAction converts motor commands to knee angles.
     # Passive joints are handled automatically by MuJoCo's constraint solver.
+    # Scale of 0.5 provides more conservative movements for better stability
     cfg.actions = {
-        "joint_pos": LeggyJointActionCfg(entity_name="robot")
+        "joint_pos": LeggyJointActionCfg(entity_name="robot", scale=0.5)
     }
 
     # -------------------------------------------------------------------------
