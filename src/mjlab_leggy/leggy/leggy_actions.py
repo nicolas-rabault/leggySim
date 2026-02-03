@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 import torch
 
 from mjlab.envs.mdp.actions import JointPositionAction, JointPositionActionCfg
+from mjlab.utils.lab_api.math import euler_xyz_from_quat
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv
@@ -295,27 +296,37 @@ def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
     return actuator_torques
 
 
-def body_quat(env, asset_cfg=None) -> torch.Tensor:
-    """Get body orientation quaternion in world frame.
+def body_euler(env, asset_cfg=None) -> torch.Tensor:
+    """Get body orientation as Euler angles (roll, pitch, yaw).
 
-    Returns the body orientation as a quaternion (w, x, y, z) that would be
-    available from a real IMU sensor. This provides clean orientation information
-    that complements the projected gravity vector.
+    Returns the body orientation in Euler XYZ convention that would be
+    available from a real IMU sensor. Euler angles are more compact than
+    quaternions (3D vs 4D) and more interpretable for RL policies.
+
+    For a biped robot, this provides:
+    - Roll: rotation about X (side-to-side tilt)
+    - Pitch: rotation about Y (forward-backward tilt)
+    - Yaw: rotation about Z (heading direction)
+
+    Yaw is critical for robots with small feet that can rotate in place.
 
     Args:
         env: The environment instance
         asset_cfg: Asset configuration (not used, kept for API compatibility)
 
     Returns:
-        Body quaternion [num_envs, 4]
-        Layout: [qw, qx, qy, qz] - quaternion in world frame
+        Body Euler angles [num_envs, 3]
+        Layout: [roll, pitch, yaw] - angles in radians, range (-π, π]
     """
     # Get the robot asset
     asset = env.scene["robot"]
 
-    # Return the root link quaternion (body orientation in world frame)
-    # This corresponds to what an IMU would measure
-    return asset.data.root_link_quat_w
+    # Get quaternion and convert to Euler angles
+    quat = asset.data.root_link_quat_w
+    roll, pitch, yaw = euler_xyz_from_quat(quat)
+
+    # Stack into [num_envs, 3] tensor
+    return torch.stack([roll, pitch, yaw], dim=1)
 
 
 # =============================================================================
@@ -328,7 +339,7 @@ __all__ = [
     "joint_pos_motor",
     "joint_vel_motor",
     "joint_torques_motor",
-    "body_quat",
+    "body_euler",
     "LeggyJointAction",
     "LeggyJointActionCfg",
 ]

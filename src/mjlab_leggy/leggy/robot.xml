@@ -26,7 +26,7 @@
     <!-- Link boddy -->
     <body name="boddy" pos="0 0 0" quat="1 0 0 0" childclass="leggy">
       <freejoint name="boddy_freejoint"/>
-      <inertial pos="0.00937309 0.0175794 0.00311699" mass="0.227015" fullinertia="0.000271489 0.000303651 0.000253796 1.36758e-08 4.88864e-09 -9.36267e-05"/>
+      <inertial pos="0.00937309 0.0175794 0.00311699" mass="0.227015" fullinertia="0.000271489 0.000303651 0.000253796 1.3676e-08 4.889e-09 -9.36267e-05"/>
       <!-- Part trunclink -->
       <geom class="visual" type="mesh" pos="0.00937515 0.00667062 0.0096124" quat="1 -5.85101e-12 -6.93845e-12 -5.13841e-13" mesh="trunclink" material="trunclink_material"/>
       <!-- Part antenna -->
@@ -130,7 +130,7 @@
       <!-- Part spacer__c331c3826e3aeff78bc4513233f2bf84_4 -->
       <geom class="visual" type="mesh" pos="0.0279252 -0.00192938 -0.00697498" quat="0.690346 0.153046 0.153046 0.690346" mesh="spacer__c331c3826e3aeff78bc4513233f2bf84" material="spacer__c331c3826e3aeff78bc4513233f2bf84_material"/>
       <!-- Frame imu -->
-      <site group="3" name="imu" pos="0.00936556 0.0252249 0.015575" quat="1 -5.85104e-12 -6.93855e-12 -5.13851e-13"/>
+      <site group="3" name="imu" pos="0.00936556 0.0252249 0.015575" quat="1 -6e-12 -7e-12 -1e-12"/>
       <!-- Link lhip -->
       <body name="lhip" pos="0.0483654 0.0110706 -0.00541094" quat="0.153046 -0.153046 -0.690346 -0.690346">
         <!-- Joint from boddy to lhip -->
@@ -246,10 +246,10 @@
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_2 -->
           <geom class="visual" type="mesh" pos="0.0178642 0.0100559 -6.93889e-18" quat="0.5 -0.5 -0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Link tibia -->
-          <body name="tibia" pos="-0.0958522 -0.0588949 -0.0052" quat="5.27082e-17 0.872786 -0.488103 1.43925e-18">
+          <body name="tibia" pos="-0.0958522 -0.0588949 -0.0052" quat="0 0.872786 -0.488103 0">
             <!-- Joint from lfemur to tibia -->
             <joint axis="0 0 1" name="Lknee" type="hinge" range="-4 4" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-            <inertial pos="0.0149636 -0.0259177 0.001" mass="0.00458484" fullinertia="4.27206e-06 1.44e-06 5.70887e-06 2.45264e-06 -2.45454e-20 -9.96887e-21"/>
+            <inertial pos="0.0149636 -0.0259177 0.001" mass="0.00458484" fullinertia="4.27206e-06 1.44e-06 5.70887e-06 2.45264e-06 -0 -0"/>
             <!-- Part foot -->
             <geom class="visual" type="mesh" pos="-0.0887676 -0.05125 0.002" quat="3.70621e-15 0.5 0.866025 -8.05872e-16" mesh="foot" material="foot_material"/>
             <geom class="collision" type="sphere" pos="0.049 -0.0848705 0.001" quat="3.70621e-15 0.5 0.866025 -8.05872e-16" name="left_foot_collision" size="0.0025" contype="1" conaffinity="1"/>
@@ -258,12 +258,12 @@
             <!-- Part tibia -->
             <geom class="visual" type="mesh" pos="-0.0887676 -0.05125 0.002" quat="1.35432e-15 0.5 0.866025 -1.19178e-15" mesh="tibia" material="tibia_material"/>
             <!-- Frame left_foot -->
-            <site group="3" name="left_foot" pos="0.05025 -0.0870356 0.001" quat="0.5 -1.31895e-15 8.80508e-16 0.866025"/>
+            <site group="3" name="left_foot" pos="0.05025 -0.0870356 0.001" quat="0.5 -0 0 0.866025"/>
             <!-- Link rod -->
-            <body name="rod" pos="-0.0125 0.0216506 0.002" quat="2.9057e-16 1 -2.3922e-09 -6.04913e-16">
+            <body name="rod" pos="-0.0125 0.0216506 0.002" quat="0 1 -2.392e-09 -0">
               <!-- Joint from tibia to rod -->
               <joint axis="0 0 1" name="Lpassive2" type="hinge" range="-4 4" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
-              <inertial pos="-1.21555e-17 0.058455 -0.00392853" mass="0.0100309" fullinertia="2.05845e-05 3.51312e-07 2.03094e-05 2.75512e-21 -8.11153e-23 1.65405e-06"/>
+              <inertial pos="-0 0.058455 -0.00392853" mass="0.0100309" fullinertia="2.05845e-05 3.51312e-07 2.03094e-05 0 -0 1.65405e-06"/>
               <!-- Part mr63_19 -->
               <geom class="visual" type="mesh" pos="0 -6.93889e-18 6.93889e-18" quat="8.18598e-17 -0.707107 -0.707107 1.29391e-15" mesh="mr63" material="mr63_material"/>
               <!-- Part mr63_20 -->
@@ -273,9 +273,9 @@
               <!-- Part rod -->
               <geom class="visual" type="mesh" pos="-0.025 0.1025 0" quat="0 1 0 0" mesh="rod" material="rod_material"/>
               <!-- Frame closing_L_2 -->
-              <site group="3" name="closing_L_2" pos="-1.73472e-17 0.1125 -0.0176" quat="0.707107 -0 -0 0.707107"/>
+              <site group="3" name="closing_L_2" pos="-0 0.1125 -0.0176" quat="0.707107 -0 -0 0.707107"/>
               <!-- Frame closing_L_2_z -->
-              <site group="3" name="closing_L_2_z" pos="-2.08167e-17 0.1125 0.0824" quat="0.707107 -0 -0 0.707107"/>
+              <site group="3" name="closing_L_2_z" pos="-0 0.1125 0.0824" quat="0.707107 -0 -0 0.707107"/>
             </body>
           </body>
         </body>
@@ -283,7 +283,7 @@
         <body name="output__c331c3826e3aeff78bc4513233f2bf84" pos="-0.0175335 -0.00102929 0.0486642" quat="0.0096755 -0.607477 0.3619 0.707041">
           <!-- Joint from lhip to output__c331c3826e3aeff78bc4513233f2bf84 -->
           <joint axis="0 0 1" name="LpassiveMotor" type="hinge" range="-1.57 1.57" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
-          <inertial pos="-0.0072873 0.00447757 -0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 -2.81055e-24 -3.47577e-24"/>
+          <inertial pos="-0.0072873 0.00447757 -0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.3856e-08 1.21769e-07 4.4381e-08 -0 -0"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_3 -->
           <geom class="visual" type="mesh" pos="0.0178642 -0.0100559 -0.0024" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Frame closing_L_1 -->
@@ -407,10 +407,10 @@
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_5 -->
           <geom class="visual" type="mesh" pos="0.0178642 0.0100559 0.0024" quat="0.5 -0.5 -0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Link tibia_2 -->
-          <body name="tibia_2" pos="-0.0958522 -0.0588949 0.0052" quat="8.07135e-14 -0.488103 -0.872786 -6.50177e-14">
+          <body name="tibia_2" pos="-0.0958522 -0.0588949 0.0052" quat="0 -0.488103 -0.872786 -0">
             <!-- Joint from rfemur to tibia_2 -->
             <joint axis="0 0 1" name="Rknee" type="hinge" range="-4 4" frictionloss="0.01" armature="6.499e-05" damping="0.008824"/>
-            <inertial pos="-0.0149636 0.0259177 -0.001" mass="0.00458484" fullinertia="4.27206e-06 1.44e-06 5.70887e-06 2.45264e-06 9.46168e-22 3.8606e-22"/>
+            <inertial pos="-0.0149636 0.0259177 -0.001" mass="0.00458484" fullinertia="4.27206e-06 1.44e-06 5.70887e-06 2.45264e-06 0 0"/>
             <!-- Part collider_2 -->
             <geom class="collision" type="mesh" pos="-0.0887676 -0.05125 -0.002" quat="0.866025 6.65693e-17 -5.9862e-17 -0.5" mesh="collider" material="collider_material" name="right_tibia_collision" contype="4" conaffinity="4"/>
             <!-- Part tibia_2 -->
@@ -419,9 +419,9 @@
             <geom class="visual" type="mesh" pos="0.0887676 0.05125 4.51028e-17" quat="1.39141e-16 -0.866025 0.5 7.41526e-17" mesh="foot" material="foot_material"/>
             <geom class="collision" type="sphere" pos="-0.049 0.0848705 -0.001" quat="1.39141e-16 -0.866025 0.5 7.41526e-17" name="right_foot_collision" size="0.0025" contype="1" conaffinity="1"/>
             <!-- Frame right_foot -->
-            <site group="3" name="right_foot" pos="-0.05025 0.0870356 -0.001" quat="5.66084e-17 -0.866025 0.5 -3.60095e-17"/>
+            <site group="3" name="right_foot" pos="-0.05025 0.0870356 -0.001" quat="0 -0.866025 0.5 -0"/>
             <!-- Link rod_2 -->
-            <body name="rod_2" pos="0.0125 -0.0216506 -0.002" quat="5.66084e-17 -0.866025 0.5 -3.60095e-17">
+            <body name="rod_2" pos="0.0125 -0.0216506 -0.002" quat="0 -0.866025 0.5 -0">
               <!-- Joint from tibia_2 to rod_2 -->
               <joint axis="0 0 1" name="Rpassive2" type="hinge" range="-4 4" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
               <inertial pos="-0.0506236 -0.0292275 0.00392853" mass="0.0100309" fullinertia="5.40962e-06 1.55262e-05 2.03094e-05 -8.76125e-06 1.43245e-06 8.27026e-07"/>
@@ -434,9 +434,9 @@
               <!-- Part rod_2 -->
               <geom class="visual" type="mesh" pos="-0.101268 -0.0295994 1.75381e-14" quat="0.866025 6.59738e-14 7.91589e-14 -0.5" mesh="rod" material="rod_material"/>
               <!-- Frame closing_R_2 -->
-              <site group="3" name="closing_R_2" pos="-0.0974279 -0.05625 0.0176" quat="9.4524e-15 0.258819 -0.965926 -1.02698e-13"/>
+              <site group="3" name="closing_R_2" pos="-0.0974279 -0.05625 0.0176" quat="0 0.258819 -0.965926 -0"/>
               <!-- Frame closing_R_2_z -->
-              <site group="3" name="closing_R_2_z" pos="-0.0974279 -0.05625 -0.0824" quat="9.4524e-15 0.258819 -0.965926 -1.02698e-13"/>
+              <site group="3" name="closing_R_2_z" pos="-0.0974279 -0.05625 -0.0824" quat="0 0.258819 -0.965926 -0"/>
             </body>
           </body>
         </body>
@@ -444,44 +444,44 @@
         <body name="output__c331c3826e3aeff78bc4513233f2bf84_2" pos="-0.0175335 -0.00102929 -0.0486642" quat="0.0096755 0.607477 -0.3619 0.707041">
           <!-- Joint from rhip to output__c331c3826e3aeff78bc4513233f2bf84_2 -->
           <joint axis="0 0 1" name="RpassiveMotor" type="hinge" range="-1.57 1.57" frictionloss="0.0001" armature="1e-05" damping="0.0001" stiffness="0"/>
-          <inertial pos="-0.0072873 0.00447757 0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.38564e-08 1.21769e-07 4.43811e-08 -5.4544e-24 -3.33837e-24"/>
+          <inertial pos="-0.0072873 0.00447757 0.0012" mass="0.00145758" fullinertia="3.8895e-08 8.3856e-08 1.21769e-07 4.4381e-08 -0 -0"/>
           <!-- Part output__c331c3826e3aeff78bc4513233f2bf84_6 -->
           <geom class="visual" type="mesh" pos="0.0178642 -0.0100559 0" quat="0.5 0.5 0.5 -0.5" mesh="output__c331c3826e3aeff78bc4513233f2bf84" material="output__c331c3826e3aeff78bc4513233f2bf84_material"/>
           <!-- Frame closing_R_1 -->
-          <site group="3" name="closing_R_1" pos="-0.0213005 0.0130878 0.0022" quat="1 0 6.65835e-17 3.50296e-11"/>
+          <site group="3" name="closing_R_1" pos="-0.0213005 0.0130878 0.0022" quat="1 0 0 3.5e-11"/>
           <!-- Frame closing_R_1_z -->
-          <site group="3" name="closing_R_1_z" pos="-0.0213005 0.0130878 0.1022" quat="1 0 6.65835e-17 3.50296e-11"/>
+          <site group="3" name="closing_R_1_z" pos="-0.0213005 0.0130878 0.1022" quat="1 0 0 3.5e-11"/>
         </body>
       </body>
     </body>
   </worldbody>
   <asset>
-    <mesh file="trunclink.stl"/>
-    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="antenna.stl"/>
-    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="rod.stl"/>
-    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="foot.stl"/>
     <mesh file="gear1__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="enc_magnet.stl"/>
+    <mesh file="motor_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="kneelinkl.stl"/>
-    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="spacer__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="pcb_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="stator.stl"/>
-    <mesh file="collider.stl"/>
-    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
-    <mesh file="mr63.stl"/>
-    <mesh file="kneelinkr.stl"/>
-    <mesh file="brd.stl"/>
+    <mesh file="gear3__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="trunclink.stl"/>
     <mesh file="femur.stl"/>
     <mesh file="tibia.stl"/>
+    <mesh file="rod.stl"/>
+    <mesh file="enc_magnet.stl"/>
+    <mesh file="output_axis__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="kneelinkr.stl"/>
+    <mesh file="spacer_small__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="short_axe__c331c3826e3aeff78bc4513233f2bf84.stl"/>
     <mesh file="rotor.stl"/>
+    <mesh file="spring__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="collider.stl"/>
+    <mesh file="foot.stl"/>
+    <mesh file="gear2__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="brd.stl"/>
+    <mesh file="output_support__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="output__c331c3826e3aeff78bc4513233f2bf84.stl"/>
+    <mesh file="mr63.stl"/>
     <material name="trunclink_material" rgba="0.615686 0.811765 0.929412 1"/>
     <material name="antenna_material" rgba="0.498039 0.498039 0.498039 1"/>
     <material name="brd_material" rgba="0.972549 0.529412 0.00392157 1"/>

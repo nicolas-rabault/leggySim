@@ -21,7 +21,7 @@ from mjlab_leggy.leggy.leggy_actions import (
     joint_pos_motor,
     joint_vel_motor,
     joint_torques_motor,
-    body_quat,
+    body_euler,
 )
 from mjlab_leggy.leggy.leggy_rewards import joint_pos_limits_motor
 
@@ -72,12 +72,17 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         func=joint_vel_motor
     )
 
-    # Add body orientation quaternion (available from real IMU)
-    cfg.observations["policy"].terms["body_quat"] = ObservationTermCfg(
-        func=body_quat
+    # Remove projected_gravity (redundant with body orientation)
+    del cfg.observations["policy"].terms["projected_gravity"]
+    del cfg.observations["critic"].terms["projected_gravity"]
+
+    # Add body orientation as Euler angles (available from real IMU)
+    # This replaces projected_gravity with more complete orientation info
+    cfg.observations["policy"].terms["body_euler"] = ObservationTermCfg(
+        func=body_euler
     )
-    cfg.observations["critic"].terms["body_quat"] = ObservationTermCfg(
-        func=body_quat
+    cfg.observations["critic"].terms["body_euler"] = ObservationTermCfg(
+        func=body_euler
     )
 
     # Add motor torques (measured at motor outputs via torque sensors)
@@ -257,28 +262,21 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.observations["policy"].enable_corruption = True
     cfg.observations["policy"].corruption_std = 0.01
 
-    # Configure sensor delays
-    cfg.observations["policy"].terms["projected_gravity"] = deepcopy(
-        cfg.observations["policy"].terms["projected_gravity"]
-    )
+    # Configure sensor delays for IMU data
     cfg.observations["policy"].terms["base_ang_vel"] = deepcopy(
         cfg.observations["policy"].terms["base_ang_vel"]
     )
-    cfg.observations["policy"].terms["body_quat"] = deepcopy(
-        cfg.observations["policy"].terms["body_quat"]
+    cfg.observations["policy"].terms["body_euler"] = deepcopy(
+        cfg.observations["policy"].terms["body_euler"]
     )
 
     cfg.observations["policy"].terms["base_ang_vel"].delay_min_lag = 2
     cfg.observations["policy"].terms["base_ang_vel"].delay_max_lag = 4
     cfg.observations["policy"].terms["base_ang_vel"].delay_update_period = 64
 
-    cfg.observations["policy"].terms["projected_gravity"].delay_min_lag = 2
-    cfg.observations["policy"].terms["projected_gravity"].delay_max_lag = 4
-    cfg.observations["policy"].terms["projected_gravity"].delay_update_period = 64
-
-    cfg.observations["policy"].terms["body_quat"].delay_min_lag = 2
-    cfg.observations["policy"].terms["body_quat"].delay_max_lag = 4
-    cfg.observations["policy"].terms["body_quat"].delay_update_period = 64
+    cfg.observations["policy"].terms["body_euler"].delay_min_lag = 2
+    cfg.observations["policy"].terms["body_euler"].delay_max_lag = 4
+    cfg.observations["policy"].terms["body_euler"].delay_update_period = 64
 
     cfg.commands["twist"].ranges.ang_vel_z = (-1.0, 1.0)
     cfg.commands["twist"].ranges.lin_vel_y = (-0.3, 0.3)
