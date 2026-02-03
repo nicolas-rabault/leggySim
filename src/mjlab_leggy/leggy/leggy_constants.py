@@ -75,7 +75,7 @@ FULL_COLLISION = CollisionCfg(
 # Use existing position actuators defined in robot.xml
 # (LhipY, LhipX, Lknee, RhipY, RhipX, Rknee with kp=10, forcerange=0.236)
 LEGGY_ACTUATORS = XmlPositionActuatorCfg(
-    joint_names_expr=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"),
+    target_names_expr=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"),
 )
 
 LEGGY_ROBOT_CFG = EntityCfg(

@@ -9,7 +9,7 @@ description = "Training leggy to stand up in MJLab"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "mjlab @ git+https://github.com/mujocolab/mjlab.git@d1d32d8b86e68fe317356de2561f4efc63ffcc29",
+    "mjlab>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -36,4 +36,4 @@ src = ["src"]
 indent-width = 4
 
 [tool.uv]
-override-dependencies = ["mujoco"]
+override-dependencies = ["mujoco", "mujoco-warp>=0.0.2"]
