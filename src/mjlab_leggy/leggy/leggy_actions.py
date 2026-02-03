@@ -83,6 +83,14 @@ class LeggyJointAction(JointPositionAction):
     """
 
     cfg: LeggyJointActionCfg
+    _motor_limits: torch.Tensor | None = None
+
+    def __post_init__(self) -> None:
+        """Initialize motor limits after parent initialization."""
+        super().__post_init__()
+        # Motor limits will be initialized on first process_actions call
+        # when we have access to the asset data
+        self._motor_limits = None
 
     def process_actions(self, actions: torch.Tensor) -> None:
         """Convert motor commands to knee angles and store in processed_actions.
@@ -96,6 +104,36 @@ class LeggyJointAction(JointPositionAction):
 
         # Apply scale and offset (from parent class - includes HOME_FRAME default offset)
         self._processed_actions[:] = self._raw_actions * self._scale + self._offset
+
+        # Initialize motor limits on first call
+        if self._motor_limits is None:
+            # Get soft joint limits for motor joints (indices 2 and 5 correspond to Lmotor and Rmotor)
+            # In motor space, these correspond to the passive motor joint limits
+            asset = self._env.scene[self.cfg.asset_name]
+            joint_names = ["LpassiveMotor", "RpassiveMotor"]
+            motor_joint_ids = asset.find_joints(joint_names)[0]
+            motor_soft_limits = asset.data.soft_joint_pos_limits[:, motor_joint_ids]
+            # Store motor limits as [min_left, max_left, min_right, max_right]
+            self._motor_limits = torch.stack([
+                motor_soft_limits[0, 0, 0],  # Lmotor min
+                motor_soft_limits[0, 0, 1],  # Lmotor max
+                motor_soft_limits[0, 1, 0],  # Rmotor min
+                motor_soft_limits[0, 1, 1],  # Rmotor max
+            ]).to(self._processed_actions.device)
+
+        # Clamp motor commands to respect motor limits BEFORE converting to knee space
+        # This ensures that we never command a knee position that would require
+        # an impossible motor position
+        self._processed_actions[:, 2] = torch.clamp(
+            self._processed_actions[:, 2],
+            min=self._motor_limits[0],
+            max=self._motor_limits[1]
+        )
+        self._processed_actions[:, 5] = torch.clamp(
+            self._processed_actions[:, 5],
+            min=self._motor_limits[2],
+            max=self._motor_limits[3]
+        )
 
         # Convert motor commands to knee commands (indices 2 and 5)
         # Use target hipX values (indices 1 and 4) for the conversion

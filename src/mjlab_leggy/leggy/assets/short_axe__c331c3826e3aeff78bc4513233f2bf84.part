@@ -1,8 +1,8 @@
 {
     "configuration": "Gear_depth=0.003+meter;Last_gear=56.0;Middle_gear=50.0;Module=0.5;Small_gear=20.0",
     "documentId": "4e205097f2e70aec4e41eedb",
-    "documentMicroversion": "38b653cf65f4e763da81c516",
-    "documentVersion": "dfab45f52715e2a7f2723413",
+    "documentMicroversion": "9c2828d0e91987d5533b4462",
+    "documentVersion": "77a7de158165dde39f18133e",
     "elementId": "9b8e349f1695f82e8a497351",
     "fullConfiguration": "Gear_depth=0.003+meter;Last_gear=56.0;Middle_gear=50.0;Module=0.5;Small_gear=20.0",
     "id": "MjCP/FwtrbAjZnCtN",
