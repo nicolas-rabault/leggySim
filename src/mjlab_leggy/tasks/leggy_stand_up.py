@@ -128,7 +128,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     twist_cmd.ranges.lin_vel_y = (-0.8, 0.3)  # Forward velocity in m/s
     twist_cmd.ranges.lin_vel_x = (-0.2, 0.2)  # Lateral velocity in m/s - side-stepping
     twist_cmd.rel_standing_envs = 0.5  # Fraction with zero velocity command
-    twist_cmd.rel_heading_envs = 0.0
+    twist_cmd.rel_heading_envs = 0.5
 
     # -------------------------------------------------------------------------
     # Update asset references for Leggy's geometry
