@@ -42,26 +42,50 @@
   "geom_properties": {
     "collider": {
       "collision": {
+        "name": "left_tibia_collision",
         "contype": 4,
-        "conaffinity": 4
+        "conaffinity": 4,
+        "condim": 1
       }
     },
     "collider_2": {
       "collision": {
+        "name": "right_tibia_collision",
         "contype": 4,
-        "conaffinity": 4
+        "conaffinity": 4,
+        "condim": 1
       }
     },
     "rod": {
       "collision": {
+        "name": "left_rod_collision",
         "contype": 4,
-        "conaffinity": 4
+        "conaffinity": 4,
+        "condim": 1
       }
     },
     "rod_2": {
       "collision": {
+        "name": "right_rod_collision",
         "contype": 4,
-        "conaffinity": 4
+        "conaffinity": 4,
+        "condim": 1
+      }
+    },
+    "femur": {
+      "collision": {
+        "name": "left_femur_collision",
+        "contype": 4,
+        "conaffinity": 4,
+        "condim": 1
+      }
+    },
+    "femur_2": {
+      "collision": {
+        "name": "right_femur_collision",
+        "contype": 4,
+        "conaffinity": 4,
+        "condim": 1
       }
     },
     "foot": {
@@ -71,7 +95,9 @@
         "size": 0.0025,
         "pos": "0.049 -0.0848705 0.001",
         "contype": 1,
-        "conaffinity": 1
+        "conaffinity": 1,
+        "condim": 3,
+        "priority": 1
       }
     },
     "foot_2": {
@@ -81,7 +107,9 @@
         "size": 0.0025,
         "pos": "-0.049 0.0848705 -0.001",
         "contype": 1,
-        "conaffinity": 1
+        "conaffinity": 1,
+        "condim": 3,
+        "priority": 1
       }
     }
   },
@@ -96,7 +124,8 @@
     "*": "collision",
     "!Collider": "collision",
     "!Foot*": "collision",
-    "!Rod*": "collision"
+    "!Rod*": "collision",
+    "!Femur*": "collision"
   },
   // Override equality attributes
   "equalities": {
