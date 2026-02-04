@@ -25,7 +25,8 @@ from mjlab_leggy.leggy.leggy_actions import (
     joint_torques_motor,
     body_euler,
 )
-from mjlab_leggy.leggy.leggy_rewards import joint_pos_limits_motor
+from mjlab_leggy.leggy.leggy_rewards import joint_pos_limits_motor, leg_collision_penalty
+from mjlab_leggy.leggy.leggy_terminations import illegal_contact_curriculum
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -374,6 +375,17 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=("boddy",))},
     )
 
+    # Leg collision penalty - soft constraint to discourage leg-leg contact
+    # This provides continuous feedback before the hard termination kicks in
+    # Helps shape the policy away from collision-prone configurations
+    cfg.rewards["leg_collision_penalty"] = RewardTermCfg(
+        func=leg_collision_penalty,
+        weight=-5.0,
+        params={
+            "sensor_name": "leg_collision_ltibia_rtibia",
+        },
+    )
+
     # -------------------------------------------------------------------------
     # Terrain configuration
     # -------------------------------------------------------------------------
@@ -440,42 +452,80 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     )
 
     # Hard constraint: Leg self-collision - terminates when legs collide with each other
+    # Uses curriculum learning: only activates after iteration 1000 AND mean episode length > 100
+    # This prevents the agent from finding a local minimum by just falling slowly
     # Check all 9 leg-leg collision sensor pairs
     cfg.terminations["leg_collision_ltibia_rtibia"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_ltibia_rtibia"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_ltibia_rtibia",
+            "enable_after_iterations": 300,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_ltibia_rfemur"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_ltibia_rfemur"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_ltibia_rfemur",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_ltibia_rrod"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_ltibia_rrod"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_ltibia_rrod",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_lfemur_rtibia"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_lfemur_rtibia"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_lfemur_rtibia",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_lfemur_rfemur"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_lfemur_rfemur"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_lfemur_rfemur",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_lfemur_rrod"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_lfemur_rrod"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_lfemur_rrod",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_lrod_rtibia"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_lrod_rtibia"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_lrod_rtibia",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_lrod_rfemur"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_lrod_rfemur"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_lrod_rfemur",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
     cfg.terminations["leg_collision_lrod_rrod"] = TerminationTermCfg(
-        func=illegal_contact,
-        params={"sensor_name": "leg_collision_lrod_rrod"},
+        func=illegal_contact_curriculum,
+        params={
+            "sensor_name": "leg_collision_lrod_rrod",
+            "enable_after_iterations": 1000,
+            "mean_episode_length_threshold": 100.0,
+        },
     )
 
     # Hard constraint: Bad orientation (fell_over) - already configured by default

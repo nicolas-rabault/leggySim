@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import torch
 
 from mjlab.managers.scene_entity_config import SceneEntityCfg
+from mjlab.sensor import ContactSensor
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv
@@ -51,6 +52,30 @@ def joint_pos_limits_motor(
     return torch.sum(out_of_limits, dim=1)
 
 
+def leg_collision_penalty(env: ManagerBasedRlEnv, sensor_name: str) -> torch.Tensor:
+    """Penalize leg-leg collisions.
+
+    Provides continuous penalty signal when legs collide with each other.
+    This acts as a soft constraint before the hard termination kicks in.
+
+    Args:
+        env: The environment.
+        sensor_name: Name of the contact sensor to check.
+
+    Returns:
+        Penalty value (1.0 if collision detected, 0.0 otherwise).
+    """
+    sensor: ContactSensor = env.scene[sensor_name]
+    assert sensor.data.found is not None
+
+    # Return 1.0 for environments with collision, 0.0 otherwise
+    # This will be multiplied by negative weight to create penalty
+    collision_detected = torch.any(sensor.data.found, dim=-1).float()
+
+    return collision_detected
+
+
 __all__ = [
     "joint_pos_limits_motor",
+    "leg_collision_penalty",
 ]
