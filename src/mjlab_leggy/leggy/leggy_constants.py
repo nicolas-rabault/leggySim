@@ -57,15 +57,6 @@ HOME_FRAME = EntityCfg.InitialStateCfg(
     ang_vel=(0.0, 0.0, 0.0),
 )
 
-FULL_COLLISION = CollisionCfg(
-    geom_names_expr=[".*_collision"],
-    # Friction: (sliding, torsional, rolling) - higher sliding = less slip
-    friction={r"^(left|right)_foot_collision$": (1.5, 0.005, 0.0001)},
-    # solref: (timeconst, dampratio) - smaller timeconst = stiffer, less bouncy
-    solref={r"^(left|right)_foot_collision$": (0.005, 1.0)},
-    # solimp: (dmin, dmax, width, midpoint, power) - higher values = less penetration
-    solimp={r"^(left|right)_foot_collision$": (0.995, 0.9995, 0.001, 0.5, 2)},
-)
 
 # Use existing position actuators defined in robot.xml
 # (LhipY, LhipX, Lknee, RhipY, RhipX, Rknee with kp=10, forcerange=0.236)
@@ -76,7 +67,7 @@ LEGGY_ACTUATORS = XmlPositionActuatorCfg(
 LEGGY_ROBOT_CFG = EntityCfg(
     spec_fn=get_spec,
     init_state=HOME_FRAME,
-    collisions=(FULL_COLLISION,),
+    collisions=(),  # Empty - rely on config.json for all collision properties
     articulation=EntityArticulationInfoCfg(
         actuators=(LEGGY_ACTUATORS,),
         soft_joint_pos_limit_factor=0.9,
