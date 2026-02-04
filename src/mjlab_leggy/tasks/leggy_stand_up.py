@@ -14,6 +14,7 @@ from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
+from mjlab.tasks.manipulation.mdp.terminations import illegal_contact
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
@@ -114,9 +115,107 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         track_air_time=True,
     )
 
-    # Note: Leggy only has foot collision geoms, so we rely on orientation
-    # and height checks for hard constraints instead of contact sensors
-    cfg.scene.sensors = (feet_ground_cfg,)
+    # Leg self-collision sensors - detect contacts between left and right leg parts
+    # Each sensor monitors one specific geom pair to avoid secondary_policy issues
+    # Left leg: left_femur_collision, left_tibia_collision, left_rod_collision
+    # Right leg: right_femur_collision, right_tibia_collision, right_rod_collision
+
+    # Left tibia vs right leg parts (most likely collision)
+    leg_collision_ltibia_rtibia = ContactSensorCfg(
+        name="leg_collision_ltibia_rtibia",
+        primary=ContactMatch(mode="geom", pattern="left_tibia_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_tibia_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    leg_collision_ltibia_rfemur = ContactSensorCfg(
+        name="leg_collision_ltibia_rfemur",
+        primary=ContactMatch(mode="geom", pattern="left_tibia_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_femur_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    leg_collision_ltibia_rrod = ContactSensorCfg(
+        name="leg_collision_ltibia_rrod",
+        primary=ContactMatch(mode="geom", pattern="left_tibia_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_rod_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    # Left femur vs right leg parts
+    leg_collision_lfemur_rtibia = ContactSensorCfg(
+        name="leg_collision_lfemur_rtibia",
+        primary=ContactMatch(mode="geom", pattern="left_femur_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_tibia_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    leg_collision_lfemur_rfemur = ContactSensorCfg(
+        name="leg_collision_lfemur_rfemur",
+        primary=ContactMatch(mode="geom", pattern="left_femur_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_femur_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    leg_collision_lfemur_rrod = ContactSensorCfg(
+        name="leg_collision_lfemur_rrod",
+        primary=ContactMatch(mode="geom", pattern="left_femur_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_rod_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    # Left rod vs right leg parts
+    leg_collision_lrod_rtibia = ContactSensorCfg(
+        name="leg_collision_lrod_rtibia",
+        primary=ContactMatch(mode="geom", pattern="left_rod_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_tibia_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    leg_collision_lrod_rfemur = ContactSensorCfg(
+        name="leg_collision_lrod_rfemur",
+        primary=ContactMatch(mode="geom", pattern="left_rod_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_femur_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    leg_collision_lrod_rrod = ContactSensorCfg(
+        name="leg_collision_lrod_rrod",
+        primary=ContactMatch(mode="geom", pattern="left_rod_collision", entity="robot"),
+        secondary=ContactMatch(mode="geom", pattern="right_rod_collision", entity="robot"),
+        fields=("found",),
+        reduce="maxforce",
+        num_slots=1,
+    )
+
+    cfg.scene.sensors = (
+        feet_ground_cfg,
+        leg_collision_ltibia_rtibia,
+        leg_collision_ltibia_rfemur,
+        leg_collision_ltibia_rrod,
+        leg_collision_lfemur_rtibia,
+        leg_collision_lfemur_rfemur,
+        leg_collision_lfemur_rrod,
+        leg_collision_lrod_rtibia,
+        leg_collision_lrod_rfemur,
+        leg_collision_lrod_rrod,
+    )
 
     # Configure viewer (main body is called "boddy" in robot.xml)
     cfg.viewer.body_name = "boddy"
@@ -338,6 +437,45 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.terminations["body_below_floor"] = TerminationTermCfg(
         func=mdp_terminations.root_height_below_minimum,
         params={"minimum_height": 0.00},  # meters
+    )
+
+    # Hard constraint: Leg self-collision - terminates when legs collide with each other
+    # Check all 9 leg-leg collision sensor pairs
+    cfg.terminations["leg_collision_ltibia_rtibia"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_ltibia_rtibia"},
+    )
+    cfg.terminations["leg_collision_ltibia_rfemur"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_ltibia_rfemur"},
+    )
+    cfg.terminations["leg_collision_ltibia_rrod"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_ltibia_rrod"},
+    )
+    cfg.terminations["leg_collision_lfemur_rtibia"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_lfemur_rtibia"},
+    )
+    cfg.terminations["leg_collision_lfemur_rfemur"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_lfemur_rfemur"},
+    )
+    cfg.terminations["leg_collision_lfemur_rrod"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_lfemur_rrod"},
+    )
+    cfg.terminations["leg_collision_lrod_rtibia"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_lrod_rtibia"},
+    )
+    cfg.terminations["leg_collision_lrod_rfemur"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_lrod_rfemur"},
+    )
+    cfg.terminations["leg_collision_lrod_rrod"] = TerminationTermCfg(
+        func=illegal_contact,
+        params={"sensor_name": "leg_collision_lrod_rrod"},
     )
 
     # Hard constraint: Bad orientation (fell_over) - already configured by default
