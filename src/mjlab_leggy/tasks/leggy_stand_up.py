@@ -14,7 +14,6 @@ from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
-from mjlab.tasks.manipulation.mdp.terminations import illegal_contact
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
@@ -26,7 +25,6 @@ from mjlab_leggy.leggy.leggy_actions import (
     body_euler,
 )
 from mjlab_leggy.leggy.leggy_rewards import joint_pos_limits_motor, leg_collision_penalty
-from mjlab_leggy.leggy.leggy_terminations import illegal_contact_curriculum
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -449,83 +447,6 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.terminations["body_below_floor"] = TerminationTermCfg(
         func=mdp_terminations.root_height_below_minimum,
         params={"minimum_height": 0.00},  # meters
-    )
-
-    # Hard constraint: Leg self-collision - terminates when legs collide with each other
-    # Uses curriculum learning: only activates after iteration 1000 AND mean episode length > 100
-    # This prevents the agent from finding a local minimum by just falling slowly
-    # Check all 9 leg-leg collision sensor pairs
-    cfg.terminations["leg_collision_ltibia_rtibia"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_ltibia_rtibia",
-            "enable_after_iterations": 300,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_ltibia_rfemur"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_ltibia_rfemur",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_ltibia_rrod"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_ltibia_rrod",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_lfemur_rtibia"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_lfemur_rtibia",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_lfemur_rfemur"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_lfemur_rfemur",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_lfemur_rrod"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_lfemur_rrod",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_lrod_rtibia"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_lrod_rtibia",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_lrod_rfemur"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_lrod_rfemur",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
-    )
-    cfg.terminations["leg_collision_lrod_rrod"] = TerminationTermCfg(
-        func=illegal_contact_curriculum,
-        params={
-            "sensor_name": "leg_collision_lrod_rrod",
-            "enable_after_iterations": 1000,
-            "mean_episode_length_threshold": 100.0,
-        },
     )
 
     # Hard constraint: Bad orientation (fell_over) - already configured by default
