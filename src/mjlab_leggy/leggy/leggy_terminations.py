@@ -1,4 +1,4 @@
-"""Custom termination functions for Leggy robot with debug output."""
+"""Custom termination functions for Leggy robot."""
 
 from __future__ import annotations
 
@@ -13,17 +13,11 @@ if TYPE_CHECKING:
 
 
 def illegal_contact_debug(env: ManagerBasedRlEnv, sensor_name: str) -> torch.Tensor:
-    """Terminate on illegal contact with debug output."""
+    """Terminate on illegal contact."""
     sensor: ContactSensor = env.scene[sensor_name]
     assert sensor.data.found is not None
 
     result = torch.any(sensor.data.found, dim=-1)
-
-    # Print debug info when contact is detected
-    if torch.any(result):
-        print(f"\n[LEG COLLISION DETECTED] Sensor: {sensor_name}")
-        print(f"  found data: {sensor.data.found}")
-        print(f"  Environments with collision: {torch.where(result)[0].tolist()}")
 
     return result
 
@@ -70,12 +64,6 @@ def illegal_contact_curriculum(
 
     # Normal collision detection after curriculum phase
     result = torch.any(sensor.data.found, dim=-1)
-
-    # Print debug info when contact is detected (only when active)
-    if torch.any(result):
-        print(f"\n[LEG COLLISION DETECTED - CURRICULUM ACTIVE] Sensor: {sensor_name}")
-        print(f"  Iteration: {current_iteration}, Mean Episode Length: {mean_ep_length:.1f}")
-        print(f"  Environments with collision: {torch.where(result)[0].tolist()}")
 
     return result
 
