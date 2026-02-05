@@ -220,19 +220,6 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.viewer.body_name = "boddy"
 
     # -------------------------------------------------------------------------
-    # Velocity command ranges
-    # -------------------------------------------------------------------------
-    # During training, commands are sampled uniformly from these ranges.
-    # 80% of environments receive zero velocity (standing still) for balance training.
-    twist_cmd = cfg.commands["twist"]
-    twist_cmd.viz.z_offset = 1.0
-    twist_cmd.ranges.ang_vel_z = (-0.2, 0.2)  # Yaw rate in rad/s - controls turning
-    twist_cmd.ranges.lin_vel_y = (-0.8, 0.3)  # Forward velocity in m/s
-    twist_cmd.ranges.lin_vel_x = (-0.2, 0.2)  # Lateral velocity in m/s - side-stepping
-    twist_cmd.rel_standing_envs = 0.5  # Fraction with zero velocity command
-    twist_cmd.rel_heading_envs = 0.5
-
-    # -------------------------------------------------------------------------
     # Update asset references for Leggy's geometry
     # -------------------------------------------------------------------------
     # Foot sites for observations
@@ -370,7 +357,49 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # Disable terrain curriculum
     del cfg.curriculum["terrain_levels"]
-    # del cfg.curriculum["command_vel"]
+
+    # Configure custom command velocity curriculum
+    # Progressively increases velocity ranges to target values at lines 227-232
+    del cfg.curriculum["command_vel"]  # Remove default curriculum
+    from mjlab.managers.curriculum_manager import CurriculumTermCfg
+    from mjlab.tasks.velocity.mdp.curriculums import commands_vel
+
+    cfg.curriculum["command_vel"] = CurriculumTermCfg(
+        func=commands_vel,
+        params={
+            "command_name": "twist",
+            "velocity_stages": [
+                # Stage 0: almost stand still for initial learning
+                {
+                    "step": 0,
+                    "lin_vel_x": (-0.1, 0.1),
+                    "lin_vel_y": (-0.1, 0.1),
+                    "ang_vel_z": (-0.1, 0.1),
+                },
+                # Stage 1: Intermediate values at ~5k iterations (120k env steps)
+                {
+                    "step": 5000 * 24,
+                    "lin_vel_x": (-0.15, 0.15),
+                    "lin_vel_y": (-0.8, 0.2),
+                    "ang_vel_z": (-0.2, 0.2),
+                },
+                # Stage 2: Intermediate values at ~10k iterations (240k env steps)
+                {
+                    "step": 10000 * 24,
+                    "lin_vel_x": (-0.2, 0.2),
+                    "lin_vel_y": (-1.8, 0.3),
+                    "ang_vel_z": (-0.6, 0.6),
+                },
+                # Stage 3: Full target values at ~15k iterations (360k env steps)
+                {
+                    "step": 15000 * 24,
+                    "lin_vel_x": (-0.4, 0.4),
+                    "lin_vel_y": (-3.0, 0.5),
+                    "ang_vel_z": (-1.0, 1.0),
+                },
+            ],
+        },
+    )
 
     # -------------------------------------------------------------------------
     # Observation history and corruption (sim-to-real)
@@ -400,10 +429,6 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.observations["policy"].terms["body_euler"].delay_max_lag = 4
     cfg.observations["policy"].terms["body_euler"].delay_update_period = 64
 
-    cfg.commands["twist"].ranges.ang_vel_z = (-1.0, 1.0)
-    cfg.commands["twist"].ranges.lin_vel_y = (-0.3, 0.3)
-    cfg.commands["twist"].ranges.lin_vel_x = (-0.3, 0.3)
-
     cfg.events["push_robot"].params["velocity_range"] = {
         "x": (-0.8, 0.8),
         "y": (-0.8, 0.8),
@@ -430,10 +455,16 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.observations["policy"].enable_corruption = False
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
-        # Disable velocity commands
-        # cfg.commands["twist"].ranges.ang_vel_z = (0.0, 0.0)
-        # cfg.commands["twist"].ranges.lin_vel_y = (0.0, 0.0)
-        # cfg.commands["twist"].ranges.lin_vel_x = (0.0, 0.0)
+
+        # Disable curriculum in play mode
+        cfg.curriculum.pop("command_vel", None)
+
+        # Set play mode twist ranges (will persist across episodes)
+        cfg.commands["twist"].ranges.ang_vel_z = (-0.2, 0.2)
+        cfg.commands["twist"].ranges.lin_vel_y = (-3.0, 0.3)
+        cfg.commands["twist"].ranges.lin_vel_x = (-0.2, 0.2)
+        cfg.commands["twist"].rel_standing_envs = 0.2
+        cfg.commands["twist"].rel_heading_envs = 0.5
 
     return cfg
 
