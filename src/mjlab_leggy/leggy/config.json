@@ -97,7 +97,9 @@
         "contype": 1,
         "conaffinity": 1,
         "condim": 3,
-        "priority": 1
+        "priority": 1,
+        "solref": "0.002 1.0",
+        "solimp": "0.998 0.9998 0.0005 0.5 2"
       }
     },
     "foot_2": {
@@ -109,7 +111,9 @@
         "contype": 1,
         "conaffinity": 1,
         "condim": 3,
-        "priority": 1
+        "priority": 1,
+        "solref": "0.002 1.0",
+        "solimp": "0.998 0.9998 0.0005 0.5 2"
       }
     }
   },
