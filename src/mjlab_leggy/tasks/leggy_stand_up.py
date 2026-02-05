@@ -341,37 +341,6 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -------------------------------------------------------------------------
     # Soft Constraints (Penalties)
     # -------------------------------------------------------------------------
-    # These act as soft constraints similar to Bolt's max_p=0.25 constraints
-    # They penalize behavior without causing termination
-
-    # Joint torque limits - prevents excessive motor torque
-    cfg.rewards["joint_torques"] = RewardTermCfg(
-        func=mdp_rewards.joint_torques_l2,
-        weight=-1e-4,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"))},
-    )
-
-    # Joint velocity limits - prevents unrealistic joint speeds
-    cfg.rewards["joint_vel_limits"] = RewardTermCfg(
-        func=mdp_rewards.joint_vel_l2,
-        weight=-1e-4,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"))},
-    )
-
-    # Joint acceleration limits - smooths motion and prevents simulation artifacts
-    cfg.rewards["joint_acc_limits"] = RewardTermCfg(
-        func=mdp_rewards.joint_acc_l2,
-        weight=-2.5e-7,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"))},
-    )
-
-    # Flat orientation constraint - tighter than the upright reward
-    # This acts as a soft constraint on base orientation similar to Bolt's 0.1 rad limit
-    cfg.rewards["flat_orientation_penalty"] = RewardTermCfg(
-        func=mdp_rewards.flat_orientation_l2,
-        weight=-0.5,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=("boddy",))},
-    )
 
     # Leg collision penalty - soft constraint to discourage leg-leg contact
     # This provides continuous feedback before the hard termination kicks in
