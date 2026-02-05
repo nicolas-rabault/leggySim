@@ -75,7 +75,286 @@ def leg_collision_penalty(env: ManagerBasedRlEnv, sensor_name: str) -> torch.Ten
     return collision_detected
 
 
+def vertical_velocity_reward(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    command_name: str = "jump_command"
+) -> torch.Tensor:
+    """Reward upward velocity when jump command is active.
+
+    Encourages explosive extension to achieve liftoff.
+    Uses exponential scaling to strongly reward higher velocities.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+        command_name: Name of the command manager with jump signal.
+
+    Returns:
+        Reward based on vertical velocity (0 if not jumping).
+    """
+    asset = env.scene[asset_cfg.name]
+    vertical_vel = asset.data.root_lin_vel_w[:, 2]  # Z component (up is positive)
+
+    # Get jump command (expected to be 0 or >0 for jump height target)
+    jump_cmd = env.command_manager.get_command(command_name)[:, 0]  # First element is jump height
+
+    # Only reward during jump command (jump_cmd > 0)
+    is_jumping = (jump_cmd > 0.01).float()
+
+    # Exponential reward for upward velocity: exp(5 * vel_z)
+    # vel_z = 0.0 -> reward = 1.0
+    # vel_z = 0.2 -> reward = 2.72
+    # vel_z = 0.5 -> reward = 12.18
+    reward = torch.exp(5.0 * vertical_vel.clamp(min=0.0, max=1.0)) * is_jumping
+
+    return reward
+
+
+def joint_extension_speed(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    command_name: str = "jump_command"
+) -> torch.Tensor:
+    """Reward rapid joint extension during jump.
+
+    Encourages coordinated explosive movement of knees and hips.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+        command_name: Name of the command manager with jump signal.
+
+    Returns:
+        Reward based on extension velocity.
+    """
+    asset = env.scene[asset_cfg.name]
+
+    # Get knee and hip joint velocities
+    joint_names = ["LhipX", "Lknee", "RhipX", "Rknee"]
+    joint_ids = asset.find_joints(joint_names)[0]
+    joint_vel = asset.data.joint_vel[:, joint_ids]
+
+    # Get jump command
+    jump_cmd = env.command_manager.get_command(command_name)[:, 0]
+    is_jumping = (jump_cmd > 0.01).float()
+
+    # Extension is positive velocity (opening joints)
+    # Sum positive velocities for all extension joints
+    extension_vel = torch.sum(torch.clamp(joint_vel, min=0.0), dim=1)
+
+    return extension_vel * is_jumping
+
+
+def leg_coordination(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Reward symmetric leg movement.
+
+    Penalizes asymmetric extension which would cause rotation.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+
+    Returns:
+        Penalty for asymmetric leg movement.
+    """
+    asset = env.scene[asset_cfg.name]
+
+    # Get joint velocities
+    joint_names = ["LhipX", "Lknee", "RhipX", "Rknee"]
+    joint_ids = asset.find_joints(joint_names)[0]
+    joint_vel = asset.data.joint_vel[:, joint_ids]
+
+    # Compute extension velocity per leg
+    left_extension = joint_vel[:, 0] + joint_vel[:, 1]  # LhipX + Lknee
+    right_extension = joint_vel[:, 2] + joint_vel[:, 3]  # RhipX + Rknee
+
+    # Penalize difference (want symmetric movement)
+    asymmetry = torch.abs(left_extension - right_extension)
+
+    return -asymmetry
+
+
+def air_time_both_feet(
+    env: ManagerBasedRlEnv,
+    sensor_name: str = "feet_ground_contact",
+    command_name: str = "jump_command"
+) -> torch.Tensor:
+    """Reward time with both feet off ground.
+
+    Core jumping reward - encourages liftoff.
+
+    Args:
+        env: The environment.
+        sensor_name: Name of the contact sensor.
+        command_name: Name of the command manager with jump signal.
+
+    Returns:
+        Reward when both feet are airborne.
+    """
+    sensor: ContactSensor = env.scene[sensor_name]
+
+    # Get contact state for both feet
+    # sensor.data.found shape: (num_envs, num_feet, num_slots)
+    contact = sensor.data.found[:, :, 0]  # (num_envs, 2)
+
+    # Both feet off ground: both contacts are False
+    both_feet_off = (~contact[:, 0]) & (~contact[:, 1])
+
+    # Get jump command
+    jump_cmd = env.command_manager.get_command(command_name)[:, 0]
+    is_jumping = (jump_cmd > 0.01).float()
+
+    return both_feet_off.float() * is_jumping
+
+
+def jump_height_reward(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    standing_height: float = 0.18,
+    command_name: str = "jump_command"
+) -> torch.Tensor:
+    """Reward height above standing position.
+
+    Encourages maximizing jump height.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+        standing_height: Expected standing height in meters.
+        command_name: Name of the command manager with jump signal.
+
+    Returns:
+        Reward based on height gain.
+    """
+    asset = env.scene[asset_cfg.name]
+    current_height = asset.data.root_pos_w[:, 2]
+
+    # Get jump command
+    jump_cmd = env.command_manager.get_command(command_name)[:, 0]
+    is_jumping = (jump_cmd > 0.01).float()
+
+    # Reward height above standing
+    height_gain = torch.clamp(current_height - standing_height, min=0.0)
+
+    return height_gain * is_jumping * 10.0  # Scale for visibility
+
+
+def landing_stability(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    sensor_name: str = "feet_ground_contact"
+) -> torch.Tensor:
+    """Reward maintaining upright orientation after landing.
+
+    Encourages stable landing without falling.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+        sensor_name: Name of the contact sensor.
+
+    Returns:
+        Reward for upright orientation when in contact.
+    """
+    asset = env.scene[asset_cfg.name]
+    sensor: ContactSensor = env.scene[sensor_name]
+
+    # Get orientation (roll, pitch)
+    quat = asset.data.root_quat_w
+    # Convert quaternion to euler angles (simplified for roll/pitch)
+    # For small angles, can use approximation
+    roll = 2.0 * (quat[:, 0] * quat[:, 1] + quat[:, 2] * quat[:, 3])
+    pitch = 2.0 * (quat[:, 0] * quat[:, 2] - quat[:, 3] * quat[:, 1])
+
+    # Get contact state
+    contact = sensor.data.found[:, :, 0]
+    any_foot_contact = contact[:, 0] | contact[:, 1]
+
+    # Reward low roll/pitch when in contact (landing phase)
+    orientation_reward = torch.exp(-10.0 * (torch.abs(roll) + torch.abs(pitch)))
+
+    return orientation_reward * any_foot_contact.float()
+
+
+def crouch_depth_tracking(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    target_crouch_height: float = 0.12,
+    command_name: str = "jump_command"
+) -> torch.Tensor:
+    """Reward achieving target crouch depth.
+
+    Trains the robot to prepare for jumping by crouching.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+        target_crouch_height: Target height when crouched (meters).
+        command_name: Name of the command manager with jump signal.
+
+    Returns:
+        Reward for matching crouch depth.
+    """
+    asset = env.scene[asset_cfg.name]
+    current_height = asset.data.root_pos_w[:, 2]
+
+    # Get jump command (when 0, should crouch; when >0, should jump)
+    jump_cmd = env.command_manager.get_command(command_name)[:, 0]
+    should_crouch = (jump_cmd < 0.01).float()
+
+    # Reward matching crouch height
+    height_error = torch.abs(current_height - target_crouch_height)
+    reward = torch.exp(-10.0 * height_error)
+
+    return reward * should_crouch
+
+
+def soft_landing_bonus(
+    env: ManagerBasedRlEnv,
+    sensor_name: str = "feet_ground_contact",
+    max_force_threshold: float = 10.0
+) -> torch.Tensor:
+    """Reward gentle landings with low impact forces.
+
+    Penalizes hard impacts that could damage the robot.
+
+    Args:
+        env: The environment.
+        sensor_name: Name of the contact sensor.
+        max_force_threshold: Maximum acceptable force (N).
+
+    Returns:
+        Penalty for hard impacts.
+    """
+    sensor: ContactSensor = env.scene[sensor_name]
+
+    # Get contact forces
+    forces = sensor.data.force[:, :, 0, :]  # (num_envs, num_feet, 3)
+    # Compute normal force (Z component)
+    normal_forces = forces[:, :, 2]  # (num_envs, 2)
+
+    # Get peak force
+    peak_force = torch.max(torch.abs(normal_forces), dim=1)[0]
+
+    # Penalty for excessive force
+    penalty = torch.clamp(peak_force - max_force_threshold, min=0.0) / max_force_threshold
+
+    return -penalty
+
+
 __all__ = [
     "joint_pos_limits_motor",
     "leg_collision_penalty",
+    "vertical_velocity_reward",
+    "joint_extension_speed",
+    "leg_coordination",
+    "air_time_both_feet",
+    "jump_height_reward",
+    "landing_stability",
+    "crouch_depth_tracking",
+    "soft_landing_bonus",
 ]
