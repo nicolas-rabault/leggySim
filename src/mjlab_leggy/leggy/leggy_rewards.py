@@ -280,39 +280,6 @@ def landing_stability(
     return orientation_reward * any_foot_contact.float()
 
 
-def crouch_depth_tracking(
-    env: ManagerBasedRlEnv,
-    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-    target_crouch_height: float = 0.12,
-    command_name: str = "jump_command"
-) -> torch.Tensor:
-    """Reward achieving target crouch depth.
-
-    Trains the robot to prepare for jumping by crouching.
-
-    Args:
-        env: The environment.
-        asset_cfg: Asset configuration.
-        target_crouch_height: Target height when crouched (meters).
-        command_name: Name of the command manager with jump signal.
-
-    Returns:
-        Reward for matching crouch depth.
-    """
-    asset = env.scene[asset_cfg.name]
-    current_height = asset.data.root_pos_w[:, 2]
-
-    # Get jump command (when 0, should crouch; when >0, should jump)
-    jump_cmd = env.command_manager.get_command(command_name)[:, 0]
-    should_crouch = (jump_cmd < 0.01).float()
-
-    # Reward matching crouch height
-    height_error = torch.abs(current_height - target_crouch_height)
-    reward = torch.exp(-10.0 * height_error)
-
-    return reward * should_crouch
-
-
 def soft_landing_bonus(
     env: ManagerBasedRlEnv,
     sensor_name: str = "feet_ground_contact",
@@ -355,6 +322,5 @@ __all__ = [
     "air_time_both_feet",
     "jump_height_reward",
     "landing_stability",
-    "crouch_depth_tracking",
     "soft_landing_bonus",
 ]

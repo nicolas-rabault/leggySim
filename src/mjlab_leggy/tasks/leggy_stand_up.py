@@ -1,30 +1,34 @@
-"""Leggy stand up environment."""
+"""Leggy stand up environment.
+
+Trains locomotion using progressive velocity curriculum:
+- Stage 0 (0-5K iters): Almost standing still (0.1 m/s)
+- Stage 1 (5K-10K): Moderate walking (0.8 m/s)
+- Stage 2 (10K-15K): Fast walking/jogging (1.8 m/s)
+- Stage 3 (15K+): Full running speed (up to 3.0 m/s!)
+
+Customizing Velocity Curriculum:
+    To use different velocity progression, import alternatives:
+
+    from mjlab_leggy.leggy.leggy_curriculums import (
+        VELOCITY_STAGES_CONSERVATIVE,  # Slower progression
+        VELOCITY_STAGES_AGGRESSIVE,    # Faster progression
+    )
+
+    Then replace VELOCITY_STAGES_STANDARD in the curriculum config.
+"""
 
 from copy import deepcopy
 
 import torch
 
 from mjlab.envs import ManagerBasedRlEnvCfg
-from mjlab.envs.mdp import observations as mdp_obs
-from mjlab.envs.mdp import rewards as mdp_rewards
-from mjlab.envs.mdp import terminations as mdp_terminations
-from mjlab.managers.observation_manager import ObservationTermCfg
-from mjlab.managers.reward_manager import RewardTermCfg
-from mjlab.managers.scene_entity_config import SceneEntityCfg
-from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
-from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
-from mjlab_leggy.leggy.leggy_actions import (
-    LeggyJointActionCfg,
-    joint_pos_motor,
-    joint_vel_motor,
-    joint_torques_motor,
-    body_euler,
-)
-from mjlab_leggy.leggy.leggy_rewards import joint_pos_limits_motor, leg_collision_penalty
+from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
+from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
+from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -53,233 +57,22 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     }
 
     # -------------------------------------------------------------------------
-    # Custom Observations: Compute motor space positions from knee angles
+    # Standard Leggy Configuration
     # -------------------------------------------------------------------------
-    # Instead of observing passive motor joints, we compute motor space knee angles
-    # directly from current knee positions using knee_to_motor conversion.
-    # This allows MuJoCo to handle the passive joint loop automatically.
+    # Configure observations (motor space, IMU, corruption)
+    configure_leggy_observations(cfg, enable_corruption=True)
 
-    cfg.observations["policy"].terms["joint_pos"] = ObservationTermCfg(
-        func=joint_pos_motor
-    )
-    cfg.observations["critic"].terms["joint_pos"] = ObservationTermCfg(
-        func=joint_pos_motor
-    )
-
-    # Also update joint velocities to use motor space computation
-    cfg.observations["policy"].terms["joint_vel"] = ObservationTermCfg(
-        func=joint_vel_motor
-    )
-    cfg.observations["critic"].terms["joint_vel"] = ObservationTermCfg(
-        func=joint_vel_motor
-    )
-
-    # Remove projected_gravity (redundant with body orientation)
-    del cfg.observations["policy"].terms["projected_gravity"]
-    del cfg.observations["critic"].terms["projected_gravity"]
-
-    # Add body orientation as Euler angles (available from real IMU)
-    # This replaces projected_gravity with more complete orientation info
-    cfg.observations["policy"].terms["body_euler"] = ObservationTermCfg(
-        func=body_euler
-    )
-    cfg.observations["critic"].terms["body_euler"] = ObservationTermCfg(
-        func=body_euler
-    )
-
-    # Add motor torques (measured at motor outputs via torque sensors)
-    # For passiveMotor torques, we use the knee actuator forces since the knee
-    # drives the motor through the parallel differential mechanism
-    cfg.observations["policy"].terms["joint_torques"] = ObservationTermCfg(
-        func=joint_torques_motor
-    )
-    cfg.observations["critic"].terms["joint_torques"] = ObservationTermCfg(
-        func=joint_torques_motor
-    )
-
-    # -------------------------------------------------------------------------
-    # Contact sensors
-    # -------------------------------------------------------------------------
-    # Foot geometry and site names from robot.xml
-    foot_geom_names = ("left_foot_collision", "right_foot_collision")
-    foot_site_names = ("left_foot", "right_foot")
-
-    feet_ground_cfg = ContactSensorCfg(
-        name="feet_ground_contact",
-        primary=ContactMatch(mode="geom", pattern=foot_geom_names, entity="robot"),
-        secondary=ContactMatch(mode="body", pattern="terrain"),
-        fields=("found", "force"),
-        reduce="netforce",
-        num_slots=1,
-        track_air_time=True,
-    )
-
-    # Leg self-collision sensors - detect contacts between left and right leg parts
-    # Each sensor monitors one specific geom pair to avoid secondary_policy issues
-    # Left leg: left_femur_collision, left_tibia_collision, left_rod_collision
-    # Right leg: right_femur_collision, right_tibia_collision, right_rod_collision
-
-    # Left tibia vs right leg parts (most likely collision)
-    leg_collision_ltibia_rtibia = ContactSensorCfg(
-        name="leg_collision_ltibia_rtibia",
-        primary=ContactMatch(mode="geom", pattern="left_tibia_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_tibia_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    leg_collision_ltibia_rfemur = ContactSensorCfg(
-        name="leg_collision_ltibia_rfemur",
-        primary=ContactMatch(mode="geom", pattern="left_tibia_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_femur_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    leg_collision_ltibia_rrod = ContactSensorCfg(
-        name="leg_collision_ltibia_rrod",
-        primary=ContactMatch(mode="geom", pattern="left_tibia_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_rod_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    # Left femur vs right leg parts
-    leg_collision_lfemur_rtibia = ContactSensorCfg(
-        name="leg_collision_lfemur_rtibia",
-        primary=ContactMatch(mode="geom", pattern="left_femur_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_tibia_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    leg_collision_lfemur_rfemur = ContactSensorCfg(
-        name="leg_collision_lfemur_rfemur",
-        primary=ContactMatch(mode="geom", pattern="left_femur_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_femur_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    leg_collision_lfemur_rrod = ContactSensorCfg(
-        name="leg_collision_lfemur_rrod",
-        primary=ContactMatch(mode="geom", pattern="left_femur_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_rod_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    # Left rod vs right leg parts
-    leg_collision_lrod_rtibia = ContactSensorCfg(
-        name="leg_collision_lrod_rtibia",
-        primary=ContactMatch(mode="geom", pattern="left_rod_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_tibia_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    leg_collision_lrod_rfemur = ContactSensorCfg(
-        name="leg_collision_lrod_rfemur",
-        primary=ContactMatch(mode="geom", pattern="left_rod_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_femur_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    leg_collision_lrod_rrod = ContactSensorCfg(
-        name="leg_collision_lrod_rrod",
-        primary=ContactMatch(mode="geom", pattern="left_rod_collision", entity="robot"),
-        secondary=ContactMatch(mode="geom", pattern="right_rod_collision", entity="robot"),
-        fields=("found",),
-        reduce="maxforce",
-        num_slots=1,
-    )
-
-    cfg.scene.sensors = (
-        feet_ground_cfg,
-        leg_collision_ltibia_rtibia,
-        leg_collision_ltibia_rfemur,
-        leg_collision_ltibia_rrod,
-        leg_collision_lfemur_rtibia,
-        leg_collision_lfemur_rfemur,
-        leg_collision_lfemur_rrod,
-        leg_collision_lrod_rtibia,
-        leg_collision_lrod_rfemur,
-        leg_collision_lrod_rrod,
-    )
-
-    # Configure viewer (main body is called "boddy" in robot.xml)
-    cfg.viewer.body_name = "boddy"
-
-    # -------------------------------------------------------------------------
-    # Update asset references for Leggy's geometry
-    # -------------------------------------------------------------------------
-    # Foot sites for observations
-    cfg.observations["critic"].terms["foot_height"].params["asset_cfg"].site_names = foot_site_names
-
-    # Foot geoms for friction randomization
-    cfg.events["foot_friction"].params["asset_cfg"].geom_names = foot_geom_names
-    cfg.events["foot_friction"].params["ranges"] = (0.4, 1.5)  # min, max friction
-
-    # Foot sites for gait rewards
-    for reward_name in ["foot_clearance", "foot_swing_height", "foot_slip"]:
-        if reward_name in cfg.rewards:
-            cfg.rewards[reward_name].params["asset_cfg"].site_names = foot_site_names
-
-    # Body name for orientation rewards (main body is "boddy", not "trunclink")
-    for reward_name in ["upright", "body_ang_vel"]:
-        if reward_name in cfg.rewards and hasattr(cfg.rewards[reward_name].params.get("asset_cfg", None), "body_names"):
-            cfg.rewards[reward_name].params["asset_cfg"].body_names = ("boddy",)
-
-    # -------------------------------------------------------------------------
-    # Pose reward configuration
-    # -------------------------------------------------------------------------
-    # Controls how tightly the robot should maintain its default joint pose.
-    # Smaller std = tighter constraint (harsher penalty for deviation)
-    # Larger std = more relaxed (allows greater deviation before penalty kicks in)
-    # Values are in radians for joint angle deviations.
-    if "pose" in cfg.rewards:
-        # Limit to actuated joints only (exclude Lpassive*, Rpassive*)
-        cfg.rewards["pose"].params["asset_cfg"].joint_names = (
-            "LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"
-        )
-        # Standing mode: tight constraints for balance (robot mostly stationary)
-        cfg.rewards["pose"].params["std_standing"] = {
-            ".*hipY.*": 0.2,  # HipY needs tight control for balance
-            ".*hipX.*": 0.4,  # HipX needs tight control for balance
-            ".*knee.*": 0.4,  # Knee slightly more relaxed
-        }
-        # Walking mode: medium constraints for locomotion
-        cfg.rewards["pose"].params["std_walking"] = {
-            ".*hipY.*": 0.2,
-            ".*hipX.*": 0.6,
-            ".*knee.*": 0.8,
-        }
-        # Running mode: relaxed constraints for dynamic motion
-        cfg.rewards["pose"].params["std_running"] = {
-            ".*hipY.*": 0.4,
-            ".*hipX.*": 1.0,
-            ".*knee.*": 1.2,
-        }
-
-    # -------------------------------------------------------------------------
-    # Motor limit reward - custom for Leggy
-    # -------------------------------------------------------------------------
-    # Override the default joint_pos_limits with motor-space version
-    # The motor limits must be checked in motor space (motor = knee - hipX)
-    # not directly on knee positions
-    cfg.rewards["dof_pos_limits"] = RewardTermCfg(
-        func=joint_pos_limits_motor,
-        weight=-1.0
-    )
+    # Configure all standard Leggy base elements:
+    # - Contact sensors (feet + leg collisions)
+    # - Asset references (foot sites/geoms, body names)
+    # - Pose reward (standing/walking/running modes)
+    # - Motor limit reward (motor space)
+    # - Leg collision penalty
+    # - Flat terrain with high precision
+    # - Standard terminations
+    # - Push robot event
+    # - Viewer
+    configure_leggy_base(cfg)
 
     # -------------------------------------------------------------------------
     # Reward weights
@@ -325,134 +118,27 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Penalty for angular momentum - reduces unwanted spinning/wobbling
     cfg.rewards["angular_momentum"].weight = -0.02
 
-    # -------------------------------------------------------------------------
-    # Soft Constraints (Penalties)
-    # -------------------------------------------------------------------------
-
-    # Leg collision penalty - soft constraint to discourage leg-leg contact
-    # This provides continuous feedback before the hard termination kicks in
-    # Helps shape the policy away from collision-prone configurations
-    cfg.rewards["leg_collision_penalty"] = RewardTermCfg(
-        func=leg_collision_penalty,
-        weight=-5.0,
-        params={
-            "sensor_name": "leg_collision_ltibia_rtibia",
-        },
-    )
-
-    # -------------------------------------------------------------------------
-    # Terrain configuration
-    # -------------------------------------------------------------------------
-    # Walking on plane only (no rough terrain)
-    assert cfg.scene.terrain is not None
-    cfg.scene.terrain.terrain_type = "plane"
-    # Higher friction for better grip
-    cfg.scene.terrain.friction = "1.5 0.005 0.0001"
-    # Smaller timeconst (0.005) = stiffer contact, less bouncing
-    cfg.scene.terrain.solref = "0.005 1"
-    # Higher dmin/dmax (0.995, 0.9995) = less penetration, more precise collision
-    cfg.scene.terrain.solimp = "0.995 0.9995 0.001 0.5 2"
-    cfg.scene.terrain.contact = "enable"
-    cfg.scene.terrain.terrain_generator = None
-
-    # Disable terrain curriculum
-    del cfg.curriculum["terrain_levels"]
-
     # Configure custom command velocity curriculum
-    # Progressively increases velocity ranges to target values at lines 227-232
+    # Progressively increases velocity ranges: 0.1 → 0.8 → 1.8 → 3.0 m/s
     del cfg.curriculum["command_vel"]  # Remove default curriculum
     from mjlab.managers.curriculum_manager import CurriculumTermCfg
     from mjlab.tasks.velocity.mdp.curriculums import commands_vel
+    from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD
 
     cfg.curriculum["command_vel"] = CurriculumTermCfg(
         func=commands_vel,
         params={
             "command_name": "twist",
-            "velocity_stages": [
-                # Stage 0: almost stand still for initial learning
-                {
-                    "step": 0,
-                    "lin_vel_x": (-0.1, 0.1),
-                    "lin_vel_y": (-0.1, 0.1),
-                    "ang_vel_z": (-0.1, 0.1),
-                },
-                # Stage 1: Intermediate values at ~5k iterations (120k env steps)
-                {
-                    "step": 5000 * 24,
-                    "lin_vel_x": (-0.15, 0.15),
-                    "lin_vel_y": (-0.8, 0.2),
-                    "ang_vel_z": (-0.2, 0.2),
-                },
-                # Stage 2: Intermediate values at ~10k iterations (240k env steps)
-                {
-                    "step": 10000 * 24,
-                    "lin_vel_x": (-0.2, 0.2),
-                    "lin_vel_y": (-1.8, 0.3),
-                    "ang_vel_z": (-0.6, 0.6),
-                },
-                # Stage 3: Full target values at ~15k iterations (360k env steps)
-                {
-                    "step": 15000 * 24,
-                    "lin_vel_x": (-0.4, 0.4),
-                    "lin_vel_y": (-3.0, 0.5),
-                    "ang_vel_z": (-1.0, 1.0),
-                },
-            ],
+            "velocity_stages": VELOCITY_STAGES_STANDARD,  # From leggy_curriculums.py
         },
     )
-
-    # -------------------------------------------------------------------------
-    # Observation history and corruption (sim-to-real)
-    # -------------------------------------------------------------------------
-    # Add observation history to help policy understand dynamics and trajectories
-    # 5-step history provides temporal context for reactive behaviors
-    cfg.observations["policy"].history_length = 5
-    cfg.observations["policy"].flatten_history_dim = True  # Flatten into observation vector
-
-    # Add realistic sensor noise and delays
-    cfg.observations["policy"].enable_corruption = True
-    cfg.observations["policy"].corruption_std = 0.01
-
-    # Configure sensor delays for IMU data
-    cfg.observations["policy"].terms["base_ang_vel"] = deepcopy(
-        cfg.observations["policy"].terms["base_ang_vel"]
-    )
-    cfg.observations["policy"].terms["body_euler"] = deepcopy(
-        cfg.observations["policy"].terms["body_euler"]
-    )
-
-    cfg.observations["policy"].terms["base_ang_vel"].delay_min_lag = 2
-    cfg.observations["policy"].terms["base_ang_vel"].delay_max_lag = 4
-    cfg.observations["policy"].terms["base_ang_vel"].delay_update_period = 64
-
-    cfg.observations["policy"].terms["body_euler"].delay_min_lag = 2
-    cfg.observations["policy"].terms["body_euler"].delay_max_lag = 4
-    cfg.observations["policy"].terms["body_euler"].delay_update_period = 64
-
-    cfg.events["push_robot"].params["velocity_range"] = {
-        "x": (-0.8, 0.8),
-        "y": (-0.8, 0.8),
-    }
-
-    # -------------------------------------------------------------------------
-    # Termination conditions (Hard Constraints)
-    # -------------------------------------------------------------------------
-    # Hard constraint: Body below floor - prevents floor penetration exploitation
-    cfg.terminations["body_below_floor"] = TerminationTermCfg(
-        func=mdp_terminations.root_height_below_minimum,
-        params={"minimum_height": 0.00},  # meters
-    )
-
-    # Hard constraint: Bad orientation (fell_over) - already configured by default
-    # This terminates if the robot tips more than 70 degrees from upright
-    # Acts as the primary safety constraint preventing invalid states
 
     # -------------------------------------------------------------------------
     # Play mode overrides
     # -------------------------------------------------------------------------
     if play:
         cfg.episode_length_s = int(1e9)  # Effectively infinite episode length
-        cfg.observations["policy"].enable_corruption = False
+        configure_leggy_observations(cfg, enable_corruption=False)  # Disable corruption in play
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
 

@@ -5,9 +5,24 @@ Combines locomotion with jumping using progressive curriculum:
 2. Stage 4 (15K-20K): Introduce small jumps while running
 3. Stage 5 (20K-25K): Increase jump height and frequency
 4. Stage 6 (25K+): Full jumping + running capability
-"""
 
-from copy import deepcopy
+Customizing Curriculum:
+    This task uses TWO curricula (both from leggy_curriculums):
+    1. VELOCITY_STAGES_STANDARD (inherited from stand_up) - for running
+    2. JUMP_STAGES_STANDARD - for jumping
+
+    To customize, import alternatives:
+
+    from mjlab_leggy.leggy.leggy_curriculums import (
+        VELOCITY_STAGES_AGGRESSIVE,  # Faster locomotion progression
+        JUMP_STAGES_AGGRESSIVE,      # Earlier jump start
+        JUMP_STAGES_CONSERVATIVE,    # Later jump start
+        make_jump_stages,            # Create custom jump stages
+        make_reward_stages,          # Create custom reward stages
+    )
+
+    Then replace the stage constants in the curriculum config.
+"""
 
 import torch
 
@@ -17,8 +32,13 @@ from mjlab.managers.command_manager import CommandTermCfg
 from mjlab.managers.curriculum_manager import CurriculumTermCfg
 from mjlab.managers.observation_manager import ObservationTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
-from mjlab.tasks.velocity.mdp.curriculums import commands_vel
 
+from mjlab_leggy.leggy.leggy_curriculums import (
+    jump_command_curriculum,
+    reward_weight_curriculum,
+    JUMP_STAGES_STANDARD,
+    REWARD_STAGES_STANDARD,
+)
 from mjlab_leggy.leggy.leggy_rewards import (
     vertical_velocity_reward,
     joint_extension_speed,
@@ -87,83 +107,6 @@ JumpCommandCfg.class_type = JumpCommand
 
 
 # -------------------------------------------------------------------------
-# Jump Command Curriculum
-# -------------------------------------------------------------------------
-
-def jump_command_curriculum(
-    env: ManagerBasedRlEnv,
-    env_ids: torch.Tensor,
-    command_name: str,
-    jump_stages: list[dict],
-) -> dict[str, torch.Tensor]:
-    """Progressively enable jumping based on training stage.
-
-    Args:
-        env: Environment instance
-        env_ids: Environment IDs (unused)
-        command_name: Name of jump command
-        jump_stages: List of stage configurations
-
-    Returns:
-        Dictionary of curriculum metrics
-    """
-    del env_ids  # Unused
-    command_term = env.command_manager.get_term(command_name)
-    assert command_term is not None
-    cfg = command_term.cfg
-
-    # Update jump parameters based on current step
-    for stage in jump_stages:
-        if env.common_step_counter > stage["step"]:
-            if "jump_probability" in stage:
-                cfg.jump_probability = stage["jump_probability"]
-            if "jump_height_range" in stage:
-                cfg.jump_height_range = stage["jump_height_range"]
-
-    return {
-        "jump_probability": torch.tensor(cfg.jump_probability),
-        "jump_height_max": torch.tensor(cfg.jump_height_range[1]),
-    }
-
-
-# -------------------------------------------------------------------------
-# Reward Weight Curriculum
-# -------------------------------------------------------------------------
-
-def reward_weight_curriculum(
-    env: ManagerBasedRlEnv,
-    env_ids: torch.Tensor,
-    reward_stages: list[dict],
-) -> dict[str, torch.Tensor]:
-    """Adjust multiple reward weights based on training stage.
-
-    Args:
-        env: Environment instance
-        env_ids: Environment IDs (unused)
-        reward_stages: List of stage configurations with reward weights
-
-    Returns:
-        Dictionary of current reward weights
-    """
-    del env_ids  # Unused
-
-    # Update reward weights based on current step
-    for stage in reward_stages:
-        if env.common_step_counter > stage["step"]:
-            for reward_name, weight in stage.items():
-                if reward_name != "step" and reward_name in env.reward_manager._terms:
-                    env.reward_manager._terms[reward_name].weight = weight
-
-    # Return current weights for logging
-    metrics = {}
-    for name, term in env.reward_manager._terms.items():
-        if name.startswith(("jump", "vertical", "air_time", "landing")):
-            metrics[f"weight_{name}"] = torch.tensor(term.weight)
-
-    return metrics
-
-
-# -------------------------------------------------------------------------
 # Main environment configuration
 # -------------------------------------------------------------------------
 
@@ -179,7 +122,7 @@ def leggy_jump_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     Returns:
         Environment configuration for jump + run training.
     """
-    # Start with standing configuration (includes locomotion)
+    # Start with standing configuration (includes standard Leggy observations)
     cfg = leggy_stand_up_env_cfg(play=play)
 
     # -------------------------------------------------------------------------
@@ -188,14 +131,17 @@ def leggy_jump_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.commands["jump_command"] = JumpCommandCfg()
 
     # -------------------------------------------------------------------------
-    # Observations: Add vertical velocity and jump command
+    # Add Jump-Specific Observations
     # -------------------------------------------------------------------------
-    # Vertical velocity helps with jump control and landing
+    # Note: Standard Leggy observations (motor space, IMU, etc.) are already
+    # configured by leggy_stand_up_env_cfg via configure_leggy_observations()
+
+    # Add vertical velocity (crucial for jump control and landing)
     cfg.observations["policy"].terms["base_lin_vel_z"] = ObservationTermCfg(
         func=lambda env, asset_cfg: env.scene[asset_cfg.name].data.root_lin_vel_w[:, 2:3]
     )
 
-    # Jump command to policy
+    # Add jump command to policy observations
     cfg.observations["policy"].terms["jump_command"] = ObservationTermCfg(
         func=mdp_obs.generated_commands,
         params={"command_name": "jump_command"}
@@ -287,102 +233,24 @@ def leggy_jump_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Curriculum Configuration
     # -------------------------------------------------------------------------
     # Keep the velocity curriculum from stand_up (teaches running)
-    # Already configured in stand_up_env_cfg at lines 361-402
+    # Already configured in stand_up_env_cfg
 
     # Add jump command curriculum (introduces jumping progressively)
+    # Uses standard stages: 0% → 10% → 20% → 30% jumping from 15K-25K iterations
     cfg.curriculum["jump_command"] = CurriculumTermCfg(
         func=jump_command_curriculum,
         params={
             "command_name": "jump_command",
-            "jump_stages": [
-                # Stage 0-3: No jumping, focus on locomotion (0-15K iterations)
-                {
-                    "step": 0,
-                    "jump_probability": 0.0,
-                    "jump_height_range": (0.0, 0.0),
-                },
-                # Stage 4: Introduce small jumps (15K-20K iterations = 360K-480K steps)
-                {
-                    "step": 15000 * 24,
-                    "jump_probability": 0.1,  # 10% of environments jump
-                    "jump_height_range": (0.3, 0.5),  # Small jumps (3-5cm)
-                },
-                # Stage 5: Increase jump frequency and height (20K-25K iterations)
-                {
-                    "step": 20000 * 24,
-                    "jump_probability": 0.2,  # 20% jump
-                    "jump_height_range": (0.4, 0.7),  # Medium jumps (4-7cm)
-                },
-                # Stage 6: Full jumping capability (25K+ iterations)
-                {
-                    "step": 25000 * 24,
-                    "jump_probability": 0.3,  # 30% jump
-                    "jump_height_range": (0.5, 1.0),  # Full range (5-10cm)
-                },
-            ],
+            "jump_stages": JUMP_STAGES_STANDARD,  # From leggy_curriculums.py
         },
     )
 
     # Add reward weight curriculum (enables jump rewards progressively)
+    # Coordinates with jump stages to enable rewards as jumping is introduced
     cfg.curriculum["reward_weights"] = CurriculumTermCfg(
         func=reward_weight_curriculum,
         params={
-            "reward_stages": [
-                # Stage 0-3: Locomotion only (0-15K iterations)
-                {
-                    "step": 0,
-                    "vertical_velocity": 0.0,
-                    "joint_extension": 0.0,
-                    "leg_coordination": 0.0,
-                    "air_time_both": 0.0,
-                    "jump_height": 0.0,
-                    "landing_stability": 0.0,
-                    "soft_landing": 0.0,
-                    # Locomotion rewards stay at default
-                    "pose": 3.5,
-                    "action_rate_l2": -2.0,
-                },
-                # Stage 4: Enable basic jump rewards (15K-20K iterations)
-                {
-                    "step": 15000 * 24,
-                    "vertical_velocity": 2.0,
-                    "joint_extension": 0.5,
-                    "leg_coordination": 1.5,
-                    "air_time_both": 5.0,  # Main focus
-                    "jump_height": 3.0,
-                    "landing_stability": 3.0,
-                    "soft_landing": 2.0,
-                    # Relax constraints for jumping
-                    "pose": 2.5,
-                    "action_rate_l2": -1.0,
-                },
-                # Stage 5: Increase jump rewards (20K-25K iterations)
-                {
-                    "step": 20000 * 24,
-                    "vertical_velocity": 3.0,
-                    "joint_extension": 1.0,
-                    "leg_coordination": 2.0,
-                    "air_time_both": 8.0,
-                    "jump_height": 6.0,  # Encourage higher jumps
-                    "landing_stability": 4.0,
-                    "soft_landing": 3.0,
-                    "pose": 2.0,
-                    "action_rate_l2": -0.5,
-                },
-                # Stage 6: Optimize jumping (25K+ iterations)
-                {
-                    "step": 25000 * 24,
-                    "vertical_velocity": 2.5,
-                    "joint_extension": 1.0,
-                    "leg_coordination": 2.5,
-                    "air_time_both": 10.0,
-                    "jump_height": 8.0,  # Maximum jump height emphasis
-                    "landing_stability": 5.0,  # Must maintain landing
-                    "soft_landing": 3.0,
-                    "pose": 2.0,
-                    "action_rate_l2": -0.5,
-                },
-            ],
+            "reward_stages": REWARD_STAGES_STANDARD,  # From leggy_curriculums.py
         },
     )
 
@@ -396,7 +264,7 @@ def leggy_jump_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -------------------------------------------------------------------------
     if play:
         cfg.episode_length_s = int(1e9)
-        cfg.observations["policy"].enable_corruption = False
+        # Observation corruption already disabled by stand_up play mode
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
 
