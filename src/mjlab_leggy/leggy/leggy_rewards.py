@@ -181,34 +181,35 @@ def leg_coordination(
 def air_time_both_feet(
     env: ManagerBasedRlEnv,
     sensor_name: str = "feet_ground_contact",
-    command_name: str = "jump_command"
+    command_name: str = "jump_command",
+    mode: str = "jump",
+    velocity_threshold: float = 0.8
 ) -> torch.Tensor:
     """Reward time with both feet off ground.
-
-    Core jumping reward - encourages liftoff.
 
     Args:
         env: The environment.
         sensor_name: Name of the contact sensor.
-        command_name: Name of the command manager with jump signal.
+        command_name: Name of the command manager.
+        mode: "jump" or "velocity".
+        velocity_threshold: Minimum velocity for velocity mode (m/s).
 
     Returns:
         Reward when both feet are airborne.
     """
     sensor: ContactSensor = env.scene[sensor_name]
-
-    # Get contact state for both feet
-    # sensor.data.found shape: (num_envs, num_feet, num_slots)
-    contact = sensor.data.found[:, :, 0]  # (num_envs, 2)
-
-    # Both feet off ground: both contacts are False
+    contact = sensor.data.found.squeeze(-1).bool()
     both_feet_off = (~contact[:, 0]) & (~contact[:, 1])
 
-    # Get jump command
-    jump_cmd = env.command_manager.get_command(command_name)[:, 0]
-    is_jumping = (jump_cmd > 0.01).float()
+    if mode == "velocity":
+        vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+        vel_magnitude = torch.norm(vel_cmd, dim=1)
+        is_active = (vel_magnitude > velocity_threshold).float()
+    else:  # jump mode
+        jump_cmd = env.command_manager.get_command(command_name)[:, 0]
+        is_active = (jump_cmd > 0.01).float()
 
-    return both_feet_off.float() * is_jumping
+    return both_feet_off.float() * is_active
 
 
 def jump_height_reward(
@@ -271,7 +272,7 @@ def landing_stability(
     pitch = 2.0 * (quat[:, 0] * quat[:, 2] - quat[:, 3] * quat[:, 1])
 
     # Get contact state
-    contact = sensor.data.found[:, :, 0]
+    contact = sensor.data.found.squeeze(-1).bool()
     any_foot_contact = contact[:, 0] | contact[:, 1]
 
     # Reward low roll/pitch when in contact (landing phase)
@@ -300,9 +301,8 @@ def soft_landing_bonus(
     sensor: ContactSensor = env.scene[sensor_name]
 
     # Get contact forces
-    forces = sensor.data.force[:, :, 0, :]  # (num_envs, num_feet, 3)
-    # Compute normal force (Z component)
-    normal_forces = forces[:, :, 2]  # (num_envs, 2)
+    forces = sensor.data.force.squeeze(2)
+    normal_forces = forces[:, :, 2]
 
     # Get peak force
     peak_force = torch.max(torch.abs(normal_forces), dim=1)[0]
@@ -311,6 +311,66 @@ def soft_landing_bonus(
     penalty = torch.clamp(peak_force - max_force_threshold, min=0.0) / max_force_threshold
 
     return -penalty
+
+
+def pose_running_adaptive(
+    env: ManagerBasedRlEnv,
+    command_name: str = "twist",
+    velocity_threshold: float = 1.2,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Pose reward that relaxes at high speeds.
+
+    Args:
+        env: The environment.
+        command_name: Name of the velocity command.
+        velocity_threshold: Velocity above which constraints relax (m/s).
+        asset_cfg: Asset configuration.
+
+    Returns:
+        Pose deviation penalty (scaled by velocity).
+    """
+    asset = env.scene[asset_cfg.name]
+    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+    vel_magnitude = torch.norm(vel_cmd, dim=1)
+
+    joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
+    joint_pos_default = asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    deviation_sq = torch.sum((joint_pos - joint_pos_default) ** 2, dim=1)
+
+    # Scale penalty: full below threshold, reduced above threshold
+    scale = torch.where(vel_magnitude < velocity_threshold,
+                       torch.ones_like(vel_magnitude),
+                       torch.ones_like(vel_magnitude) * 0.3)
+
+    return torch.exp(-deviation_sq * scale)
+
+
+def action_rate_running_adaptive(
+    env: ManagerBasedRlEnv,
+    command_name: str = "twist",
+    velocity_threshold: float = 1.0
+) -> torch.Tensor:
+    """Action rate penalty that reduces at high speeds.
+
+    Args:
+        env: The environment.
+        command_name: Name of the velocity command.
+        velocity_threshold: Velocity above which penalty reduces to 30%.
+
+    Returns:
+        Action rate penalty scaled by velocity.
+    """
+    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+    vel_magnitude = torch.norm(vel_cmd, dim=1)
+
+    action_rate = torch.sum((env.action_manager.action - env.action_manager.prev_action) ** 2, dim=1)
+
+    scale = torch.where(vel_magnitude < velocity_threshold,
+                       torch.ones_like(vel_magnitude),
+                       torch.ones_like(vel_magnitude) * 0.3)
+
+    return action_rate * scale
 
 
 __all__ = [
@@ -323,4 +383,6 @@ __all__ = [
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
+    "pose_running_adaptive",
+    "action_rate_running_adaptive",
 ]

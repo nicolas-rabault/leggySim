@@ -22,6 +22,8 @@ from copy import deepcopy
 import torch
 
 from mjlab.envs import ManagerBasedRlEnvCfg
+from mjlab.managers.reward_manager import RewardTermCfg
+from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
@@ -29,6 +31,11 @@ from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG
 from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
+from mjlab_leggy.leggy.leggy_rewards import (
+    air_time_both_feet,
+    pose_running_adaptive,
+    action_rate_running_adaptive,
+)
 
 
 def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -89,12 +96,27 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -- Pose and orientation --
     # Reward for keeping body upright (gravity aligned with body Z axis)
     cfg.rewards["upright"].weight = 1.0
-    # Reward for staying close to default joint angles - prevents drift from home pose
-    cfg.rewards["pose"].weight = 3.5
 
-    # -- Energy efficiency --
-    # Penalty for rapid action changes between timesteps - reduces jittery motion
-    cfg.rewards["action_rate_l2"].weight = -2.0
+    # Velocity-adaptive pose reward - relaxes at high speeds
+    cfg.rewards["pose"] = RewardTermCfg(
+        func=pose_running_adaptive,
+        weight=3.5,
+        params={
+            "command_name": "twist",
+            "velocity_threshold": 1.2,
+            "asset_cfg": SceneEntityCfg("robot", joint_names=["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]),
+        },
+    )
+
+    # Velocity-adaptive action rate - reduces penalty at high speeds
+    cfg.rewards["action_rate_l2"] = RewardTermCfg(
+        func=action_rate_running_adaptive,
+        weight=-2.0,
+        params={
+            "command_name": "twist",
+            "velocity_threshold": 1.0,
+        },
+    )
 
     # -- Gait and foot behavior --
     # Foot clearance during swing phase - promotes proper stepping
@@ -108,6 +130,18 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Air time tracking - encourages slower gait with feet spending time in air
     cfg.rewards["air_time"].weight = 1.0
     cfg.rewards["air_time"].params["command_threshold"] = 0.05
+
+    # Both feet airtime - rewards running gait (flight phase) at high speeds
+    cfg.rewards["air_time_both_feet_running"] = RewardTermCfg(
+        func=air_time_both_feet,
+        weight=3.0,
+        params={
+            "sensor_name": "feet_ground_contact",
+            "command_name": "twist",
+            "mode": "velocity",
+            "velocity_threshold": 0.8,
+        },
+    )
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -6.0
     cfg.rewards["foot_slip"].params["command_threshold"] = 0
