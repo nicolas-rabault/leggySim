@@ -181,7 +181,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
         # Set play mode twist ranges (will persist across episodes)
         cfg.commands["twist"].ranges.ang_vel_z = (-0.2, 0.2)
-        cfg.commands["twist"].ranges.lin_vel_y = (-3.0, 0.3)
+        cfg.commands["twist"].ranges.lin_vel_y = (-2.0, 0.3)
         cfg.commands["twist"].ranges.lin_vel_x = (-0.2, 0.2)
         cfg.commands["twist"].rel_standing_envs = 0.2
         cfg.commands["twist"].rel_heading_envs = 0.5
