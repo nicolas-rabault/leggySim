@@ -89,7 +89,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Velocity tracking --
     # Reward for matching commanded linear velocity (forward/backward, left/right)
-    cfg.rewards["track_linear_velocity"].weight = 8.0
+    cfg.rewards["track_linear_velocity"].weight = 15.0
     # Reward for matching commanded angular velocity (turning rate)
     cfg.rewards["track_angular_velocity"].weight = 8.0
 
@@ -100,7 +100,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Velocity-adaptive pose reward - relaxes at high speeds
     cfg.rewards["pose"] = RewardTermCfg(
         func=pose_running_adaptive,
-        weight=3.5,
+        weight=2.0,
         params={
             "command_name": "twist",
             "velocity_threshold": 1.2,
@@ -134,16 +134,16 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Both feet airtime - rewards running gait (flight phase) at high speeds
     cfg.rewards["air_time_both_feet_running"] = RewardTermCfg(
         func=air_time_both_feet,
-        weight=3.0,
+        weight=8.0,
         params={
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
             "mode": "velocity",
-            "velocity_threshold": 0.8,
+            "velocity_threshold": 0.50,
         },
     )
     # Penalty for foot slipping on ground during contact
-    cfg.rewards["foot_slip"].weight = -6.0
+    cfg.rewards["foot_slip"].weight = -3.0
     cfg.rewards["foot_slip"].params["command_threshold"] = 0
 
     # -- Regularization --
