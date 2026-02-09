@@ -186,7 +186,7 @@ def air_time_both_feet(
     velocity_threshold: float = 0.8,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
 ) -> torch.Tensor:
-    """Reward time with both feet off ground.
+    """Reward time with both feet off ground, scaled by flight duration.
 
     Args:
         env: The environment.
@@ -197,7 +197,7 @@ def air_time_both_feet(
         asset_cfg: Asset configuration for accessing velocity data.
 
     Returns:
-        Reward when both feet are airborne.
+        Reward scaled by flight duration (longer jumps = more reward).
     """
     sensor: ContactSensor = env.scene[sensor_name]
     contact = sensor.data.found.squeeze(-1).bool()
@@ -212,7 +212,10 @@ def air_time_both_feet(
         jump_cmd = env.command_manager.get_command(command_name)[:, 0]
         is_active = (jump_cmd > 0.01).float()
 
-    return both_feet_off.float() * is_active
+    # Scale reward by flight duration (minimum air time of both feet)
+    min_air_time = torch.min(sensor.data.air_time, dim=1)[0]
+
+    return both_feet_off.float() * is_active * min_air_time
 
 
 def jump_height_reward(
