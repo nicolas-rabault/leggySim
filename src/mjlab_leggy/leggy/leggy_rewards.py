@@ -203,19 +203,22 @@ def air_time_both_feet(
     contact = sensor.data.found.squeeze(-1).bool()
     both_feet_off = (~contact[:, 0]) & (~contact[:, 1])
 
+    asset = env.scene[asset_cfg.name]
+
     if mode == "velocity":
-        asset = env.scene[asset_cfg.name]
-        actual_vel = asset.data.root_lin_vel_w[:, :2]
+        actual_vel = asset.data.root_link_vel_w[:, :2]
         vel_magnitude = torch.norm(actual_vel, dim=1)
         is_active = (vel_magnitude > velocity_threshold).float()
     else:  # jump mode
         jump_cmd = env.command_manager.get_command(command_name)[:, 0]
         is_active = (jump_cmd > 0.01).float()
 
-    # Scale reward by flight duration (minimum air time of both feet)
-    min_air_time = torch.min(sensor.data.air_time, dim=1)[0]
+    # Scale reward by vertical velocity when airborne (proxy for flight duration)
+    # Higher upward velocity = longer potential flight time
+    vertical_vel = asset.data.root_link_vel_w[:, 2]
+    flight_quality = torch.clamp(vertical_vel, min=0.0, max=2.0)
 
-    return both_feet_off.float() * is_active * min_air_time
+    return both_feet_off.float() * is_active * (1.0 + flight_quality)
 
 
 def jump_height_reward(
