@@ -103,7 +103,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         weight=2.0,
         params={
             "command_name": "twist",
-            "velocity_threshold": 1.2,
+            "velocity_threshold": 0.8,
             "asset_cfg": SceneEntityCfg("robot", joint_names=["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]),
         },
     )
@@ -111,7 +111,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Velocity-adaptive action rate - reduces penalty at high speeds
     cfg.rewards["action_rate_l2"] = RewardTermCfg(
         func=action_rate_running_adaptive,
-        weight=-2.0,
+        weight=-1.0,
         params={
             "command_name": "twist",
             "velocity_threshold": 1.0,
@@ -128,13 +128,13 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["foot_swing_height"].params["target_height"] = 0.05
     cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
     # Air time tracking - encourages slower gait with feet spending time in air
-    cfg.rewards["air_time"].weight = 1.0
+    cfg.rewards["air_time"].weight = 0.5
     cfg.rewards["air_time"].params["command_threshold"] = 0.05
 
     # Both feet airtime - rewards running gait (flight phase) at high speeds
     cfg.rewards["air_time_both_feet_running"] = RewardTermCfg(
         func=air_time_both_feet,
-        weight=8.0,
+        weight=12.0,
         params={
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
