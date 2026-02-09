@@ -183,7 +183,8 @@ def air_time_both_feet(
     sensor_name: str = "feet_ground_contact",
     command_name: str = "jump_command",
     mode: str = "jump",
-    velocity_threshold: float = 0.8
+    velocity_threshold: float = 0.8,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
 ) -> torch.Tensor:
     """Reward time with both feet off ground.
 
@@ -193,6 +194,7 @@ def air_time_both_feet(
         command_name: Name of the command manager.
         mode: "jump" or "velocity".
         velocity_threshold: Minimum velocity for velocity mode (m/s).
+        asset_cfg: Asset configuration for accessing velocity data.
 
     Returns:
         Reward when both feet are airborne.
@@ -202,8 +204,9 @@ def air_time_both_feet(
     both_feet_off = (~contact[:, 0]) & (~contact[:, 1])
 
     if mode == "velocity":
-        vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-        vel_magnitude = torch.norm(vel_cmd, dim=1)
+        asset = env.scene[asset_cfg.name]
+        actual_vel = asset.data.root_lin_vel_w[:, :2]
+        vel_magnitude = torch.norm(actual_vel, dim=1)
         is_active = (vel_magnitude > velocity_threshold).float()
     else:  # jump mode
         jump_cmd = env.command_manager.get_command(command_name)[:, 0]
