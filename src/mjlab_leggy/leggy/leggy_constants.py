@@ -24,10 +24,10 @@ def get_spec() -> mujoco.MjSpec:
 
 
 stand_pose = {
-    "hipY": 15 * np.pi / 180.0,
-    "hipX": 25 * np.pi / 180.0,
-    "kneeMotor": 45 * np.pi / 180.0,
-    "knee": (25+45) * np.pi / 180.0
+    "hipY": 13 * np.pi / 180.0, # 0,2268928028
+    "hipX": -25 * np.pi / 180.0, # -0,436332313
+    "kneeMotor": -53 * np.pi / 180.0, # 0,9250245036
+    "knee": (-53+25) * np.pi / 180.0 # -0,8329244468
 }
 
 HOME_FRAME = EntityCfg.InitialStateCfg(
@@ -37,7 +37,7 @@ HOME_FRAME = EntityCfg.InitialStateCfg(
     joint_pos={
         # ".*hipY.*": stand_pose["hipY"],
         # ".*hipX.*": stand_pose["hipX"],#25
-        # ".*knee.*": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]),# so delta is 45+25=70
+        # ".*knee.*": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]),# so delta is 53-25=28
         # "LpassiveMotor": stand_pose["kneeMotor"], #this one is the actual motor knee
         # "RpassiveMotor": stand_pose["kneeMotor"],#this one is the actual motor knee
         # "Lpassive2": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]), #70

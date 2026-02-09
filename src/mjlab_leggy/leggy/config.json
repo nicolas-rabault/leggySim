@@ -1,6 +1,6 @@
 {
   // Onshape URL of the assembly
-  "url": "https://cad.onshape.com/documents/6006520d7e567b7f616afa69/w/10b25d97dd9b3cea810edf0f/e/0e8fe2c78e38de67c452e429",
+  "url": "https://cad.onshape.com/documents/6006520d7e567b7f616afa69/w/f5d6c01614216363a8f5deb8/e/0e8fe2c78e38de67c452e429",
   // Output format
   "output_format": "mujoco",
 
@@ -18,17 +18,17 @@
       "damping": 0.008824,
       "armature": 0.00006499,
       "forcerange": 0.236,
-      "limits": [-4, 4],
+      "limits": [-4.9741883682, 0.7853981634], // [-255-30, 75-30] 30 degree offset
       "frictionloss": 0.01,
       "kp": 10
     },
-    "*passive*": {
+    "*passive2": {
       "actuated": false,
       "frictionloss": 0.0001,
       "damping": 0.0001,
       "stiffness": 0,
       "armature": 0.00001,
-      "limits": [-4, 4] // no limits
+      "limits": [-1.8325957146, 3.926990817] // [-75+30, 255+30] 30 degree offset
     },
     "*passiveMotor": {
       "actuated": false,
@@ -90,10 +90,7 @@
     },
     "foot": {
       "collision": {
-        "type": "sphere",
         "name": "left_foot_collision",
-        "size": 0.0025,
-        "pos": "0.049 -0.0848705 0.001",
         "contype": 1,
         "conaffinity": 1,
         "condim": 3,
@@ -104,10 +101,7 @@
     },
     "foot_2": {
       "collision": {
-        "type": "sphere",
         "name": "right_foot_collision",
-        "size": 0.0025,
-        "pos": "-0.049 0.0848705 -0.001",
         "contype": 1,
         "conaffinity": 1,
         "condim": 3,

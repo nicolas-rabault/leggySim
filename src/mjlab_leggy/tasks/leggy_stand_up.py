@@ -182,9 +182,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.curriculum.pop("command_vel", None)
 
         # Set play mode twist ranges (will persist across episodes)
-        cfg.commands["twist"].ranges.ang_vel_z = (-0.2, 0.2)
-        cfg.commands["twist"].ranges.lin_vel_y = (-2.0, 0.3)
-        cfg.commands["twist"].ranges.lin_vel_x = (-0.2, 0.2)
+        velocities = VELOCITY_STAGES_STANDARD[-1]
+        cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
+        cfg.commands["twist"].ranges.lin_vel_y = velocities["lin_vel_y"]
+        cfg.commands["twist"].ranges.lin_vel_x = velocities["lin_vel_x"]
         cfg.commands["twist"].rel_standing_envs = 0.2
         cfg.commands["twist"].rel_heading_envs = 0.5
 

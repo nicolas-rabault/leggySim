@@ -46,7 +46,7 @@ def motor_to_knee(motor: torch.Tensor | float, hipX: torch.Tensor | float) -> to
     Returns:
         Knee angle [rad] (same type as input)
     """
-    result = hipX + motor
+    result = motor - hipX
     return result
 
 
@@ -62,7 +62,7 @@ def knee_to_motor(knee: torch.Tensor | float, hipX: torch.Tensor | float) -> tor
     Returns:
         Motor command angle [rad] (same type as input)
     """
-    result = knee - hipX
+    result = knee + hipX
     return result
 
 
