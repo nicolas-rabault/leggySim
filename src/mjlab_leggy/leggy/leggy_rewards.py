@@ -322,39 +322,6 @@ def soft_landing_bonus(
     return -penalty
 
 
-def pose_running_adaptive(
-    env: ManagerBasedRlEnv,
-    command_name: str = "twist",
-    velocity_threshold: float = 1.2,
-    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
-) -> torch.Tensor:
-    """Pose reward that relaxes at high speeds.
-
-    Args:
-        env: The environment.
-        command_name: Name of the velocity command.
-        velocity_threshold: Velocity above which constraints relax (m/s).
-        asset_cfg: Asset configuration.
-
-    Returns:
-        Pose deviation penalty (scaled by velocity).
-    """
-    asset = env.scene[asset_cfg.name]
-    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-    vel_magnitude = torch.norm(vel_cmd, dim=1)
-
-    joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
-    joint_pos_default = asset.data.default_joint_pos[:, asset_cfg.joint_ids]
-    deviation_sq = torch.sum((joint_pos - joint_pos_default) ** 2, dim=1)
-
-    # Scale penalty: full below threshold, reduced above threshold
-    scale = torch.where(vel_magnitude < velocity_threshold,
-                       torch.ones_like(vel_magnitude),
-                       torch.ones_like(vel_magnitude) * 0.3)
-
-    return torch.exp(-deviation_sq * scale)
-
-
 def action_rate_running_adaptive(
     env: ManagerBasedRlEnv,
     command_name: str = "twist",
@@ -392,6 +359,5 @@ __all__ = [
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
-    "pose_running_adaptive",
     "action_rate_running_adaptive",
 ]

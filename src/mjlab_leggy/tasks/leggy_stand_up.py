@@ -1,20 +1,14 @@
-"""Leggy stand up environment.
+"""Leggy locomotion environment.
 
-Trains locomotion using progressive velocity curriculum:
-- Stage 0 (0-5K iters): Almost standing still (0.1 m/s)
-- Stage 1 (5K-10K): Moderate walking (0.8 m/s)
-- Stage 2 (10K-15K): Fast walking/jogging (1.8 m/s)
-- Stage 3 (15K+): Full running speed (up to 3.0 m/s!)
+Trains standing, walking, and running using progressive velocity curriculum:
+- 6 stages over 20K iterations
+- Linearly increases from 0.1 m/s (standing) to 2.0 m/s (running)
+- Final ranges: lin_vel_x=(-1.0, 2.0), lin_vel_y=(-0.8, 0.8), ang_vel_z=(-1.0, 1.0)
 
-Customizing Velocity Curriculum:
-    To use different velocity progression, import alternatives:
-
-    from mjlab_leggy.leggy.leggy_curriculums import (
-        VELOCITY_STAGES_CONSERVATIVE,  # Slower progression
-        VELOCITY_STAGES_AGGRESSIVE,    # Faster progression
-    )
-
-    Then replace VELOCITY_STAGES_STANDARD in the curriculum config.
+Pose reward automatically adapts based on speed:
+- Standing mode (< 0.5 m/s): Tight pose constraints
+- Walking mode (0.5-1.2 m/s): Medium constraints
+- Running mode (> 1.2 m/s): Relaxed constraints for dynamic motion
 """
 
 from copy import deepcopy
@@ -33,7 +27,6 @@ from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     air_time_both_feet,
-    pose_running_adaptive,
     action_rate_running_adaptive,
 )
 
@@ -97,16 +90,12 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Reward for keeping body upright (gravity aligned with body Z axis)
     cfg.rewards["upright"].weight = 1.0
 
-    # Velocity-adaptive pose reward - relaxes at high speeds
-    cfg.rewards["pose"] = RewardTermCfg(
-        func=pose_running_adaptive,
-        weight=2.0,
-        params={
-            "command_name": "twist",
-            "velocity_threshold": 0.8,
-            "asset_cfg": SceneEntityCfg("robot", joint_names=["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]),
-        },
-    )
+    # Velocity-adaptive pose reward - uses standard 3-phase system (standing/walking/running)
+    # Already configured by configure_leggy_base() with per-joint std parameters
+    cfg.rewards["pose"].weight = 2.0
+    # Set speed thresholds to match velocity curriculum (max 2.0 m/s)
+    cfg.rewards["pose"].params["walking_threshold"] = 0.5  # Standing -> Walking transition
+    cfg.rewards["pose"].params["running_threshold"] = 1.2  # Walking -> Running transition
 
     # Velocity-adaptive action rate - reduces penalty at high speeds
     cfg.rewards["action_rate_l2"] = RewardTermCfg(
@@ -154,8 +143,8 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Penalty for angular momentum - reduces unwanted spinning/wobbling
     cfg.rewards["angular_momentum"].weight = -0.02
 
-    # Configure custom command velocity curriculum
-    # Progressively increases velocity ranges: 0.1 → 0.8 → 1.8 → 3.0 m/s
+    # Configure command velocity curriculum
+    # 6 stages over 20K iterations, linearly increasing from 0.1 to 2.0 m/s
     del cfg.curriculum["command_vel"]  # Remove default curriculum
     from mjlab.managers.curriculum_manager import CurriculumTermCfg
     from mjlab.tasks.velocity.mdp.curriculums import commands_vel
@@ -193,7 +182,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
 
 def leggy_stand_up_rl_cfg() -> RslRlOnPolicyRunnerCfg:
-    """Create RL runner configuration for Leggy stand up task.
+    """Create RL runner configuration for Leggy locomotion task.
 
     Returns PPO training configuration with network architecture and hyperparameters.
     """
