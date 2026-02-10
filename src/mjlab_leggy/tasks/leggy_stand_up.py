@@ -28,6 +28,7 @@ from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     air_time_both_feet,
     action_rate_running_adaptive,
+    body_height_reward,
 )
 
 
@@ -96,6 +97,17 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Set speed thresholds to match velocity curriculum (max 2.0 m/s)
     cfg.rewards["pose"].params["walking_threshold"] = 0.5  # Standing -> Walking transition
     cfg.rewards["pose"].params["running_threshold"] = 1.2  # Walking -> Running transition
+
+    # Body height reward - directly incentivizes maintaining standing height
+    cfg.rewards["body_height"] = RewardTermCfg(
+        func=body_height_reward,
+        weight=5.0,
+        params={
+            "asset_cfg": SceneEntityCfg("robot"),
+            "target_height": 0.18,
+            "std": 0.05,
+        },
+    )
 
     # Velocity-adaptive action rate - reduces penalty at high speeds
     cfg.rewards["action_rate_l2"] = RewardTermCfg(
