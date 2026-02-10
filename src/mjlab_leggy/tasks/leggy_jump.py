@@ -186,7 +186,7 @@ def leggy_jump_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         func=jump_height_reward,
         weight=0.0,
         params={
-            "standing_height": 0.18,
+            "standing_height": 0.13,
             "command_name": "jump_command"
         }
     )

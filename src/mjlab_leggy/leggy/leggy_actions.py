@@ -93,6 +93,15 @@ class LeggyJointAction(JointPositionAction):
         # when we have access to the asset data
         self._motor_limits = None
 
+        # Fix offset for motor channels (indices 2 and 5):
+        # The parent class sets offset to default KNEE joint positions, but
+        # process_actions treats indices 2/5 as MOTOR commands before converting
+        # to knee space. We need motor-space defaults so that zero-action
+        # produces the correct stand pose after motor_to_knee conversion.
+        # motor_default = knee_to_motor(knee_default, hipX_default) = knee + hipX
+        self._offset[:, 2] = knee_to_motor(self._offset[:, 2], self._offset[:, 1])
+        self._offset[:, 5] = knee_to_motor(self._offset[:, 5], self._offset[:, 4])
+
     def process_actions(self, actions: torch.Tensor) -> None:
         """Convert motor commands to knee angles and store in processed_actions.
 

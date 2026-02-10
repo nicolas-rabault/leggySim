@@ -104,7 +104,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         weight=5.0,
         params={
             "asset_cfg": SceneEntityCfg("robot"),
-            "target_height": 0.18,
+            "target_height": 0.13,
             "std": 0.05,
         },
     )

@@ -32,7 +32,7 @@ stand_pose = {
 
 HOME_FRAME = EntityCfg.InitialStateCfg(
     # Starting position (robot body center height)
-    pos=(0.0, 0.0, 0.18),
+    pos=(0.0, 0.0, 0.13),
     rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
         # ".*hipY.*": stand_pose["hipY"],
