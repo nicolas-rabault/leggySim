@@ -28,7 +28,7 @@
       "damping": 0.0001,
       "stiffness": 0,
       "armature": 0.00001,
-      "limits": [-1.8325957146, 3.926990817] // [-75+30, 255+30] 30 degree offset
+      "limits": [-1.8325957146, 3.926990817] // [-75-30, 255-30] = [-105, 225] deg, 30 degree offset
     },
     "*passiveMotor": {
       "actuated": false,

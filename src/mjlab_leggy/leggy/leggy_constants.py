@@ -24,10 +24,10 @@ def get_spec() -> mujoco.MjSpec:
 
 
 stand_pose = {
-    "hipY": 13 * np.pi / 180.0, # 0,2268928028
-    "hipX": -25 * np.pi / 180.0, # -0,436332313
-    "kneeMotor": -53 * np.pi / 180.0, # 0,9250245036
-    "knee": (-53+25) * np.pi / 180.0 # -0,8329244468
+    "hipY": 13 * np.pi / 180.0, # 0.2269 rad
+    "hipX": -25 * np.pi / 180.0, # -0.4363 rad
+    "kneeMotor": -53 * np.pi / 180.0, # -0.9250 rad
+    "knee": (-53+25) * np.pi / 180.0 # -0.4887 rad (-28 deg)
 }
 
 HOME_FRAME = EntityCfg.InitialStateCfg(
@@ -44,12 +44,12 @@ HOME_FRAME = EntityCfg.InitialStateCfg(
         # "Rpassive2": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]) #70
 
         ".*hipY.*": stand_pose["hipY"],
-        ".*hipX.*": stand_pose["hipX"],#25
-        ".*knee.*": stand_pose["knee"],# so delta is 45+25=70
-        "LpassiveMotor": knee_to_motor(stand_pose["knee"], stand_pose["hipX"]), #this one is the actual motor knee
-        "RpassiveMotor": knee_to_motor(stand_pose["knee"], stand_pose["hipX"]),#this one is the actual motor knee
-        "Lpassive2": stand_pose["knee"], #70
-        "Rpassive2": stand_pose["knee"] #70
+        ".*hipX.*": stand_pose["hipX"], # -25 deg
+        ".*knee.*": stand_pose["knee"], # -28 deg (motor_to_knee(-53, -25) = -53+25 = -28)
+        "LpassiveMotor": knee_to_motor(stand_pose["knee"], stand_pose["hipX"]), # -53 deg (motor)
+        "RpassiveMotor": knee_to_motor(stand_pose["knee"], stand_pose["hipX"]), # -53 deg (motor)
+        "Lpassive2": stand_pose["knee"], # -28 deg
+        "Rpassive2": stand_pose["knee"] # -28 deg
     },
     joint_vel={".*": 0.0},
     # Explicitly set root (freejoint) velocities to zero

@@ -25,8 +25,9 @@ def joint_pos_limits_motor(
 ) -> torch.Tensor:
     """Penalize motor positions if they cross soft limits.
 
-    For Leggy's knee joints, checks limits in motor space (motor = knee - hipX)
+    For Leggy's knee joints, checks limits in motor space (motor = knee + hipX)
     rather than knee space, since the physical motor limits are in motor space.
+    Uses passiveMotor joint limits for the motor-space check.
     """
     asset = env.scene[asset_cfg.name]
     joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids].clone()
@@ -44,8 +45,15 @@ def joint_pos_limits_motor(
     joint_pos[:, 2] = knee_to_motor(lknee_pos, lhipx_pos)
     joint_pos[:, 5] = knee_to_motor(rknee_pos, rhipx_pos)
 
-    # Check limits
-    limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
+    # Get limits: use actuated joint limits for hips, but passiveMotor limits for knees
+    # (since we converted knee values to motor space, we must check against motor limits)
+    limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids].clone()
+    motor_joint_names = ["LpassiveMotor", "RpassiveMotor"]
+    motor_joint_ids = asset.find_joints(motor_joint_names)[0]
+    motor_limits = asset.data.soft_joint_pos_limits[:, motor_joint_ids]
+    limits[:, 2, :] = motor_limits[:, 0, :]  # Lmotor limits
+    limits[:, 5, :] = motor_limits[:, 1, :]  # Rmotor limits
+
     out_of_limits = -(joint_pos - limits[:, :, 0]).clip(max=0.0)
     out_of_limits += (joint_pos - limits[:, :, 1]).clip(min=0.0)
 
