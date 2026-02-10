@@ -248,9 +248,9 @@ def joint_vel_motor(env, asset_cfg=None) -> torch.Tensor:
     RhipX_vel = joint_velocities[:, 4]
     Rknee_vel = joint_velocities[:, 5]
 
-    # Motor velocity = d/dt(knee - hipX) = knee_vel - hipX_vel
-    Lmotor_vel = Lknee_vel - LhipX_vel
-    Rmotor_vel = Rknee_vel - RhipX_vel
+    # Motor velocity = d/dt(knee + hipX) = knee_vel + hipX_vel
+    Lmotor_vel = Lknee_vel + LhipX_vel
+    Rmotor_vel = Rknee_vel + RhipX_vel
 
     # Return in motor space layout
     motor_velocities = torch.stack([LhipY_vel, LhipX_vel, Lmotor_vel, RhipY_vel, RhipX_vel, Rmotor_vel], dim=1)

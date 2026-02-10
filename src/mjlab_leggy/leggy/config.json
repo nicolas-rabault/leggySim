@@ -9,7 +9,7 @@
     "*hip*": {
       "damping": 0.008824,
       "armature": 0.00006499,
-      "forcerange": 0.236,
+      "forcerange": 2.36,
       "limits": [-1.57, 1.57],
       "frictionloss": 0.01,
       "kp": 10
@@ -17,7 +17,7 @@
     "*knee": {
       "damping": 0.008824,
       "armature": 0.00006499,
-      "forcerange": 0.236,
+      "forcerange": 2.36,
       "limits": [-4.9741883682, 0.7853981634], // [-255-30, 75-30] 30 degree offset
       "frictionloss": 0.01,
       "kp": 10

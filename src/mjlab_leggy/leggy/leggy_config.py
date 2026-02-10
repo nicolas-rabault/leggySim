@@ -162,9 +162,9 @@ def configure_pose_reward(cfg):
 
     # Standing mode: tight constraints for balance
     cfg.rewards["pose"].params["std_standing"] = {
-        ".*hipY.*": 0.2,  # HipY needs tight control
-        ".*hipX.*": 0.4,  # HipX needs tight control
-        ".*knee.*": 0.4,  # Knee slightly more relaxed
+        ".*hipY.*": 0.15,  # HipY needs tight control
+        ".*hipX.*": 0.2,  # HipX needs tight control
+        ".*knee.*": 0.2,  # Knee tight to prevent crouching
     }
 
     # Walking mode: medium constraints for locomotion
