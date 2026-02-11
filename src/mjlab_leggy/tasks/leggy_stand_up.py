@@ -26,7 +26,7 @@ from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
-    foot_contact_time_asymmetry,
+    foot_max_air_time,
     action_rate_running_adaptive,
 )
 
@@ -120,14 +120,14 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["air_time"].weight = 0.5
     cfg.rewards["air_time"].params["command_threshold"] = 0.3
 
-    # Foot contact time asymmetry penalty - prevents one-leg hopping
-    # Penalizes difference in ground contact duration between left and right feet
-    # Grows over time during asymmetric behavior, stays bounded during walking
-    cfg.rewards["foot_contact_time_asymmetry"] = RewardTermCfg(
-        func=foot_contact_time_asymmetry,
+    # Max foot air time penalty - prevents keeping a foot in the air
+    # Penalty grows linearly for any foot airborne longer than max_duration
+    cfg.rewards["foot_max_air_time"] = RewardTermCfg(
+        func=foot_max_air_time,
         weight=-2.0,
         params={
             "sensor_name": "feet_ground_contact",
+            "max_duration": 0.5,
         },
     )
     # Penalty for foot slipping on ground during contact

@@ -229,27 +229,29 @@ def air_time_both_feet(
     return both_feet_off.float() * is_active * (1.0 + flight_quality)
 
 
-def foot_contact_time_asymmetry(
+def foot_max_air_time(
     env: ManagerBasedRlEnv,
     sensor_name: str = "feet_ground_contact",
+    max_duration: float = 0.5,
 ) -> torch.Tensor:
-    """Penalize asymmetric ground contact time between left and right feet.
+    """Penalize any foot being in the air longer than max_duration.
 
-    Uses current_contact_time (how long each foot has been continuously in contact).
-    One-leg hopping: standing foot accumulates large contact time, hopping foot stays near zero.
-    Walking: both feet have similar bounded contact times (alternating stance phases).
-    Standing: both feet have similar growing contact times.
+    current_air_time grows continuously while a foot is airborne.
+    Walking: feet land within normal step duration -> no penalty.
+    One-leg hopping: floating foot's air time grows unboundedly -> increasing penalty.
 
     Args:
         env: The environment.
         sensor_name: Name of the contact sensor (must have track_air_time=True).
+        max_duration: Maximum allowed continuous air time per foot (seconds).
 
     Returns:
-        Absolute difference in current contact time between left and right foot.
+        Sum of excess air time across both feet.
     """
     sensor: ContactSensor = env.scene[sensor_name]
-    contact_time = sensor.data.current_contact_time
-    return torch.abs(contact_time[:, 0] - contact_time[:, 1])
+    air_time = sensor.data.current_air_time
+    excess = torch.clamp(air_time - max_duration, min=0.0)
+    return torch.sum(excess, dim=1)
 
 
 def jump_height_reward(
@@ -387,7 +389,7 @@ __all__ = [
     "joint_extension_speed",
     "leg_coordination",
     "air_time_both_feet",
-    "foot_contact_time_asymmetry",
+    "foot_max_air_time",
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
