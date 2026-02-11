@@ -25,14 +25,14 @@ def get_spec() -> mujoco.MjSpec:
 
 stand_pose = {
     "hipY": 13 * np.pi / 180.0, # 0.2269 rad
-    "hipX": -25 * np.pi / 180.0, # -0.4363 rad
-    "kneeMotor": -53 * np.pi / 180.0, # -0.9250 rad
-    "knee": (-53+25) * np.pi / 180.0 # -0.4887 rad (-28 deg)
+    "hipX": -35 * np.pi / 180.0, # -0.4363 rad
+    "kneeMotor": -38 * np.pi / 180.0, # -0.9250 rad
+    "knee": (-38+35) * np.pi / 180.0 # -0.4887 rad (-28 deg)
 }
 
 HOME_FRAME = EntityCfg.InitialStateCfg(
     # Starting position (robot body center height)
-    pos=(0.0, 0.0, 0.13),
+    pos=(0.0, 0.0, 0.175),
     rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
         # ".*hipY.*": stand_pose["hipY"],
