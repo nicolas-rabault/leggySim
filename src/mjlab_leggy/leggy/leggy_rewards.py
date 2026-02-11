@@ -229,50 +229,27 @@ def air_time_both_feet(
     return both_feet_off.float() * is_active * (1.0 + flight_quality)
 
 
-def feet_air_time_adaptive(
+def foot_air_time_asymmetry(
     env: ManagerBasedRlEnv,
     sensor_name: str = "feet_ground_contact",
-    command_name: str = "twist",
-    threshold: float = 0.5,
-    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """Adaptive air time: penalizes flight when standing, rewards both-feet flight when running.
+    """Penalize asymmetric air time between left and right feet.
 
-    Below threshold: penalizes any foot off ground (strongest at zero command, fades linearly)
-    Above threshold: rewards both feet off ground (grows linearly above threshold)
-    At threshold: neutral
-
-    Use with a positive weight. Returns negative values below threshold,
-    positive values above.
+    Uses last_air_time (duration of each foot's most recent completed flight phase).
+    Walking: both feet have similar flight durations -> low asymmetry.
+    One-leg hopping: only one foot accumulates flight time -> high asymmetry.
+    Standing: both feet stay on ground -> zero asymmetry.
 
     Args:
         env: The environment.
-        sensor_name: Name of the contact sensor.
-        command_name: Name of the velocity command.
-        threshold: Command magnitude that separates standing from running.
-        asset_cfg: Asset configuration.
+        sensor_name: Name of the contact sensor (must have track_air_time=True).
 
     Returns:
-        Blended reward in roughly [-2, +1] range.
+        Absolute difference in last air time between left and right foot.
     """
     sensor: ContactSensor = env.scene[sensor_name]
-    contact = sensor.data.found.squeeze(-1).bool()
-
-    # Command magnitude (commanded, not actual — respects curriculum)
-    command = env.command_manager.get_command(command_name)
-    cmd_magnitude = torch.norm(command[:, :2], dim=1) + torch.abs(command[:, 2])
-
-    # Standing mode: penalize any foot being off ground
-    # Scale: 1.0 at cmd=0, linearly to 0.0 at cmd=threshold
-    feet_in_air = (~contact).float().sum(dim=1)  # 0, 1, or 2
-    penalty_scale = torch.clamp(1.0 - cmd_magnitude / threshold, 0.0, 1.0)
-
-    # Running mode: reward both feet off ground
-    # Scale: 0.0 at cmd=threshold, linearly to 1.0 at cmd=2*threshold
-    both_feet_off = (~contact[:, 0] & ~contact[:, 1]).float()
-    reward_scale = torch.clamp((cmd_magnitude - threshold) / threshold, 0.0, 1.0)
-
-    return -feet_in_air * penalty_scale + both_feet_off * reward_scale
+    last_air_time = sensor.data.last_air_time
+    return torch.abs(last_air_time[:, 0] - last_air_time[:, 1])
 
 
 def jump_height_reward(
@@ -410,7 +387,7 @@ __all__ = [
     "joint_extension_speed",
     "leg_coordination",
     "air_time_both_feet",
-    "feet_air_time_adaptive",
+    "foot_air_time_asymmetry",
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
