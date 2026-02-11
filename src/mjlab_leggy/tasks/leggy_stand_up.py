@@ -26,7 +26,7 @@ from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
-    foot_air_time_asymmetry,
+    foot_contact_time_asymmetry,
     action_rate_running_adaptive,
 )
 
@@ -120,10 +120,11 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["air_time"].weight = 0.5
     cfg.rewards["air_time"].params["command_threshold"] = 0.3
 
-    # Foot air time asymmetry penalty - prevents one-leg hopping
-    # Penalizes difference in flight duration between left and right feet
-    cfg.rewards["foot_air_time_asymmetry"] = RewardTermCfg(
-        func=foot_air_time_asymmetry,
+    # Foot contact time asymmetry penalty - prevents one-leg hopping
+    # Penalizes difference in ground contact duration between left and right feet
+    # Grows over time during asymmetric behavior, stays bounded during walking
+    cfg.rewards["foot_contact_time_asymmetry"] = RewardTermCfg(
+        func=foot_contact_time_asymmetry,
         weight=-2.0,
         params={
             "sensor_name": "feet_ground_contact",
@@ -171,7 +172,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
         cfg.commands["twist"].ranges.lin_vel_y = velocities["lin_vel_y"]
         cfg.commands["twist"].ranges.lin_vel_x = velocities["lin_vel_x"]
-        cfg.commands["twist"].rel_standing_envs = 0.2
+        cfg.commands["twist"].rel_standing_envs = 1.0
         cfg.commands["twist"].rel_heading_envs = 0.5
 
     return cfg
