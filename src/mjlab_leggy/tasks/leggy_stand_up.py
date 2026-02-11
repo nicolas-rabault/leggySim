@@ -28,7 +28,6 @@ from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     air_time_both_feet,
     action_rate_running_adaptive,
-    body_height_reward,
 )
 
 
@@ -39,7 +38,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Set mujoco sim parameters to improve stability and collision detection
     cfg.sim.mujoco.ccd_iterations = 500
     cfg.sim.contact_sensor_maxmatch = 500
-    cfg.sim.nconmax = 45
+    cfg.sim.nconmax = 70
 
     # Set control frequency to 100Hz (was 50Hz with decimation=4)                                                                                                                                               
     cfg.decimation = 2
@@ -83,7 +82,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Velocity tracking --
     # Reward for matching commanded linear velocity (forward/backward, left/right)
-    cfg.rewards["track_linear_velocity"].weight = 15.0
+    cfg.rewards["track_linear_velocity"].weight = 8.0
     # Reward for matching commanded angular velocity (turning rate)
     cfg.rewards["track_angular_velocity"].weight = 8.0
 
@@ -98,21 +97,10 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["pose"].params["walking_threshold"] = 0.5  # Standing -> Walking transition
     cfg.rewards["pose"].params["running_threshold"] = 1.2  # Walking -> Running transition
 
-    # Body height reward - directly incentivizes maintaining standing height
-    cfg.rewards["body_height"] = RewardTermCfg(
-        func=body_height_reward,
-        weight=5.0,
-        params={
-            "asset_cfg": SceneEntityCfg("robot"),
-            "target_height": 0.13,
-            "std": 0.05,
-        },
-    )
-
     # Velocity-adaptive action rate - reduces penalty at high speeds
     cfg.rewards["action_rate_l2"] = RewardTermCfg(
         func=action_rate_running_adaptive,
-        weight=-1.0,
+        weight=-6.0,
         params={
             "command_name": "twist",
             "velocity_threshold": 1.0,
@@ -122,12 +110,12 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -- Gait and foot behavior --
     # Foot clearance during swing phase - promotes proper stepping
     cfg.rewards["foot_clearance"].weight = 1.0
-    cfg.rewards["foot_clearance"].params["target_height"] = 0.03
-    cfg.rewards["foot_clearance"].params["command_threshold"] = 0.01
+    cfg.rewards["foot_clearance"].params["target_height"] = 0.05
+    cfg.rewards["foot_clearance"].params["command_threshold"] = 0.05
     # Minimum swing height - ensures feet lift properly
     cfg.rewards["foot_swing_height"].weight = 1.0
-    cfg.rewards["foot_swing_height"].params["target_height"] = 0.05
-    cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.01
+    cfg.rewards["foot_swing_height"].params["target_height"] = 0.08
+    cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.05
     # Air time tracking - encourages slower gait with feet spending time in air
     cfg.rewards["air_time"].weight = 0.5
     cfg.rewards["air_time"].params["command_threshold"] = 0.05
@@ -136,12 +124,12 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Gates on ACTUAL velocity, not commanded, to prevent jumping in place
     cfg.rewards["air_time_both_feet_running"] = RewardTermCfg(
         func=air_time_both_feet,
-        weight=12.0,
+        weight=0.5,
         params={
             "sensor_name": "feet_ground_contact",
-            "command_name": "twist",
+            "command_name": "command",
             "mode": "velocity",
-            "velocity_threshold": 0.50,
+            "velocity_threshold": 0.8,
             "asset_cfg": SceneEntityCfg("robot"),
         },
     )

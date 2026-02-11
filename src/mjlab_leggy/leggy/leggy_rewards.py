@@ -357,28 +357,6 @@ def action_rate_running_adaptive(
     return action_rate * scale
 
 
-def body_height_reward(
-    env: ManagerBasedRlEnv,
-    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-    target_height: float = 0.18,
-    std: float = 0.05,
-) -> torch.Tensor:
-    """Reward body height being close to target standing height.
-
-    Args:
-        env: The environment.
-        asset_cfg: Asset configuration.
-        target_height: Desired standing height in meters.
-        std: Standard deviation for Gaussian reward shaping.
-
-    Returns:
-        Reward in [0, 1] based on proximity to target height.
-    """
-    asset = env.scene[asset_cfg.name]
-    current_height = asset.data.root_link_pos_w[:, 2]
-    return torch.exp(-((current_height - target_height) ** 2) / (std ** 2))
-
-
 __all__ = [
     "joint_pos_limits_motor",
     "leg_collision_penalty",
@@ -390,5 +368,4 @@ __all__ = [
     "landing_stability",
     "soft_landing_bonus",
     "action_rate_running_adaptive",
-    "body_height_reward",
 ]
