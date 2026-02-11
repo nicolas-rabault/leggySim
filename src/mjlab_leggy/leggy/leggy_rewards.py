@@ -254,6 +254,28 @@ def foot_max_air_time(
     return torch.sum(excess, dim=1)
 
 
+def foot_air_time_asymmetry(
+    env: ManagerBasedRlEnv,
+    sensor_name: str = "feet_ground_contact",
+) -> torch.Tensor:
+    """Penalize asymmetric flight durations between left and right feet.
+
+    Uses last_air_time (duration of each foot's most recent completed flight phase).
+    Walking: both feet have similar flight durations -> low asymmetry.
+    One-leg hopping: one foot has long flights, the other short -> high asymmetry.
+
+    Args:
+        env: The environment.
+        sensor_name: Name of the contact sensor (must have track_air_time=True).
+
+    Returns:
+        Absolute difference in last air time between left and right foot.
+    """
+    sensor: ContactSensor = env.scene[sensor_name]
+    last_air_time = sensor.data.last_air_time
+    return torch.abs(last_air_time[:, 0] - last_air_time[:, 1])
+
+
 def jump_height_reward(
     env: ManagerBasedRlEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
@@ -390,6 +412,7 @@ __all__ = [
     "leg_coordination",
     "air_time_both_feet",
     "foot_max_air_time",
+    "foot_air_time_asymmetry",
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
