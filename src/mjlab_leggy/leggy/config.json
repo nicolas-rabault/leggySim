@@ -91,6 +91,8 @@
     "foot": {
       "collision": {
         "name": "left_foot_collision",
+        "type": "sphere",
+        "size": 0.0025,
         "contype": 1,
         "conaffinity": 1,
         "condim": 3,
@@ -102,6 +104,8 @@
     "foot_2": {
       "collision": {
         "name": "right_foot_collision",
+        "type": "sphere",
+        "size": 0.0025,
         "contype": 1,
         "conaffinity": 1,
         "condim": 3,
