@@ -82,13 +82,13 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Velocity tracking --
     # Reward for matching commanded linear velocity (forward/backward, left/right)
-    cfg.rewards["track_linear_velocity"].weight = 8.0
+    cfg.rewards["track_linear_velocity"].weight = 10.0
     # Reward for matching commanded angular velocity (turning rate)
     cfg.rewards["track_angular_velocity"].weight = 8.0
 
     # -- Pose and orientation --
     # Reward for keeping body upright (gravity aligned with body Z axis)
-    cfg.rewards["upright"].weight = 1.0
+    cfg.rewards["upright"].weight = 3.0
 
     # Velocity-adaptive pose reward - uses standard 3-phase system (standing/walking/running)
     # Already configured by configure_leggy_base() with per-joint std parameters
@@ -111,14 +111,14 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Foot clearance during swing phase - promotes proper stepping
     cfg.rewards["foot_clearance"].weight = 1.0
     cfg.rewards["foot_clearance"].params["target_height"] = 0.05
-    cfg.rewards["foot_clearance"].params["command_threshold"] = 0.05
+    cfg.rewards["foot_clearance"].params["command_threshold"] = 0.3
     # Minimum swing height - ensures feet lift properly
     cfg.rewards["foot_swing_height"].weight = 1.0
     cfg.rewards["foot_swing_height"].params["target_height"] = 0.08
-    cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.05
+    cfg.rewards["foot_swing_height"].params["command_threshold"] = 0.03
     # Air time tracking - encourages slower gait with feet spending time in air
     cfg.rewards["air_time"].weight = 0.5
-    cfg.rewards["air_time"].params["command_threshold"] = 0.05
+    cfg.rewards["air_time"].params["command_threshold"] = 0.3
 
     # Adaptive air time: penalizes flight when standing, rewards both-feet flight when running
     # Below threshold: penalizes any foot off ground (prevents one-leg hopping)
