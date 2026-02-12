@@ -75,18 +75,26 @@ def reward_weight_curriculum(
     """
     del env_ids  # Unused
 
+    # Build name -> cfg lookup
+    rm = env.reward_manager
+    term_by_name = dict(zip(rm._term_names, rm._term_cfgs))
+
     # Update reward weights based on current step
     for stage in reward_stages:
         if env.common_step_counter > stage["step"]:
             for reward_name, weight in stage.items():
-                if reward_name != "step" and reward_name in env.reward_manager._terms:
-                    env.reward_manager._terms[reward_name].weight = weight
+                if reward_name != "step" and reward_name in term_by_name:
+                    term_by_name[reward_name].weight = weight
 
-    # Return current weights for logging (jump-related only)
+    # Return current weights for logging (all rewards referenced in stages)
+    tracked_names = set()
+    for stage in reward_stages:
+        tracked_names.update(k for k in stage if k != "step")
+
     metrics = {}
-    for name, term in env.reward_manager._terms.items():
-        if name.startswith(("jump", "vertical", "air_time_both", "landing", "leg_coordination")):
-            metrics[f"weight_{name}"] = torch.tensor(term.weight)
+    for name in tracked_names:
+        if name in term_by_name:
+            metrics[f"weight_{name}"] = torch.tensor(term_by_name[name].weight)
 
     return metrics
 

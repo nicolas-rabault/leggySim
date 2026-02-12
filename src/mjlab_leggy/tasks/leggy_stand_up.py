@@ -82,14 +82,8 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Positive weights encourage behavior, negative weights penalize it.
 
     # -- Velocity tracking --
-    # Reward for matching commanded linear velocity (forward/backward, left/right)
-    cfg.rewards["track_linear_velocity"].weight = 10.0
-    # Reward for matching commanded angular velocity (turning rate)
+    # track_linear_velocity and upright weights are set by reward_weights curriculum
     cfg.rewards["track_angular_velocity"].weight = 8.0
-
-    # -- Pose and orientation --
-    # Reward for keeping body upright (gravity aligned with body Z axis)
-    cfg.rewards["upright"].weight = 3.0
 
     # Velocity-adaptive pose reward - uses standard 3-phase system (standing/walking/running)
     # Already configured by configure_leggy_base() with per-joint std parameters
@@ -154,13 +148,36 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     del cfg.curriculum["command_vel"]  # Remove default curriculum
     from mjlab.managers.curriculum_manager import CurriculumTermCfg
     from mjlab.tasks.velocity.mdp.curriculums import commands_vel
-    from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD
+    from mjlab_leggy.leggy.leggy_curriculums import (
+        VELOCITY_STAGES_STANDARD,
+        reward_weight_curriculum,
+    )
 
     cfg.curriculum["command_vel"] = CurriculumTermCfg(
         func=commands_vel,
         params={
             "command_name": "twist",
-            "velocity_stages": VELOCITY_STAGES_STANDARD,  # From leggy_curriculums.py
+            "velocity_stages": VELOCITY_STAGES_STANDARD,
+        },
+    )
+
+    # Reward weight curriculum: increase velocity tracking and upright after
+    # the robot learns proper two-legged gait (500 iterations)
+    cfg.curriculum["reward_weights"] = CurriculumTermCfg(
+        func=reward_weight_curriculum,
+        params={
+            "reward_stages": [
+                {
+                    "step": 0,
+                    "track_linear_velocity": 10.0,
+                    "upright": 3.0,
+                },
+                {
+                    "step": 500 * 24,
+                    "track_linear_velocity": 20.0,
+                    "upright": 5.0,
+                },
+            ],
         },
     )
 
@@ -181,7 +198,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
         cfg.commands["twist"].ranges.lin_vel_y = velocities["lin_vel_y"]
         cfg.commands["twist"].ranges.lin_vel_x = velocities["lin_vel_x"]
-        cfg.commands["twist"].rel_standing_envs = 1.0
+        cfg.commands["twist"].rel_standing_envs = 0.2
         cfg.commands["twist"].rel_heading_envs = 0.5
 
     return cfg
