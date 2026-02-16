@@ -120,19 +120,6 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["air_time"].weight = 0.5
     cfg.rewards["air_time"].params["command_threshold"] = 0.05
 
-    # Both feet airtime - rewards running gait (flight phase) at high speeds
-    # Gates on ACTUAL velocity, not commanded, to prevent jumping in place
-    cfg.rewards["air_time_both_feet_running"] = RewardTermCfg(
-        func=air_time_both_feet,
-        weight=0.5,
-        params={
-            "sensor_name": "feet_ground_contact",
-            "command_name": "command",
-            "mode": "velocity",
-            "velocity_threshold": 0.8,
-            "asset_cfg": SceneEntityCfg("robot"),
-        },
-    )
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -3.0
     cfg.rewards["foot_slip"].params["command_threshold"] = 0.3
