@@ -28,6 +28,7 @@ from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     air_time_both_feet,
     action_rate_running_adaptive,
+    gait_symmetry,
 )
 
 
@@ -124,9 +125,21 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["foot_slip"].weight = -3.0
     cfg.rewards["foot_slip"].params["command_threshold"] = 0.3
 
+    # -- Symmetry --
+    # Penalize asymmetric joint positions (one foot ahead of the other)
+    # Reduces at high speeds to allow dynamic gaits
+    cfg.rewards["gait_symmetry"] = RewardTermCfg(
+        func=gait_symmetry,
+        weight=-2.0,
+        params={
+            "command_name": "twist",
+            "velocity_threshold": 0.5,
+        },
+    )
+
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling
-    cfg.rewards["body_ang_vel"].weight = -0.05
+    cfg.rewards["body_ang_vel"].weight = -0.2
     # Penalty for angular momentum - reduces unwanted spinning/wobbling
     cfg.rewards["angular_momentum"].weight = -0.02
 
@@ -162,7 +175,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
         cfg.commands["twist"].ranges.lin_vel_y = velocities["lin_vel_y"]
         cfg.commands["twist"].ranges.lin_vel_x = velocities["lin_vel_x"]
-        cfg.commands["twist"].rel_standing_envs = 0.2
+        cfg.commands["twist"].rel_standing_envs = 1.0
         cfg.commands["twist"].rel_heading_envs = 0.5
 
     return cfg

@@ -330,6 +330,52 @@ def soft_landing_bonus(
     return -penalty
 
 
+def gait_symmetry(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    command_name: str = "twist",
+    velocity_threshold: float = 0.5,
+) -> torch.Tensor:
+    """Penalize asymmetric joint positions between left and right legs.
+
+    Compares corresponding left/right joint positions to discourage gaits where
+    one foot stays consistently ahead of the other. The penalty reduces at
+    higher speeds to allow more dynamic motion.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+        command_name: Name of the velocity command.
+        velocity_threshold: Velocity above which penalty reduces to 30%.
+
+    Returns:
+        Sum of squared position differences between left and right joints.
+    """
+    asset = env.scene[asset_cfg.name]
+
+    joint_names = ["LhipY", "RhipY", "LhipX", "RhipX", "Lknee", "Rknee"]
+    joint_ids = asset.find_joints(joint_names)[0]
+    joint_pos = asset.data.joint_pos[:, joint_ids]
+
+    # Squared difference for each L/R pair
+    hipY_diff = (joint_pos[:, 0] - joint_pos[:, 1]) ** 2
+    hipX_diff = (joint_pos[:, 2] - joint_pos[:, 3]) ** 2
+    knee_diff = (joint_pos[:, 4] - joint_pos[:, 5]) ** 2
+
+    asymmetry = hipY_diff + hipX_diff + knee_diff
+
+    # Reduce penalty at high speeds (walking/running needs some asymmetry)
+    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+    vel_magnitude = torch.norm(vel_cmd, dim=1)
+    scale = torch.where(
+        vel_magnitude < velocity_threshold,
+        torch.ones_like(vel_magnitude),
+        torch.ones_like(vel_magnitude) * 0.3,
+    )
+
+    return asymmetry * scale
+
+
 def action_rate_running_adaptive(
     env: ManagerBasedRlEnv,
     command_name: str = "twist",
@@ -367,5 +413,6 @@ __all__ = [
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
+    "gait_symmetry",
     "action_rate_running_adaptive",
 ]
