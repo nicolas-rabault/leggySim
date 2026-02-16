@@ -26,7 +26,7 @@ from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
-    feet_air_time_adaptive,
+    air_time_both_feet,
     action_rate_running_adaptive,
 )
 
@@ -120,17 +120,16 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["air_time"].weight = 0.5
     cfg.rewards["air_time"].params["command_threshold"] = 0.05
 
-    # Adaptive air time: penalizes flight when standing, rewards both-feet flight when running
-    # Below threshold: penalizes any foot off ground (prevents one-leg hopping)
-    # Above threshold: rewards both feet off ground (proper running gait)
-    # Uses commanded velocity to respect curriculum progression
-    cfg.rewards["air_time_adaptive"] = RewardTermCfg(
-        func=feet_air_time_adaptive,
-        weight=2.0,
+    # Both feet airtime - rewards running gait (flight phase) at high speeds
+    # Gates on ACTUAL velocity, not commanded, to prevent jumping in place
+    cfg.rewards["air_time_both_feet_running"] = RewardTermCfg(
+        func=air_time_both_feet,
+        weight=0.5,
         params={
             "sensor_name": "feet_ground_contact",
-            "command_name": "twist",
-            "threshold": 0.5,
+            "command_name": "command",
+            "mode": "velocity",
+            "velocity_threshold": 0.8,
             "asset_cfg": SceneEntityCfg("robot"),
         },
     )
