@@ -5,10 +5,13 @@ import mujoco
 from mjlab.actuator import XmlPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 import numpy as np
-from mjlab_leggy.leggy.leggy_actions import motor_to_knee, knee_to_motor
+from mjlab_leggy.leggy.leggy_actions import knee_to_motor
 
 LEGGY_XML: Path = Path(os.path.dirname(__file__)) / "robot.xml"
 assert LEGGY_XML.exists(), f"XML not found: {LEGGY_XML}"
+
+# Training constant shared between RL config and curriculum
+NUM_STEPS_PER_ENV = 48
 
 
 def get_spec() -> mujoco.MjSpec:

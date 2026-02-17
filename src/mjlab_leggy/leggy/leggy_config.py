@@ -6,7 +6,6 @@ that are common across all Leggy tasks.
 
 from mjlab.envs.mdp import terminations as mdp_terminations
 from mjlab.managers.reward_manager import RewardTermCfg
-from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 
@@ -162,16 +161,16 @@ def configure_pose_reward(cfg):
 
     # Standing mode: tight constraints for balance
     cfg.rewards["pose"].params["std_standing"] = {
-        ".*hipY.*": 0.2,  # HipY needs tight control
-        ".*hipX.*": 0.3,  # HipX needs tight control
-        ".*knee.*": 0.3,  # Knee tight to prevent crouching
+        ".*hipY.*": 0.4,  # HipY needs tight control
+        ".*hipX.*": 0.5,  # HipX needs tight control
+        ".*knee.*": 0.6,  # Knee tight to prevent crouching
     }
 
     # Walking mode: medium constraints for locomotion
     cfg.rewards["pose"].params["std_walking"] = {
-        ".*hipY.*": 0.3,
-        ".*hipX.*": 0.6,
-        ".*knee.*": 0.8,
+        ".*hipY.*": 0.5,
+        ".*hipX.*": 0.8,
+        ".*knee.*": 1.2,
     }
 
     # Running mode: relaxed constraints for dynamic motion
@@ -212,7 +211,7 @@ def configure_leg_collision_penalty(cfg):
     """
     cfg.rewards["leg_collision_penalty"] = RewardTermCfg(
         func=leg_collision_penalty,
-        weight=-5.0,
+        weight=-2.0,
         params={"sensor_name": "leg_collision_ltibia_rtibia"},
     )
 

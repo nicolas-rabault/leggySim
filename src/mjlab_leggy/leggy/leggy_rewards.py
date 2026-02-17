@@ -142,9 +142,89 @@ def action_rate_running_adaptive(
     return action_rate * scale
 
 
+class same_foot_penalty:
+    """Growing penalty for consecutive same-foot contacts.
+
+    Counts how many times the robot enters single-support on the same foot
+    without the other foot taking over. The penalty equals the count, so it
+    grows with each repeated hop on the same leg.
+
+    - One-leg hopping: count grows 1, 2, 3, 4... → penalty grows per hop
+    - Proper walking: count alternates 1, 1, 1, 1... → penalty stays at 1
+    - No step frequency incentive — penalty is per-event, not per-timestep
+    """
+
+    def __init__(self, cfg, env: ManagerBasedRlEnv):
+        # -1 = unknown, 0 = left support, 1 = right support
+        self.last_support = torch.full((env.num_envs,), -1.0, device=env.device)
+        self.was_single_support = torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+        self.same_foot_count = torch.zeros(env.num_envs, device=env.device)
+
+    def reset(self, env_ids: torch.Tensor):
+        self.last_support[env_ids] = -1.0
+        self.was_single_support[env_ids] = False
+        self.same_foot_count[env_ids] = 0.0
+
+    def __call__(
+        self,
+        env: ManagerBasedRlEnv,
+        sensor_name: str = "feet_ground_contact",
+        command_name: str = "twist",
+        command_threshold: float = 0.1,
+    ) -> torch.Tensor:
+        sensor: ContactSensor = env.scene[sensor_name]
+        contact = sensor.data.found.squeeze(-1) > 0  # [B, 2] bool
+
+        left = contact[:, 0]
+        right = contact[:, 1]
+
+        # Single support: exactly one foot on ground
+        is_single_support = left ^ right
+
+        # Detect entry into single support (transition from not-single to single)
+        entered_single = is_single_support & ~self.was_single_support
+        self.was_single_support = is_single_support
+
+        # Which foot is the current support?
+        current_support = torch.where(
+            left & ~right,
+            torch.zeros_like(self.last_support),
+            torch.where(
+                ~left & right,
+                torch.ones_like(self.last_support),
+                torch.full_like(self.last_support, -1.0),
+            ),
+        )
+
+        # On entry to single support: check if same or different foot
+        same_foot = entered_single & (current_support == self.last_support)
+        diff_foot = entered_single & (self.last_support >= 0) & (current_support >= 0) & (current_support != self.last_support)
+
+        # Update counter: increment on same foot, reset to 1 on different foot
+        self.same_foot_count = torch.where(
+            same_foot, self.same_foot_count + 1.0, self.same_foot_count
+        )
+        self.same_foot_count = torch.where(
+            diff_foot, torch.ones_like(self.same_foot_count), self.same_foot_count
+        )
+
+        # Update last support foot
+        self.last_support = torch.where(
+            entered_single & (current_support >= 0), current_support, self.last_support
+        )
+
+        # Gate by command velocity (standing is not penalized)
+        vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+        vel_magnitude = torch.norm(vel_cmd, dim=1)
+        is_moving = (vel_magnitude > command_threshold).float()
+
+        return self.same_foot_count * is_moving
+
+
 __all__ = [
     "joint_pos_limits_motor",
     "leg_collision_penalty",
     "mechanical_power",
     "action_rate_running_adaptive",
+    "same_foot_penalty",
 ]
