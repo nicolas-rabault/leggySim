@@ -221,10 +221,45 @@ class same_foot_penalty:
         return self.same_foot_count * is_moving
 
 
+def flight_penalty(
+    env: ManagerBasedRlEnv,
+    sensor_name: str = "feet_ground_contact",
+    command_name: str = "twist",
+    run_threshold: float = 0.8,
+) -> torch.Tensor:
+    """Penalize both feet being in the air, scaled down at high speed.
+
+    At low speed the robot should walk (one foot always on ground).
+    At high speed (above run_threshold) flight phases are allowed for running.
+    Penalty scales linearly from 1.0 at zero speed to 0.0 at run_threshold.
+
+    Args:
+        env: The environment.
+        sensor_name: Name of the foot contact sensor.
+        command_name: Name of the velocity command.
+        run_threshold: Speed above which flight phases are not penalized.
+
+    Returns:
+        1.0 when both feet in the air at low speed, 0.0 otherwise.
+    """
+    sensor: ContactSensor = env.scene[sensor_name]
+    contact = sensor.data.found.squeeze(-1) > 0  # [B, 2] bool
+
+    both_in_air = (~contact[:, 0] & ~contact[:, 1]).float()
+
+    # Scale: full penalty at low speed, zero at run_threshold
+    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+    vel_magnitude = torch.norm(vel_cmd, dim=1)
+    scale = torch.clamp(1.0 - vel_magnitude / run_threshold, min=0.0)
+
+    return both_in_air * scale
+
+
 __all__ = [
     "joint_pos_limits_motor",
     "leg_collision_penalty",
     "mechanical_power",
     "action_rate_running_adaptive",
     "same_foot_penalty",
+    "flight_penalty",
 ]

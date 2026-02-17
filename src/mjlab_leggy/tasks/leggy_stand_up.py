@@ -22,6 +22,7 @@ from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     action_rate_running_adaptive,
+    flight_penalty,
     mechanical_power,
     same_foot_penalty,
 )
@@ -132,6 +133,19 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -1.0
     cfg.rewards["foot_slip"].params["command_threshold"] = 0.1
+
+    # Flight penalty - penalizes both feet in the air at low speed.
+    # Scales linearly: full penalty at 0 m/s, no penalty above 0.8 m/s.
+    # Allows running with flight phases at high speed.
+    cfg.rewards["flight_penalty"] = RewardTermCfg(
+        func=flight_penalty,
+        weight=-2.0,
+        params={
+            "sensor_name": "feet_ground_contact",
+            "command_name": "twist",
+            "run_threshold": 0.8,
+        },
+    )
 
     # -- Energy efficiency --
     # Penalize mechanical power (torque * velocity) to discourage high-energy
