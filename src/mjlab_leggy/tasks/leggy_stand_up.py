@@ -11,13 +11,8 @@ Pose reward automatically adapts based on speed:
 - Running mode (> 1.2 m/s): Relaxed constraints for dynamic motion
 """
 
-from copy import deepcopy
-
-import torch
-
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.managers.reward_manager import RewardTermCfg
-from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 

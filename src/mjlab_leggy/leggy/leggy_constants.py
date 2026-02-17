@@ -4,7 +4,6 @@ from pathlib import Path
 import mujoco
 from mjlab.actuator import XmlPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
-from mjlab.utils.spec_config import CollisionCfg
 import numpy as np
 from mjlab_leggy.leggy.leggy_actions import motor_to_knee, knee_to_motor
 
@@ -35,14 +34,6 @@ HOME_FRAME = EntityCfg.InitialStateCfg(
     pos=(0.0, 0.0, 0.175),
     rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
-        # ".*hipY.*": stand_pose["hipY"],
-        # ".*hipX.*": stand_pose["hipX"],#25
-        # ".*knee.*": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]),# so delta is 53-25=28
-        # "LpassiveMotor": stand_pose["kneeMotor"], #this one is the actual motor knee
-        # "RpassiveMotor": stand_pose["kneeMotor"],#this one is the actual motor knee
-        # "Lpassive2": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]), #70
-        # "Rpassive2": motor_to_knee(stand_pose["kneeMotor"], stand_pose["hipX"]) #70
-
         ".*hipY.*": stand_pose["hipY"],
         ".*hipX.*": stand_pose["hipX"], # -25 deg
         ".*knee.*": stand_pose["knee"], # -28 deg (motor_to_knee(-53, -25) = -53+25 = -28)

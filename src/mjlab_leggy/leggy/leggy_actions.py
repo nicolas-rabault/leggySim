@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 # =============================================================================
 # Kinematic Conversion Functions
-# those 2 functions are validated by there usage in leggy_constants.py
+# These 2 functions are validated by their usage in leggy_constants.py
 # =============================================================================
 
 def motor_to_knee(motor: torch.Tensor | float, hipX: torch.Tensor | float) -> torch.Tensor | float:
