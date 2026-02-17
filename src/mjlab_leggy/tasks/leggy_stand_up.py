@@ -27,6 +27,7 @@ from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     action_rate_running_adaptive,
+    mechanical_power,
 )
 
 
@@ -123,6 +124,14 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["foot_slip"].weight = -3.0
     cfg.rewards["foot_slip"].params["command_threshold"] = 0.3
 
+    # -- Energy efficiency --
+    # Penalize mechanical power (torque * velocity) to discourage high-energy
+    # gaits like hopping and encourage efficient alternating steps
+    cfg.rewards["mechanical_power"] = RewardTermCfg(
+        func=mechanical_power,
+        weight=-0.05,
+    )
+
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling
     cfg.rewards["body_ang_vel"].weight = -0.2
@@ -161,7 +170,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
         cfg.commands["twist"].ranges.lin_vel_y = velocities["lin_vel_y"]
         cfg.commands["twist"].ranges.lin_vel_x = velocities["lin_vel_x"]
-        cfg.commands["twist"].rel_standing_envs = 1.0
+        cfg.commands["twist"].rel_standing_envs = 0.2
         cfg.commands["twist"].rel_heading_envs = 0.5
 
     return cfg

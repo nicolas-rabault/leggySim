@@ -330,6 +330,38 @@ def soft_landing_bonus(
     return -penalty
 
 
+def mechanical_power(
+    env: ManagerBasedRlEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Penalize mechanical power (torque * velocity) across all actuated joints.
+
+    Discourages high-energy gaits like hopping in favor of efficient alternating
+    gaits. Mechanical power measures the actual work done by the motors.
+
+    Args:
+        env: The environment.
+        asset_cfg: Asset configuration.
+
+    Returns:
+        Total absolute mechanical power across all joints.
+    """
+    asset = env.scene[asset_cfg.name]
+
+    actuator_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
+    actuator_ids = asset.find_actuators(actuator_names)[0]
+    joint_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
+    joint_ids = asset.find_joints(joint_names)[0]
+
+    torques = asset.data.actuator_force[:, actuator_ids]
+    velocities = asset.data.joint_vel[:, joint_ids]
+
+    # Mechanical power = |torque * velocity| per joint, summed
+    power = torch.sum(torch.abs(torques * velocities), dim=1)
+
+    return power
+
+
 def action_rate_running_adaptive(
     env: ManagerBasedRlEnv,
     command_name: str = "twist",
@@ -367,5 +399,6 @@ __all__ = [
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
+    "mechanical_power",
     "action_rate_running_adaptive",
 ]
