@@ -255,6 +255,40 @@ def flight_penalty(
     return both_in_air * scale
 
 
+def gait_symmetry(
+    env: ManagerBasedRlEnv,
+    sensor_name: str = "feet_ground_contact",
+    command_name: str = "twist",
+    command_threshold: float = 0.1,
+) -> torch.Tensor:
+    """Penalize asymmetric contact durations between left and right feet.
+
+    Compares the last completed contact phase duration for each foot.
+    If one foot spends more time on the ground per step than the other,
+    the difference is penalized. Updates once per step (when a foot lifts off).
+
+    Args:
+        env: The environment.
+        sensor_name: Name of the foot contact sensor.
+        command_name: Name of the velocity command.
+        command_threshold: Minimum command velocity to activate penalty.
+
+    Returns:
+        Absolute difference in last contact duration between feet.
+    """
+    sensor: ContactSensor = env.scene[sensor_name]
+    last_contact = sensor.data.last_contact_time  # [B, 2]
+
+    asymmetry = torch.abs(last_contact[:, 0] - last_contact[:, 1])
+
+    # Gate by command velocity
+    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+    vel_magnitude = torch.norm(vel_cmd, dim=1)
+    is_moving = (vel_magnitude > command_threshold).float()
+
+    return asymmetry * is_moving
+
+
 __all__ = [
     "joint_pos_limits_motor",
     "leg_collision_penalty",
@@ -262,4 +296,5 @@ __all__ = [
     "action_rate_running_adaptive",
     "same_foot_penalty",
     "flight_penalty",
+    "gait_symmetry",
 ]

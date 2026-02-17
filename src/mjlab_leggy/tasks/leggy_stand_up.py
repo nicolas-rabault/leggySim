@@ -23,6 +23,7 @@ from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     action_rate_running_adaptive,
     flight_penalty,
+    gait_symmetry,
     mechanical_power,
     same_foot_penalty,
 )
@@ -153,6 +154,19 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["mechanical_power"] = RewardTermCfg(
         func=mechanical_power,
         weight=-0.05,
+    )
+
+    # -- Gait symmetry --
+    # Penalize difference in contact duration between left and right feet.
+    # Pushes the robot toward symmetric step timing.
+    cfg.rewards["gait_symmetry"] = RewardTermCfg(
+        func=gait_symmetry,
+        weight=-1.0,
+        params={
+            "sensor_name": "feet_ground_contact",
+            "command_name": "twist",
+            "command_threshold": 0.1,
+        },
     )
 
     # -- Regularization --
