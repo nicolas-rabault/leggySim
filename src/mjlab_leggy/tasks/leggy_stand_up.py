@@ -26,10 +26,7 @@ from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
-    air_time_both_feet,
     action_rate_running_adaptive,
-    gait_symmetry,
-    feet_air_time_penalty,
 )
 
 
@@ -125,18 +122,6 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Penalty for foot slipping on ground during contact
     cfg.rewards["foot_slip"].weight = -3.0
     cfg.rewards["foot_slip"].params["command_threshold"] = 0.3
-
-    # -- Symmetry --
-    # Penalize sustained asymmetry in leg positions (one leg consistently ahead)
-    # Uses EMA to allow normal stride oscillation while penalizing persistent bias
-    cfg.rewards["gait_symmetry"] = RewardTermCfg(
-        func=gait_symmetry,
-        weight=-4.0,
-        params={
-            "asset_cfg": SceneEntityCfg("robot"),
-            "alpha": 0.02,  # EMA decay (~0.5s window at 100Hz)
-        },
-    )
 
     # -- Regularization --
     # Penalty for body angular velocity - reduces unwanted spinning/wobbling

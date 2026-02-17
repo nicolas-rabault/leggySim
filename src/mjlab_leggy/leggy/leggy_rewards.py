@@ -15,7 +15,6 @@ from mjlab.sensor import ContactSensor
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv
-    from mjlab.managers.reward_manager import RewardTermCfg
 
 from .leggy_actions import knee_to_motor
 
@@ -331,83 +330,6 @@ def soft_landing_bonus(
     return -penalty
 
 
-def feet_air_time_penalty(
-    env: ManagerBasedRlEnv,
-    sensor_name: str = "feet_ground_contact",
-    threshold: float = 0.5,
-) -> torch.Tensor:
-    """Penalize any foot that stays in the air too long.
-
-    Prevents the robot from learning to hop on one leg by applying a growing
-    penalty when a foot hasn't touched the ground recently. The penalty grows
-    linearly beyond the threshold, so briefly lifting feet is fine but
-    permanently tucking one leg away is strongly penalized.
-
-    Args:
-        env: The environment.
-        sensor_name: Name of the contact sensor (must have track_air_time=True).
-        threshold: Air time (seconds) beyond which penalty starts.
-
-    Returns:
-        Sum of excess air time across all feet.
-    """
-    sensor: ContactSensor = env.scene[sensor_name]
-    current_air_time = sensor.data.current_air_time  # [B, N_feet]
-    assert current_air_time is not None
-
-    # Penalty grows linearly for air time beyond threshold
-    excess = torch.clamp(current_air_time - threshold, min=0.0)
-    return torch.sum(excess, dim=1)
-
-
-class gait_symmetry:
-    """Penalize sustained asymmetry in leg positions using exponential moving average.
-
-    Tracks the EMA of each leg's hipY position and penalizes the difference.
-    This allows large instantaneous differences (normal walking stride) while
-    penalizing gaits where one leg is consistently ahead of the other.
-
-    The EMA window (~0.5s with alpha=0.02 at 100Hz) roughly matches one gait
-    cycle, so transient per-step asymmetry is smoothed out.
-    """
-
-    def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRlEnv):
-        asset = env.scene[cfg.params["asset_cfg"].name]
-        joint_ids = asset.find_joints(["LhipY", "RhipY"])[0]
-        default_pos = asset.data.default_joint_pos[:, joint_ids]  # [B, 2]
-
-        # Initialize means to default pose (symmetric)
-        self.mean_L = default_pos[:, 0].clone()
-        self.mean_R = default_pos[:, 1].clone()
-
-    def __call__(
-        self,
-        env: ManagerBasedRlEnv,
-        asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-        alpha: float = 0.02,
-    ) -> torch.Tensor:
-        asset = env.scene[asset_cfg.name]
-        joint_ids = asset.find_joints(["LhipY", "RhipY"])[0]
-        joint_pos = asset.data.joint_pos[:, joint_ids]
-
-        left_hipY = joint_pos[:, 0]
-        right_hipY = joint_pos[:, 1]
-
-        # Update exponential moving averages
-        self.mean_L = (1.0 - alpha) * self.mean_L + alpha * left_hipY
-        self.mean_R = (1.0 - alpha) * self.mean_R + alpha * right_hipY
-
-        # Reset means for environments that just restarted
-        just_reset = env.episode_length_buf == 0
-        if just_reset.any():
-            default_pos = asset.data.default_joint_pos[:, joint_ids]
-            self.mean_L = torch.where(just_reset, default_pos[:, 0], self.mean_L)
-            self.mean_R = torch.where(just_reset, default_pos[:, 1], self.mean_R)
-
-        # Penalize difference in mean positions
-        return (self.mean_L - self.mean_R) ** 2
-
-
 def action_rate_running_adaptive(
     env: ManagerBasedRlEnv,
     command_name: str = "twist",
@@ -445,7 +367,5 @@ __all__ = [
     "jump_height_reward",
     "landing_stability",
     "soft_landing_bonus",
-    "feet_air_time_penalty",
-    "gait_symmetry",
     "action_rate_running_adaptive",
 ]

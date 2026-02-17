@@ -67,6 +67,47 @@ def knee_to_motor(knee: torch.Tensor | float, hipX: torch.Tensor | float) -> tor
 
 
 # =============================================================================
+# L/R Mirror Randomization for Gait Symmetry
+# =============================================================================
+
+# Joint index swap for L/R mirror: [LhipY,LhipX,Lmotor,RhipY,RhipX,Rmotor] -> [RhipY,RhipX,Rmotor,LhipY,LhipX,Lmotor]
+MIRROR_SWAP = [3, 4, 5, 0, 1, 2]
+
+
+def get_mirror_flag(env) -> torch.Tensor:
+    """Get per-environment mirror flag, randomizing for newly reset episodes.
+
+    Returns a boolean tensor [num_envs] where True means L/R are swapped
+    in observations and actions for that environment. The flag is randomized
+    (50% chance) at each episode reset and stays constant within an episode.
+
+    Safe to call multiple times per step - only the first call per step
+    detects resets and randomizes.
+
+    Args:
+        env: The environment instance.
+
+    Returns:
+        Boolean tensor [num_envs] indicating mirrored environments.
+    """
+    if not hasattr(env, '_leggy_mirror_flag'):
+        env._leggy_mirror_flag = torch.rand(env.num_envs, device=env.device) < 0.5
+        env._leggy_mirror_prev_ep_len = env.episode_length_buf.clone()
+        return env._leggy_mirror_flag
+
+    # Detect resets: episode_length_buf decreased since last check
+    current_len = env.episode_length_buf
+    reset_mask = current_len < env._leggy_mirror_prev_ep_len
+    env._leggy_mirror_prev_ep_len = current_len.clone()
+
+    if reset_mask.any():
+        random_flags = torch.rand(env.num_envs, device=env.device) < 0.5
+        env._leggy_mirror_flag[reset_mask] = random_flags[reset_mask]
+
+    return env._leggy_mirror_flag
+
+
+# =============================================================================
 # Action Term Implementation
 # =============================================================================
 
@@ -114,6 +155,12 @@ class LeggyJointAction(JointPositionAction):
 
         # Apply scale and offset (from parent class - includes HOME_FRAME default offset)
         self._processed_actions[:] = self._raw_actions * self._scale + self._offset
+
+        # Un-mirror: swap L/R actions for mirrored environments
+        # This converts from the policy's mirrored action space back to physical joint space
+        mirror = get_mirror_flag(self._env)
+        if mirror.any():
+            self._processed_actions[mirror] = self._processed_actions[mirror][:, MIRROR_SWAP]
 
         # Initialize motor limits on first call
         if self._motor_limits is None:
@@ -223,6 +270,11 @@ def joint_pos_motor(env, asset_cfg=None) -> torch.Tensor:
     # Return in motor space layout
     motor_positions = torch.stack([LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor], dim=1)
 
+    # Mirror: swap L/R for mirrored environments
+    mirror = get_mirror_flag(env)
+    if mirror.any():
+        motor_positions[mirror] = motor_positions[mirror][:, MIRROR_SWAP]
+
     return motor_positions
 
 
@@ -264,6 +316,11 @@ def joint_vel_motor(env, asset_cfg=None) -> torch.Tensor:
     # Return in motor space layout
     motor_velocities = torch.stack([LhipY_vel, LhipX_vel, Lmotor_vel, RhipY_vel, RhipX_vel, Rmotor_vel], dim=1)
 
+    # Mirror: swap L/R for mirrored environments
+    mirror = get_mirror_flag(env)
+    if mirror.any():
+        motor_velocities[mirror] = motor_velocities[mirror][:, MIRROR_SWAP]
+
     return motor_velocities
 
 
@@ -302,6 +359,12 @@ def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
     # - Index 4: RhipX actuator → RhipX torque
     # - Index 5: Rknee actuator → Rmotor torque (knee drives motor through mechanism)
 
+    # Mirror: swap L/R for mirrored environments
+    mirror = get_mirror_flag(env)
+    if mirror.any():
+        actuator_torques = actuator_torques.clone()
+        actuator_torques[mirror] = actuator_torques[mirror][:, MIRROR_SWAP]
+
     return actuator_torques
 
 
@@ -335,7 +398,15 @@ def body_euler(env, asset_cfg=None) -> torch.Tensor:
     roll, pitch, yaw = euler_xyz_from_quat(quat)
 
     # Stack into [num_envs, 3] tensor
-    return torch.stack([roll, pitch, yaw], dim=1)
+    euler = torch.stack([roll, pitch, yaw], dim=1)
+
+    # Mirror: negate roll and yaw for mirrored environments
+    mirror = get_mirror_flag(env)
+    if mirror.any():
+        euler[mirror, 0] = -euler[mirror, 0]  # roll
+        euler[mirror, 2] = -euler[mirror, 2]  # yaw
+
+    return euler
 
 
 # =============================================================================
@@ -345,6 +416,8 @@ def body_euler(env, asset_cfg=None) -> torch.Tensor:
 __all__ = [
     "motor_to_knee",
     "knee_to_motor",
+    "MIRROR_SWAP",
+    "get_mirror_flag",
     "joint_pos_motor",
     "joint_vel_motor",
     "joint_torques_motor",
