@@ -23,6 +23,7 @@ from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_rewards import (
     action_rate_running_adaptive,
     flight_penalty,
+    forward_symmetry,
     gait_symmetry,
     mechanical_power,
     same_foot_penalty,
@@ -166,6 +167,19 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
             "command_threshold": 0,
+        },
+    )
+
+    # Penalize one foot being persistently ahead of the other.
+    # Uses EMA of forward foot offset — single-step differences average out,
+    # only a sustained bias triggers penalty.
+    cfg.rewards["forward_symmetry"] = RewardTermCfg(
+        func=forward_symmetry,
+        weight=-2.0,
+        params={
+            "command_name": "twist",
+            "command_threshold": 0.1,
+            "alpha": 0.01,
         },
     )
 

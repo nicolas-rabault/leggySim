@@ -12,6 +12,7 @@ import torch
 
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import ContactSensor
+from mjlab.utils.lab_api.math import euler_xyz_from_quat
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv
@@ -289,6 +290,57 @@ def gait_symmetry(
     return asymmetry * is_moving
 
 
+class forward_symmetry:
+    """Penalize one foot being consistently ahead of the other.
+
+    Tracks an exponential moving average of the forward distance between
+    the two feet (projected onto the robot's heading direction). If one
+    foot is persistently ahead over many timesteps, the penalty grows.
+
+    A single-step offset (normal during walking) averages out. Only a
+    persistent bias triggers penalty.
+    """
+
+    def __init__(self, cfg, env: ManagerBasedRlEnv):
+        asset = env.scene["robot"]
+        self.foot_site_ids = asset.find_sites(("left_foot", "right_foot"))[0]
+        self.mean_diff = torch.zeros(env.num_envs, device=env.device)
+
+    def reset(self, env_ids: torch.Tensor):
+        self.mean_diff[env_ids] = 0.0
+
+    def __call__(
+        self,
+        env: ManagerBasedRlEnv,
+        command_name: str = "twist",
+        command_threshold: float = 0.1,
+        alpha: float = 0.01,
+    ) -> torch.Tensor:
+        asset = env.scene["robot"]
+
+        # Foot positions in world frame [B, 2, 3]
+        foot_pos = asset.data.site_pos_w[:, self.foot_site_ids]
+
+        # Robot heading from quaternion
+        _, _, yaw = euler_xyz_from_quat(asset.data.root_link_quat_w)
+        forward_x = torch.cos(yaw)
+        forward_y = torch.sin(yaw)
+
+        # Foot difference projected onto forward direction
+        diff = foot_pos[:, 0, :2] - foot_pos[:, 1, :2]  # left - right [B, 2]
+        forward_diff = diff[:, 0] * forward_x + diff[:, 1] * forward_y
+
+        # Exponential moving average
+        self.mean_diff = alpha * forward_diff + (1.0 - alpha) * self.mean_diff
+
+        # Gate by command velocity
+        vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+        vel_magnitude = torch.norm(vel_cmd, dim=1)
+        is_moving = (vel_magnitude > command_threshold).float()
+
+        return torch.abs(self.mean_diff) * is_moving
+
+
 __all__ = [
     "joint_pos_limits_motor",
     "leg_collision_penalty",
@@ -297,4 +349,5 @@ __all__ = [
     "same_foot_penalty",
     "flight_penalty",
     "gait_symmetry",
+    "forward_symmetry",
 ]
