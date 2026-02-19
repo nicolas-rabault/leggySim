@@ -161,11 +161,11 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Pushes the robot toward symmetric step timing.
     cfg.rewards["gait_symmetry"] = RewardTermCfg(
         func=gait_symmetry,
-        weight=-1.0,
+        weight=-2.0,
         params={
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
-            "command_threshold": 0.1,
+            "command_threshold": 0,
         },
     )
 
