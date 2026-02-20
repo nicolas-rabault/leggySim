@@ -17,7 +17,7 @@ _KEY_RIGHT = 262
 class KeyboardController:
     """Controls velocity targets via arrow key input.
 
-    Works with both raw MuJoCo inference (infer_policy.py) and mjlab environments.
+    Works with mjlab environments (used by leggy-play).
 
     Args:
         lin_vel_x_step: Increment per key press for forward speed (m/s).

@@ -92,8 +92,6 @@ python -m mujoco.viewer --mjcf=src/mjlab_leggy/leggy/robot.xml
 ```
 leggySim/
 ├── pyproject.toml              # Package configuration and dependencies
-├── env.py                      # Deprecated standalone environment (kept for reference)
-├── infer_policy.py             # ONNX policy inference script
 └── src/
     └── mjlab_leggy/            # Main package
         ├── __init__.py
