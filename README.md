@@ -50,17 +50,12 @@ Optional dependencies:
 
 ### Training
 
-Run training using mjlab's train command:
-
 ```bash
-# Train with default settings
-uv run train Mjlab-Stand-up-Flat-Leggy
-
-# Adjust number of parallel environments
-uv run train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
+# Train with torque metrics logged to wandb
+uv run leggy-train Mjlab-Stand-up-Flat-Leggy --env.scene.num-envs 2048
 
 # See all available options
-uv run train Mjlab-Stand-up-Flat-Leggy --help
+uv run leggy-train Mjlab-Stand-up-Flat-Leggy --help
 ```
 
 ### Play/Evaluation
