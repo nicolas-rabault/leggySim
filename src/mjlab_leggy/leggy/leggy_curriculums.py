@@ -1,16 +1,7 @@
-"""Curriculum stage definitions for Leggy training.
-
-Provides velocity stage definitions for progressive training curricula.
-"""
+"""Curriculum stage definitions for Leggy training."""
 
 from .leggy_constants import NUM_STEPS_PER_ENV
 
-# -------------------------------------------------------------------------
-# Velocity Stages (for locomotion curriculum)
-# -------------------------------------------------------------------------
-
-# Standard velocity curriculum: progressively increase running speed
-# Linearly interpolates from near-zero to the final target values.
 _N_STAGES = 8
 _LAST_ITERATION = 20000
 _LAST_STEP = _LAST_ITERATION * NUM_STEPS_PER_ENV
@@ -26,8 +17,3 @@ for _i in range(_N_STAGES):
         _hi = _INITIAL[_key][1] + _t * (_FINAL[_key][1] - _INITIAL[_key][1])
         _stage[_key] = (round(_lo, 4), round(_hi, 4))
     VELOCITY_STAGES_STANDARD.append(_stage)
-
-
-__all__ = [
-    "VELOCITY_STAGES_STANDARD",
-]

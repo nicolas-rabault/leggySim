@@ -1,17 +1,7 @@
-"""Custom action term for Leggy robot with motor-to-knee conversion.
+"""Custom action term for Leggy with motor-to-knee conversion.
 
-This module provides a simplified action term that only handles motor-to-knee conversion:
-- Inherits from JointPositionAction for standard joint control
-- Overrides process_actions to convert motor commands → knee angles
-- Passive joints are handled automatically by MuJoCo's constraint solver
-- Observations compute motor space using joint_pos_motor/joint_vel_motor
-
-Usage in your task configuration:
-    from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
-
-    cfg.actions = {
-        "joint_pos": LeggyJointActionCfg()
-    }
+Policy outputs motor commands that get converted to knee angles.
+Passive joints are handled by MuJoCo's constraint solver.
 """
 
 from __future__ import annotations
@@ -24,102 +14,44 @@ from mjlab.envs.mdp.actions import JointPositionAction, JointPositionActionCfg
 from mjlab.utils.lab_api.math import euler_xyz_from_quat
 
 
-# =============================================================================
-# Kinematic Conversion Functions
-# These 2 functions are validated by their usage in leggy_constants.py
-# =============================================================================
-
 def motor_to_knee(motor: torch.Tensor | float, hipX: torch.Tensor | float) -> torch.Tensor | float:
-    """Convert motor command to knee angle.
-
-    Leggy's knee is mechanically offset by the hipX angle.
-    The motor command must be adjusted to get the actual knee angle.
-
-    Args:
-        motor: Motor command angle [rad] (tensor or scalar)
-        hipX: Current hipX joint angle [rad] (tensor or scalar)
-
-    Returns:
-        Knee angle [rad] (same type as input)
-    """
-    result = motor - hipX
-    return result
+    """Convert motor command to knee angle (knee = motor - hipX)."""
+    return motor - hipX
 
 
 def knee_to_motor(knee: torch.Tensor | float, hipX: torch.Tensor | float) -> torch.Tensor | float:
-    """Convert knee angle to motor command.
+    """Convert knee angle to motor command (motor = knee + hipX)."""
+    return knee + hipX
 
-    Used for observations: convert actual knee angle to motor representation.
-
-    Args:
-        knee: Knee joint angle [rad] (tensor or scalar)
-        hipX: Current hipX joint angle [rad] (tensor or scalar)
-
-    Returns:
-        Motor command angle [rad] (same type as input)
-    """
-    result = knee + hipX
-    return result
-
-
-# =============================================================================
-# Action Term Implementation
-# =============================================================================
 
 class LeggyJointAction(JointPositionAction):
-    """Action term that handles Leggy's motor-to-knee conversion.
-
-    Inherits from JointPositionAction and only overrides process_actions to convert
-    motor commands to knee angles. The parent class handles apply_actions.
+    """Action term that converts motor commands to knee angles.
 
     Policy outputs: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
-    Converted to: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-
-    Note: Passive joints are handled automatically by MuJoCo's constraint solver.
-    Observations compute motor space from knee angles using joint_pos_motor/joint_vel_motor.
+    Converted to:   [LhipY, LhipX, Lknee,  RhipY, RhipX, Rknee]
     """
 
     cfg: LeggyJointActionCfg
     _motor_limits: torch.Tensor | None = None
 
     def __post_init__(self) -> None:
-        """Initialize motor limits after parent initialization."""
         super().__post_init__()
-        # Motor limits will be initialized on first process_actions call
-        # when we have access to the asset data
         self._motor_limits = None
 
         # Fix offset for motor channels (indices 2 and 5):
-        # The parent class sets offset to default KNEE joint positions, but
-        # process_actions treats indices 2/5 as MOTOR commands before converting
-        # to knee space. We need motor-space defaults so that zero-action
-        # produces the correct stand pose after motor_to_knee conversion.
-        # motor_default = knee_to_motor(knee_default, hipX_default) = knee + hipX
+        # Parent sets offset to default KNEE positions, but we treat these as
+        # MOTOR commands. Convert to motor-space defaults.
         self._offset[:, 2] = knee_to_motor(self._offset[:, 2], self._offset[:, 1])
         self._offset[:, 5] = knee_to_motor(self._offset[:, 5], self._offset[:, 4])
 
     def process_actions(self, actions: torch.Tensor) -> None:
-        """Convert motor commands to knee angles and store in processed_actions.
-
-        Args:
-            actions: Raw actions from policy with shape [num_envs, 6]
-                     Columns: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
-        """
-        # Store raw actions
         self._raw_actions[:] = actions
-
-        # Apply scale and offset (from parent class - includes HOME_FRAME default offset)
         self._processed_actions[:] = self._raw_actions * self._scale + self._offset
 
-        # Initialize motor limits on first call
         if self._motor_limits is None:
-            # Get soft joint limits for motor joints (indices 2 and 5 correspond to Lmotor and Rmotor)
-            # In motor space, these correspond to the passive motor joint limits
             asset = self._env.scene[self.cfg.asset_name]
-            joint_names = ["LpassiveMotor", "RpassiveMotor"]
-            motor_joint_ids = asset.find_joints(joint_names)[0]
+            motor_joint_ids = asset.find_joints(["LpassiveMotor", "RpassiveMotor"])[0]
             motor_soft_limits = asset.data.soft_joint_pos_limits[:, motor_joint_ids]
-            # Store motor limits as [min_left, max_left, min_right, max_right]
             self._motor_limits = torch.stack([
                 motor_soft_limits[0, 0, 0],  # Lmotor min
                 motor_soft_limits[0, 0, 1],  # Lmotor max
@@ -127,226 +59,62 @@ class LeggyJointAction(JointPositionAction):
                 motor_soft_limits[0, 1, 1],  # Rmotor max
             ]).to(self._processed_actions.device)
 
-        # Clamp motor commands to respect motor limits BEFORE converting to knee space
-        # This ensures that we never command a knee position that would require
-        # an impossible motor position
+        # Clamp motor commands before converting to knee space
         self._processed_actions[:, 2] = torch.clamp(
             self._processed_actions[:, 2],
-            min=self._motor_limits[0],
-            max=self._motor_limits[1]
+            min=self._motor_limits[0], max=self._motor_limits[1],
         )
         self._processed_actions[:, 5] = torch.clamp(
             self._processed_actions[:, 5],
-            min=self._motor_limits[2],
-            max=self._motor_limits[3]
+            min=self._motor_limits[2], max=self._motor_limits[3],
         )
 
-        # Convert motor commands to knee commands (indices 2 and 5)
-        # Use target hipX values (indices 1 and 4) for the conversion
-        # After this, _processed_actions contains: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-        hipX_left_target = self._processed_actions[:, 1]
-        hipX_right_target = self._processed_actions[:, 4]
-        self._processed_actions[:, 2] = motor_to_knee(self._processed_actions[:, 2], hipX_left_target)
-        self._processed_actions[:, 5] = motor_to_knee(self._processed_actions[:, 5], hipX_right_target)
+        # Convert motor → knee using target hipX values
+        self._processed_actions[:, 2] = motor_to_knee(self._processed_actions[:, 2], self._processed_actions[:, 1])
+        self._processed_actions[:, 5] = motor_to_knee(self._processed_actions[:, 5], self._processed_actions[:, 4])
 
-
-# =============================================================================
-# Action Term Configuration
-# =============================================================================
 
 @dataclass(kw_only=True)
 class LeggyJointActionCfg(JointPositionActionCfg):
-    """Configuration for Leggy joint action with motor conversion.
-
-    The policy outputs 6 actions for: [LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor]
-    This action term automatically:
-    - Converts motor commands → knee angles using current hipX
-    - Sets actuated joint targets (via parent JointPositionAction)
-
-    Passive joints are handled by MuJoCo's constraint solver.
-    Use joint_pos_motor/joint_vel_motor for observations in motor space.
-
-    Attributes:
-        class_type: The action term class (automatically set to LeggyJointAction)
-        asset_name: Name of the robot asset (default: "robot")
-        actuator_names: Names of the actuators (defaults to the 6 knee actuators)
-    """
+    """Configuration for Leggy joint action with motor-to-knee conversion."""
     class_type: type[JointPositionAction] = LeggyJointAction
     asset_name: str = "robot"
     actuator_names: tuple[str, ...] = ("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee")
 
 
-# =============================================================================
-# Observation Helper Functions
-# =============================================================================
+_JOINT_NAMES = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
+
 
 def joint_pos_motor(env, asset_cfg=None) -> torch.Tensor:
-    """Get joint positions in motor-space representation.
-
-    Computes motor space knee angles from current knee positions using knee_to_motor conversion.
-    This allows MuJoCo to handle the passive joint loop automatically.
-
-    Args:
-        env: The environment instance
-        asset_cfg: Asset configuration (not used, kept for API compatibility)
-
-    Returns:
-        Joint positions [num_envs, 6]
-        Layout: [LhipY_pos, LhipX_pos, Lmotor_pos, RhipY_pos, RhipX_pos, Rmotor_pos]
-    """
-    # Get the robot asset
+    """Joint positions in motor space [num_envs, 6]."""
     asset = env.scene["robot"]
-
-    # Find joint indices in the order: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-    joint_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
-    joint_ids = asset.find_joints(joint_names)[0]
-
-    # Read current joint positions
-    joint_positions = asset.data.joint_pos[:, joint_ids]
-
-    # Extract components
-    LhipY = joint_positions[:, 0]
-    LhipX = joint_positions[:, 1]
-    Lknee = joint_positions[:, 2]
-    RhipY = joint_positions[:, 3]
-    RhipX = joint_positions[:, 4]
-    Rknee = joint_positions[:, 5]
-
-    # Convert knee positions to motor space
-    Lmotor = knee_to_motor(Lknee, LhipX)
-    Rmotor = knee_to_motor(Rknee, RhipX)
-
-    # Return in motor space layout
-    motor_positions = torch.stack([LhipY, LhipX, Lmotor, RhipY, RhipX, Rmotor], dim=1)
-
-    return motor_positions
+    joint_ids = asset.find_joints(_JOINT_NAMES)[0]
+    pos = asset.data.joint_pos[:, joint_ids].clone()
+    pos[:, 2] = knee_to_motor(pos[:, 2], pos[:, 1])
+    pos[:, 5] = knee_to_motor(pos[:, 5], pos[:, 4])
+    return pos
 
 
 def joint_vel_motor(env, asset_cfg=None) -> torch.Tensor:
-    """Get joint velocities in motor-space representation.
-
-    Computes motor space knee velocities from current knee and hipX velocities.
-
-    Args:
-        env: The environment instance
-        asset_cfg: Asset configuration (not used, kept for API compatibility)
-
-    Returns:
-        Joint velocities [num_envs, 6]
-        Layout: [LhipY_vel, LhipX_vel, Lmotor_vel, RhipY_vel, RhipX_vel, Rmotor_vel]
-    """
-    # Get the robot asset
+    """Joint velocities in motor space [num_envs, 6]."""
     asset = env.scene["robot"]
-
-    # Find joint indices in the order: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-    joint_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
-    joint_ids = asset.find_joints(joint_names)[0]
-
-    # Read current joint velocities
-    joint_velocities = asset.data.joint_vel[:, joint_ids]
-
-    # Extract components
-    LhipY_vel = joint_velocities[:, 0]
-    LhipX_vel = joint_velocities[:, 1]
-    Lknee_vel = joint_velocities[:, 2]
-    RhipY_vel = joint_velocities[:, 3]
-    RhipX_vel = joint_velocities[:, 4]
-    Rknee_vel = joint_velocities[:, 5]
-
+    joint_ids = asset.find_joints(_JOINT_NAMES)[0]
+    vel = asset.data.joint_vel[:, joint_ids].clone()
     # Motor velocity = d/dt(knee + hipX) = knee_vel + hipX_vel
-    Lmotor_vel = Lknee_vel + LhipX_vel
-    Rmotor_vel = Rknee_vel + RhipX_vel
-
-    # Return in motor space layout
-    motor_velocities = torch.stack([LhipY_vel, LhipX_vel, Lmotor_vel, RhipY_vel, RhipX_vel, Rmotor_vel], dim=1)
-
-    return motor_velocities
+    vel[:, 2] = vel[:, 2] + vel[:, 1]
+    vel[:, 5] = vel[:, 5] + vel[:, 4]
+    return vel
 
 
 def joint_torques_motor(env, asset_cfg=None) -> torch.Tensor:
-    """Get actuator torques in motor-space representation.
-
-    Since Leggy has torque sensors at the motor outputs, we want to observe
-    torques as the robot would measure them:
-    - Hip torques: directly from hip actuators
-    - Motor torques: from knee actuators (which drive the motors through the mechanism)
-
-    Args:
-        env: The environment instance
-        asset_cfg: Asset configuration (not used, kept for API compatibility)
-
-    Returns:
-        Actuator torques [num_envs, 6]
-        Layout: [LhipY_torque, LhipX_torque, Lmotor_torque, RhipY_torque, RhipX_torque, Rmotor_torque]
-    """
-    # Get the robot asset
+    """Actuator torques in motor-space layout [num_envs, 6]."""
     asset = env.scene["robot"]
-
-    # Find actuator indices in the order: [LhipY, LhipX, Lknee, RhipY, RhipX, Rknee]
-    actuator_names = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
-    actuator_ids = asset.find_actuators(actuator_names)[0]
-
-    # Read actuator forces (torques) from simulation
-    # data.actuator_force contains the force/torque each actuator is producing
-    actuator_torques = asset.data.actuator_force[:, actuator_ids]
-
-    # The layout matches our observation joints perfectly:
-    # - Index 0: LhipY actuator → LhipY torque
-    # - Index 1: LhipX actuator → LhipX torque
-    # - Index 2: Lknee actuator → Lmotor torque (knee drives motor through mechanism)
-    # - Index 3: RhipY actuator → RhipY torque
-    # - Index 4: RhipX actuator → RhipX torque
-    # - Index 5: Rknee actuator → Rmotor torque (knee drives motor through mechanism)
-
-    return actuator_torques
+    actuator_ids = asset.find_actuators(_JOINT_NAMES)[0]
+    return asset.data.actuator_force[:, actuator_ids]
 
 
 def body_euler(env, asset_cfg=None) -> torch.Tensor:
-    """Get body orientation as Euler angles (roll, pitch, yaw).
-
-    Returns the body orientation in Euler XYZ convention that would be
-    available from a real IMU sensor. Euler angles are more compact than
-    quaternions (3D vs 4D) and more interpretable for RL policies.
-
-    For a biped robot, this provides:
-    - Roll: rotation about X (side-to-side tilt)
-    - Pitch: rotation about Y (forward-backward tilt)
-    - Yaw: rotation about Z (heading direction)
-
-    Yaw is critical for robots with small feet that can rotate in place.
-
-    Args:
-        env: The environment instance
-        asset_cfg: Asset configuration (not used, kept for API compatibility)
-
-    Returns:
-        Body Euler angles [num_envs, 3]
-        Layout: [roll, pitch, yaw] - angles in radians, range (-π, π]
-    """
-    # Get the robot asset
+    """Body orientation as Euler angles (roll, pitch, yaw) [num_envs, 3]."""
     asset = env.scene["robot"]
-
-    # Get quaternion and convert to Euler angles
-    quat = asset.data.root_link_quat_w
-    roll, pitch, yaw = euler_xyz_from_quat(quat)
-
-    # Stack into [num_envs, 3] tensor
-    euler = torch.stack([roll, pitch, yaw], dim=1)
-
-    return euler
-
-
-# =============================================================================
-# Convenience Exports
-# =============================================================================
-
-__all__ = [
-    "motor_to_knee",
-    "knee_to_motor",
-    "joint_pos_motor",
-    "joint_vel_motor",
-    "joint_torques_motor",
-    "body_euler",
-    "LeggyJointAction",
-    "LeggyJointActionCfg",
-]
+    roll, pitch, yaw = euler_xyz_from_quat(asset.data.root_link_quat_w)
+    return torch.stack([roll, pitch, yaw], dim=1)

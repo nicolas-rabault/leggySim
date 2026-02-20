@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "mjlab-leggy"
 version = "0.1.0"
-description = "Training leggy to stand up in MJLab"
+description = "Leggy biped robot locomotion training with MJLab"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

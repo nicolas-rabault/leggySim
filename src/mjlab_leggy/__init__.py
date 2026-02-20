@@ -1,1 +1,1 @@
-"""MJLab Leggy - Training leggy robot to stand up."""
+"""MJLab Leggy - Biped robot locomotion training."""

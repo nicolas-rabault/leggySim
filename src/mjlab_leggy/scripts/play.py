@@ -1,13 +1,11 @@
-"""Play script with LeggyRlEnv and keyboard-controlled velocity commands.
+"""Play script with keyboard-controlled velocity commands.
 
-Reuses mjlab's play logic but swaps in LeggyRlEnv and adds arrow-key control:
-  Up/Down    = forward speed (lin_vel_x)
-  Left/Right = rotation (ang_vel_z)
+Arrow keys: Up/Down = forward speed, Left/Right = rotation.
 
 Usage:
-    uv run leggy-play Mjlab-Stand-up-Flat-Leggy --wandb-run-path <path>
-    uv run leggy-play Mjlab-Stand-up-Flat-Leggy --checkpoint-file <path>
-    uv run leggy-play Mjlab-Stand-up-Flat-Leggy --agent random
+    uv run leggy-play Mjlab-Leggy --wandb-run-path <path>
+    uv run leggy-play Mjlab-Leggy --checkpoint-file <path>
+    uv run leggy-play Mjlab-Leggy --agent random
 """
 
 import mjlab.scripts.play as _play
@@ -30,7 +28,6 @@ class KeyboardViewer(NativeMujocoViewer):
         super().step_simulation()
 
 
-# Replace the env class and viewer used by the play script.
 _play.ManagerBasedRlEnv = LeggyRlEnv
 _play.NativeMujocoViewer = KeyboardViewer
 
