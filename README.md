@@ -65,17 +65,15 @@ uv run train Mjlab-Stand-up-Flat-Leggy --help
 
 ### Play/Evaluation
 
-Run a trained policy:
-
 ```bash
 # Play with a wandb checkpoint
-uv run play Mjlab-Stand-up-Flat-Leggy --wandb-run-path <your-wandb-path>
+uv run leggy-play Mjlab-Stand-up-Flat-Leggy --wandb-run-path <your-wandb-path>
 
 # Play with a local checkpoint
-uv run play Mjlab-Stand-up-Flat-Leggy --checkpoint-file logs/rsl_rl/leggy_stand_up/<run>/model_*.pt
+uv run leggy-play Mjlab-Stand-up-Flat-Leggy --checkpoint-file logs/rsl_rl/leggy_stand_up/<run>/model_*.pt
 
 # Use random actions (for testing)
-uv run play Mjlab-Stand-up-Flat-Leggy --agent random
+uv run leggy-play Mjlab-Stand-up-Flat-Leggy --agent random
 ```
 
 ### Import Robot from Onshape

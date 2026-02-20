@@ -19,6 +19,10 @@ dev = [
     "rerun-sdk>=0.20.0",
 ]
 
+[project.scripts]
+leggy-train = "mjlab_leggy.scripts.train:main"
+leggy-play = "mjlab_leggy.scripts.play:main"
+
 [project.entry-points."mjlab.tasks"]
 mjlab_leggy = "mjlab_leggy.tasks"
 
