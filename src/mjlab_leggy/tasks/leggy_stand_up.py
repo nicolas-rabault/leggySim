@@ -178,7 +178,7 @@ def leggy_stand_up_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         weight=-2.0,
         params={
             "command_name": "twist",
-            "command_threshold": 0.1,
+            "command_threshold": 0,
             "alpha": 0.01,
         },
     )
