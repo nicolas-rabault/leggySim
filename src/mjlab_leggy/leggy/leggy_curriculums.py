@@ -2,11 +2,11 @@
 
 from .leggy_constants import NUM_STEPS_PER_ENV
 
-_N_STAGES = 8
-_LAST_ITERATION = 20000
+_N_STAGES = 16
+_LAST_ITERATION = 40000
 _LAST_STEP = _LAST_ITERATION * NUM_STEPS_PER_ENV
 _INITIAL = {"lin_vel_x": (-0.1, 0.1), "lin_vel_y": (-0.1, 0.1), "ang_vel_z": (-0.1, 0.1)}
-_FINAL = {"lin_vel_x": (-0.5, 1.0), "lin_vel_y": (-0.4, 0.4), "ang_vel_z": (-1.0, 1.0)}
+_FINAL = {"lin_vel_x": (-2.0, 3.0), "lin_vel_y": (-0.8, 0.8), "ang_vel_z": (-3.0, 3.0)}
 
 VELOCITY_STAGES_STANDARD = []
 for _i in range(_N_STAGES):
