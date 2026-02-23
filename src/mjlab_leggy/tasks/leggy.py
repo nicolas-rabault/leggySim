@@ -23,6 +23,7 @@ from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD
+from mjlab_leggy.leggy.leggy_jump import configure_jump
 from mjlab_leggy.leggy.leggy_rewards import (
     action_rate_running_adaptive,
     flight_penalty,
@@ -141,6 +142,8 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         },
     )
 
+    configure_jump(cfg)
+
     # -- Play mode overrides --
     if play:
         cfg.episode_length_s = int(1e9)
@@ -148,6 +151,8 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
         cfg.curriculum.pop("command_vel", None)
+        cfg.curriculum.pop("jump", None)
+        cfg.commands["jump"].jump_probability = 0.3
 
         velocities = VELOCITY_STAGES_STANDARD[-1]
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]

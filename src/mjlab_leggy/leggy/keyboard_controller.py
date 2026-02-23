@@ -12,6 +12,7 @@ _KEY_UP = 265
 _KEY_DOWN = 264
 _KEY_LEFT = 263
 _KEY_RIGHT = 262
+_KEY_SPACE = 32
 
 
 class KeyboardController:
@@ -26,6 +27,7 @@ class KeyboardController:
     ):
         self.lin_vel_x = 0.0
         self.ang_vel_z = 0.0
+        self.jump = False
         self.lin_vel_x_step = lin_vel_x_step
         self.ang_vel_z_step = ang_vel_z_step
         self.lin_vel_x_range = lin_vel_x_range
@@ -41,6 +43,10 @@ class KeyboardController:
             self.ang_vel_z = max(self.ang_vel_z - self.ang_vel_z_step, self.ang_vel_z_range[0])
         elif keycode == _KEY_LEFT:
             self.ang_vel_z = min(self.ang_vel_z + self.ang_vel_z_step, self.ang_vel_z_range[1])
+        elif keycode == _KEY_SPACE:
+            self.jump = not self.jump
+            print(f"Jump: {'ON' if self.jump else 'OFF'}")
+            return
         else:
             return
         self._print_target()
@@ -51,12 +57,16 @@ class KeyboardController:
         return np.array([self.lin_vel_x, 0.0, self.ang_vel_z], dtype=np.float32)
 
     def apply_to_env(self, env, command_name: str = "twist") -> None:
-        """Override the environment's velocity command with keyboard values."""
+        """Override the environment's velocity and jump commands with keyboard values."""
         cmd_term = env.unwrapped.command_manager.get_term(command_name)
         cmd_term.vel_command_b[:, 0] = self.lin_vel_x
         cmd_term.vel_command_b[:, 1] = 0.0
         cmd_term.vel_command_b[:, 2] = self.ang_vel_z
         cmd_term.time_left[:] = 1e9
+
+        jump_term = env.unwrapped.command_manager.get_term("jump")
+        jump_term._jump_cmd[:] = 1.0 if self.jump else 0.0
+        jump_term.time_left[:] = 1e9
 
     def _print_target(self) -> None:
         print(f"Target -> lin_vel_x: {self.lin_vel_x:+.2f} m/s  |  ang_vel_z: {self.ang_vel_z:+.2f} rad/s")

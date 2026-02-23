@@ -33,7 +33,7 @@ _play.NativeMujocoViewer = KeyboardViewer
 
 
 def main():
-    print("Arrow keys: Up/Down = forward speed, Left/Right = rotation")
+    print("Arrow keys: Up/Down = forward speed, Left/Right = rotation, Space = jump")
     _play.main()
 
 
