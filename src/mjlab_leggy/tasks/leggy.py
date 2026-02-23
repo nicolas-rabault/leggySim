@@ -153,8 +153,8 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
         cfg.commands["twist"].ranges.lin_vel_y = velocities["lin_vel_y"]
         cfg.commands["twist"].ranges.lin_vel_x = velocities["lin_vel_x"]
-        cfg.commands["twist"].rel_standing_envs = 0.2
-        cfg.commands["twist"].rel_heading_envs = 0.5
+        cfg.commands["twist"].rel_standing_envs = 0.0
+        cfg.commands["twist"].rel_heading_envs = 0.0
 
     return cfg
 

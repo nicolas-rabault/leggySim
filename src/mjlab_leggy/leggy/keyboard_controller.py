@@ -6,6 +6,8 @@ Left/Right arrows control yaw rotation (ang_vel_z).
 
 import numpy as np
 
+from mjlab_leggy.leggy.leggy_curriculums import _FINAL
+
 _KEY_UP = 265
 _KEY_DOWN = 264
 _KEY_LEFT = 263
@@ -13,21 +15,14 @@ _KEY_RIGHT = 262
 
 
 class KeyboardController:
-    """Controls velocity targets via arrow key input.
-
-    Args:
-        lin_vel_x_step: Increment per key press for forward speed (m/s).
-        ang_vel_z_step: Increment per key press for yaw rate (rad/s).
-        lin_vel_x_range: (min, max) clamp for forward speed.
-        ang_vel_z_range: (min, max) clamp for yaw rate.
-    """
+    """Controls velocity targets via arrow key input."""
 
     def __init__(
         self,
         lin_vel_x_step: float = 0.1,
         ang_vel_z_step: float = 0.2,
-        lin_vel_x_range: tuple[float, float] = (-0.5, 1.0),
-        ang_vel_z_range: tuple[float, float] = (-1.0, 1.0),
+        lin_vel_x_range: tuple[float, float] = _FINAL["lin_vel_x"],
+        ang_vel_z_range: tuple[float, float] = _FINAL["ang_vel_z"],
     ):
         self.lin_vel_x = 0.0
         self.ang_vel_z = 0.0
