@@ -28,6 +28,7 @@ from mjlab_leggy.leggy.leggy_rewards import (
     action_rate_running_adaptive,
     flight_penalty,
     forward_symmetry,
+    gait_frequency,
     gait_symmetry,
     mechanical_power,
     same_foot_penalty,
@@ -125,6 +126,18 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "command_name": "twist",
             "command_threshold": 0,
             "alpha": 0.01,
+        },
+    )
+
+    cfg.rewards["gait_frequency"] = RewardTermCfg(
+        func=gait_frequency,
+        weight=-1.0,
+        params={
+            "sensor_name": "feet_ground_contact",
+            "command_name": "twist",
+            "min_period": 0.15,
+            "max_period": 0.5,
+            "speed_for_min_period": 2.0,
         },
     )
 

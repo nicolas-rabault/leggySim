@@ -182,6 +182,40 @@ def gait_symmetry(
     return asymmetry * is_moving
 
 
+def gait_frequency(
+    env: ManagerBasedRlEnv,
+    sensor_name: str = "feet_ground_contact",
+    command_name: str = "twist",
+    min_period: float = 0.15,
+    max_period: float = 0.5,
+    speed_for_min_period: float = 2.0,
+) -> torch.Tensor:
+    """Penalize stride period deviating from speed-dependent target.
+
+    Target period interpolates linearly from max_period (speed=0)
+    to min_period (speed>=speed_for_min_period).
+    """
+    sensor: ContactSensor = env.scene[sensor_name]
+    step_period = sensor.data.last_contact_time + sensor.data.last_air_time  # [B, 2]
+
+    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
+    speed = torch.norm(vel_cmd, dim=1)
+
+    t = torch.clamp(speed / speed_for_min_period, max=1.0)
+    target_period = max_period + (min_period - max_period) * t  # [B]
+
+    error = (step_period - target_period.unsqueeze(1)) ** 2  # [B, 2]
+    valid = step_period > 0  # no complete cycle yet
+    error = torch.where(valid, error, torch.zeros_like(error))
+
+    penalty = error.mean(dim=1)
+
+    env.extras.setdefault("log", {})["Metrics/stride_period_mean"] = (
+        step_period[valid].mean().item() if valid.any() else 0.0
+    )
+    return penalty
+
+
 class forward_symmetry:
     """Penalize one foot being consistently ahead of the other.
 
