@@ -25,7 +25,7 @@ stand_pose = {
 }
 
 HOME_FRAME = EntityCfg.InitialStateCfg(
-    pos=(0.0, 0.0, 0.175),
+    pos=(0.0, 0.0, 0.189),
     rot=(1.0, 0.0, 0.0, 0.0),
     joint_pos={
         # Equivalent motor-space formulation (uses kneeMotor + motor_to_knee):

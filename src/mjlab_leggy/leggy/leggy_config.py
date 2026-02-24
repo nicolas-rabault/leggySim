@@ -97,13 +97,9 @@ def configure_leg_collision_penalty(cfg):
 
 
 def configure_flat_terrain(cfg):
-    """Configure flat plane terrain with tuned contact physics."""
+    """Configure flat plane terrain."""
     assert cfg.scene.terrain is not None
     cfg.scene.terrain.terrain_type = "plane"
-    cfg.scene.terrain.friction = "1.5 0.005 0.0001"
-    cfg.scene.terrain.solref = "0.005 1"
-    cfg.scene.terrain.solimp = "0.995 0.9995 0.001 0.5 2"
-    cfg.scene.terrain.contact = "enable"
     cfg.scene.terrain.terrain_generator = None
 
     if "terrain_levels" in cfg.curriculum:
