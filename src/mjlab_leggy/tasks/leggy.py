@@ -55,7 +55,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # -- Velocity tracking --
     cfg.rewards["track_linear_velocity"].weight = 5.0
-    cfg.rewards["track_angular_velocity"].weight = 5.0
+    cfg.rewards["track_angular_velocity"].weight = 6.0
 
     # -- Pose and orientation --
     cfg.rewards["upright"].weight = 1.0
@@ -81,7 +81,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     cfg.rewards["same_foot_penalty"] = RewardTermCfg(
         func=same_foot_penalty,
-        weight=-1.0,
+        weight=-2.0,
         params={
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
@@ -111,7 +111,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -- Gait symmetry --
     cfg.rewards["gait_symmetry"] = RewardTermCfg(
         func=gait_symmetry,
-        weight=-2.0,
+        weight=-3.0,
         params={
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
@@ -121,7 +121,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     cfg.rewards["forward_symmetry"] = RewardTermCfg(
         func=forward_symmetry,
-        weight=-2.0,
+        weight=-3.0,
         params={
             "command_name": "twist",
             "command_threshold": 0,
