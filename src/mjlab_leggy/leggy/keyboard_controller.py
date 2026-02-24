@@ -4,6 +4,8 @@ Up/Down arrows control forward speed (lin_vel_x).
 Left/Right arrows control yaw rotation (ang_vel_z).
 """
 
+import threading
+
 import numpy as np
 
 from mjlab_leggy.leggy.leggy_curriculums import _FINAL
@@ -12,7 +14,7 @@ _KEY_UP = 265
 _KEY_DOWN = 264
 _KEY_LEFT = 263
 _KEY_RIGHT = 262
-_KEY_SPACE = 32
+_KEY_COLON = 46
 
 
 class KeyboardController:
@@ -32,6 +34,7 @@ class KeyboardController:
         self.ang_vel_z_step = ang_vel_z_step
         self.lin_vel_x_range = lin_vel_x_range
         self.ang_vel_z_range = ang_vel_z_range
+        self._jump_timer: threading.Timer | None = None
 
     def key_callback(self, keycode: int) -> None:
         """Handle a key press."""
@@ -43,9 +46,13 @@ class KeyboardController:
             self.ang_vel_z = max(self.ang_vel_z - self.ang_vel_z_step, self.ang_vel_z_range[0])
         elif keycode == _KEY_LEFT:
             self.ang_vel_z = min(self.ang_vel_z + self.ang_vel_z_step, self.ang_vel_z_range[1])
-        elif keycode == _KEY_SPACE:
-            self.jump = not self.jump
-            print(f"Jump: {'ON' if self.jump else 'OFF'}")
+        elif keycode == _KEY_COLON:
+            if self._jump_timer is not None:
+                self._jump_timer.cancel()
+            self.jump = True
+            print("Jump: ON")
+            self._jump_timer = threading.Timer(0.7, self._jump_off)
+            self._jump_timer.start()
             return
         else:
             return
@@ -67,6 +74,10 @@ class KeyboardController:
         jump_term = env.unwrapped.command_manager.get_term("jump")
         jump_term._jump_cmd[:] = 1.0 if self.jump else 0.0
         jump_term.time_left[:] = 1e9
+
+    def _jump_off(self) -> None:
+        self.jump = False
+        print("Jump: OFF")
 
     def _print_target(self) -> None:
         print(f"Target -> lin_vel_x: {self.lin_vel_x:+.2f} m/s  |  ang_vel_z: {self.ang_vel_z:+.2f} rad/s")
