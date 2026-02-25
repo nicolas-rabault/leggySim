@@ -1,7 +1,10 @@
 """Reusable configuration functions for Leggy robot tasks."""
 
+from mjlab.envs.mdp import events as mdp_events
 from mjlab.envs.mdp import terminations as mdp_terminations
+from mjlab.managers.event_manager import EventTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
+from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 
@@ -10,6 +13,9 @@ from .leggy_rewards import joint_pos_limits_motor, leg_collision_penalty
 FOOT_GEOM_NAMES = ("left_foot_collision", "right_foot_collision")
 FOOT_SITE_NAMES = ("left_foot", "right_foot")
 BODY_NAME = "boddy"
+PASSIVE_JOINT_NAMES = ("Lpassive2", "LpassiveMotor", "Rpassive2", "RpassiveMotor")
+ALL_JOINT_NAMES = ("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee",
+                   *PASSIVE_JOINT_NAMES)
 
 
 def configure_contact_sensors(cfg):
@@ -127,6 +133,70 @@ def configure_viewer(cfg):
     cfg.viewer.body_name = BODY_NAME
 
 
+def configure_physics_randomization(cfg):
+    """Configure physics domain randomization for sim-to-sim/sim-to-real transfer.
+
+    Randomizes actuator gains, joint dynamics, and body mass at startup so the
+    policy becomes robust to physics differences between MuJoCo backends.
+    """
+    cfg.events["pd_gains"] = EventTermCfg(
+        mode="startup",
+        func=mdp_events.randomize_pd_gains,
+        domain_randomization=True,
+        params={
+            "asset_cfg": SceneEntityCfg("robot"),
+            "kp_range": (0.8, 1.2),
+            "kd_range": (0.8, 1.2),
+            "operation": "scale",
+        },
+    )
+    cfg.events["joint_damping"] = EventTermCfg(
+        mode="startup",
+        func=mdp_events.randomize_field,
+        domain_randomization=True,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=ALL_JOINT_NAMES),
+            "field": "dof_damping",
+            "ranges": (0.5, 2.0),
+            "operation": "scale",
+        },
+    )
+    cfg.events["passive_armature"] = EventTermCfg(
+        mode="startup",
+        func=mdp_events.randomize_field,
+        domain_randomization=True,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=PASSIVE_JOINT_NAMES),
+            "field": "dof_armature",
+            "ranges": (0.5, 20.0),
+            "operation": "scale",
+            "distribution": "log_uniform",
+        },
+    )
+    cfg.events["joint_frictionloss"] = EventTermCfg(
+        mode="startup",
+        func=mdp_events.randomize_field,
+        domain_randomization=True,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=ALL_JOINT_NAMES),
+            "field": "dof_frictionloss",
+            "ranges": (0.5, 3.0),
+            "operation": "scale",
+        },
+    )
+    cfg.events["body_mass"] = EventTermCfg(
+        mode="startup",
+        func=mdp_events.randomize_field,
+        domain_randomization=True,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=(BODY_NAME,)),
+            "field": "body_mass",
+            "ranges": (0.85, 1.15),
+            "operation": "scale",
+        },
+    )
+
+
 def configure_leggy_base(cfg):
     """Configure all standard Leggy base elements."""
     configure_contact_sensors(cfg)
@@ -138,3 +208,4 @@ def configure_leggy_base(cfg):
     configure_flat_terrain(cfg)
     configure_standard_terminations(cfg)
     configure_push_robot_event(cfg)
+    configure_physics_randomization(cfg)

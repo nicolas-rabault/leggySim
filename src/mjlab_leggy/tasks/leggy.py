@@ -163,6 +163,11 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         configure_leggy_observations(cfg, enable_corruption=False)
         cfg.events.pop("push_robot", None)
         cfg.events.pop("foot_friction", None)
+        cfg.events.pop("pd_gains", None)
+        cfg.events.pop("joint_damping", None)
+        cfg.events.pop("passive_armature", None)
+        cfg.events.pop("joint_frictionloss", None)
+        cfg.events.pop("body_mass", None)
         cfg.curriculum.pop("command_vel", None)
         cfg.curriculum.pop("jump", None)
         cfg.commands["jump"].jump_probability = 0.3
