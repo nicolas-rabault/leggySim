@@ -80,6 +80,16 @@ class LeggyRlEnv(ManagerBasedRlEnv):
         # Call parent (creates extras["log"] from all managers).
         super()._reset_idx(env_ids)
 
+        # Restore ctrl to default joint positions so PD actuators don't spike.
+        # mjwarp.reset_data zeroes ctrl but sets qpos to home — causing a huge
+        # torque impulse on the first forward() call. Fix by writing the default
+        # joint positions into joint_pos_target before the next write_data_to_sim.
+        if env_ids is not None and len(env_ids) > 0:
+            robot = self.scene["robot"]
+            robot.set_joint_position_target(
+                robot.data.default_joint_pos[env_ids], env_ids=env_ids
+            )
+
         # Inject our metrics into extras["log"].
         if hasattr(self, "_pending_torque_log"):
             self.extras["log"].update(self._pending_torque_log)
