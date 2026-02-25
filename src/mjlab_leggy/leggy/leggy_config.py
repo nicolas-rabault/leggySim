@@ -142,7 +142,6 @@ def configure_physics_randomization(cfg):
     cfg.events["pd_gains"] = EventTermCfg(
         mode="startup",
         func=mdp_events.randomize_pd_gains,
-        domain_randomization=True,
         params={
             "asset_cfg": SceneEntityCfg("robot"),
             "kp_range": (0.8, 1.2),
