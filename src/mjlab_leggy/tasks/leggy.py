@@ -111,7 +111,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -- Gait symmetry --
     cfg.rewards["gait_symmetry"] = RewardTermCfg(
         func=gait_symmetry,
-        weight=-3.0,
+        weight=-4.0,
         params={
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
@@ -168,6 +168,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.events.pop("passive_armature", None)
         cfg.events.pop("joint_frictionloss", None)
         cfg.events.pop("body_mass", None)
+        cfg.events.pop("effort_limits", None)
         cfg.curriculum.pop("command_vel", None)
         cfg.curriculum.pop("jump", None)
         cfg.commands["jump"].jump_probability = 0.3

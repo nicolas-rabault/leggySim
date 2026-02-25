@@ -57,7 +57,7 @@ def configure_asset_references(cfg):
 
     if "foot_friction" in cfg.events:
         cfg.events["foot_friction"].params["asset_cfg"].geom_names = FOOT_GEOM_NAMES
-        cfg.events["foot_friction"].params["ranges"] = (0.4, 1.5)
+        cfg.events["foot_friction"].params["ranges"] = (0.2, 2.0)
 
     for reward_name in ["foot_clearance", "foot_swing_height", "foot_slip"]:
         if reward_name in cfg.rewards:
@@ -123,7 +123,7 @@ def configure_standard_terminations(cfg):
 def configure_push_robot_event(cfg, velocity_range=None):
     """Configure robot push event for robustness training."""
     if velocity_range is None:
-        velocity_range = {"x": (-0.8, 0.8), "y": (-0.8, 0.8)}
+        velocity_range = {"x": (-1.2, 1.2), "y": (-1.2, 1.2)}
     if "push_robot" in cfg.events:
         cfg.events["push_robot"].params["velocity_range"] = velocity_range
 
@@ -144,8 +144,8 @@ def configure_physics_randomization(cfg):
         func=mdp_events.randomize_pd_gains,
         params={
             "asset_cfg": SceneEntityCfg("robot"),
-            "kp_range": (0.8, 1.2),
-            "kd_range": (0.8, 1.2),
+            "kp_range": (0.7, 1.3),
+            "kd_range": (0.7, 1.3),
             "operation": "scale",
         },
     )
@@ -156,7 +156,7 @@ def configure_physics_randomization(cfg):
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=ALL_JOINT_NAMES),
             "field": "dof_damping",
-            "ranges": (0.5, 2.0),
+            "ranges": (0.3, 3.0),
             "operation": "scale",
         },
     )
@@ -179,7 +179,7 @@ def configure_physics_randomization(cfg):
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=ALL_JOINT_NAMES),
             "field": "dof_frictionloss",
-            "ranges": (0.5, 3.0),
+            "ranges": (0.3, 5.0),
             "operation": "scale",
         },
     )
@@ -190,7 +190,17 @@ def configure_physics_randomization(cfg):
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=(BODY_NAME,)),
             "field": "body_mass",
-            "ranges": (0.85, 1.15),
+            "ranges": (0.75, 1.25),
+            "operation": "scale",
+        },
+    )
+    cfg.events["effort_limits"] = EventTermCfg(
+        mode="startup",
+        func=mdp_events.randomize_effort_limits,
+        domain_randomization=True,
+        params={
+            "asset_cfg": SceneEntityCfg("robot"),
+            "ranges": (0.8, 1.2),
             "operation": "scale",
         },
     )
