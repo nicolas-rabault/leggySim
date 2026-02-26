@@ -197,10 +197,9 @@ def configure_physics_randomization(cfg):
     cfg.events["effort_limits"] = EventTermCfg(
         mode="startup",
         func=mdp_events.randomize_effort_limits,
-        domain_randomization=True,
         params={
             "asset_cfg": SceneEntityCfg("robot"),
-            "ranges": (0.8, 1.2),
+            "effort_limit_range": (0.8, 1.2),
             "operation": "scale",
         },
     )
