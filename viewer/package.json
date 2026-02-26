@@ -1,0 +1,20 @@
+{
+  "name": "leggy-viewer",
+  "version": "1.0.0",
+  "description": "Interactive Leggy robot simulation in the browser",
+  "main": "src/main.js",
+  "scripts": {
+    "postinstall": "cp node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm public/",
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "mujoco-js": "^0.0.7",
+    "onnxruntime-web": "^1.21.1",
+    "three": "^0.181.0"
+  },
+  "devDependencies": {
+    "vite": "^6.2.2"
+  }
+}

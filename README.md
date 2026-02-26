@@ -45,6 +45,24 @@ Arrow keys: Up/Down = forward speed, Left/Right = rotation.
 python -m mujoco.viewer --mjcf=src/mjlab_leggy/leggy/robot.xml
 ```
 
+## Web Viewer
+
+Export a trained policy for the browser viewer:
+
+```bash
+uv run python scripts/export_web.py --checkpoint <path-to-model.pt>
+```
+
+This exports the ONNX policy and copies robot model + meshes to `viewer/public/`.
+
+Then run locally:
+
+```bash
+cd viewer && npm install && npm run dev
+```
+
+Arrow keys control speed/turning, Space toggles jump, R resets. The viewer is also deployed to GitHub Pages on push to main.
+
 ## Project Structure
 
 ```

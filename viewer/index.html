@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leggy - Interactive Robot Simulation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f172a;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+      color: #e2e8f0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #viewer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      display: block;
+    }
+
+    .title-overlay {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 12px;
+      padding: 10px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #f1f5f9;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .hud {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      color: #94a3b8;
+      user-select: none;
+      min-width: 200px;
+    }
+
+    .controls-panel {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      min-width: 220px;
+      user-select: none;
+    }
+
+    .controls-panel h3 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+
+    .control-row .key {
+      background: rgba(148, 163, 184, 0.12);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      color: #cbd5e1;
+      min-width: 28px;
+      text-align: center;
+    }
+
+    .control-row .action {
+      color: #94a3b8;
+      margin-left: 12px;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .loading-overlay .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(148, 163, 184, 0.2);
+      border-top-color: #60a5fa;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-overlay p {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #0f172a;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 32px;
+    }
+
+    .mobile-overlay p {
+      font-size: 18px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    .mobile-overlay p strong {
+      color: #e2e8f0;
+      display: block;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-overlay {
+        display: flex;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="viewer"></canvas>
+
+  <div class="title-overlay">Leggy - Interactive Robot Simulation</div>
+
+  <div class="hud" id="hud">vel: 0.0 m/s | yaw: 0.0 rad/s</div>
+
+  <div class="controls-panel">
+    <h3>Controls</h3>
+    <div class="control-row">
+      <span class="key">&uarr;</span>
+      <span class="action">Increase forward speed</span>
+    </div>
+    <div class="control-row">
+      <span class="key">&darr;</span>
+      <span class="action">Decrease forward speed</span>
+    </div>
+    <div class="control-row">
+      <span class="key">&larr;</span>
+      <span class="action">Turn left</span>
+    </div>
+    <div class="control-row">
+      <span class="key">&rarr;</span>
+      <span class="action">Turn right</span>
+    </div>
+    <div class="control-row">
+      <span class="key">Space</span>
+      <span class="action">Toggle jump</span>
+    </div>
+    <div class="control-row">
+      <span class="key">P</span>
+      <span class="action">Pause / Resume</span>
+    </div>
+    <div class="control-row">
+      <span class="key">R</span>
+      <span class="action">Reset simulation</span>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loading-status">Initializing...</p>
+  </div>
+
+  <div class="mobile-overlay">
+    <p>
+      <strong>Desktop recommended</strong>
+      This simulation requires a keyboard and a larger screen for the best experience.
+    </p>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
