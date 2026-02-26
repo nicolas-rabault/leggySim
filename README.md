@@ -2,6 +2,12 @@
 
 A robot simulation environment package for training biped robots using reinforcement learning. This project enables importing robots from Onshape, creating MuJoCo-based simulation environments with parallel execution, and training RL policies with [mjlab](https://github.com/mujocolab/mjlab).
 
+## Try it online
+
+Run the trained policy directly in your browser: **[Live Demo](https://nicolas-rabault.github.io/leggySim/)**
+
+Arrow keys control speed/turning, Space toggles jump, R resets, P pauses. Click and drag the robot to perturb it.
+
 ## Installation
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
