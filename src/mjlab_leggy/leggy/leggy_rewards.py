@@ -171,15 +171,20 @@ def gait_symmetry(
     sensor_name: str = "feet_ground_contact",
     command_name: str = "twist",
     command_threshold: float = 0.1,
+    ang_vel_fade: float = 1.0,
 ) -> torch.Tensor:
-    """Penalize asymmetric contact durations between left and right feet."""
+    """Penalize asymmetric contact durations between left and right feet.
+
+    Fades to zero when |ang_vel_z_cmd| exceeds ang_vel_fade (turning needs asymmetry).
+    """
     sensor: ContactSensor = env.scene[sensor_name]
     last_contact = sensor.data.last_contact_time  # [B, 2]
     asymmetry = torch.abs(last_contact[:, 0] - last_contact[:, 1])
 
-    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-    is_moving = (torch.norm(vel_cmd, dim=1) > command_threshold).float()
-    return asymmetry * is_moving
+    cmd = env.command_manager.get_command(command_name)
+    is_moving = (torch.norm(cmd[:, :2], dim=1) > command_threshold).float()
+    turn_scale = torch.clamp(1.0 - torch.abs(cmd[:, 2]) / ang_vel_fade, min=0.0)
+    return asymmetry * is_moving * turn_scale
 
 
 def gait_frequency(
@@ -237,6 +242,7 @@ class forward_symmetry:
         command_name: str = "twist",
         command_threshold: float = 0.1,
         alpha: float = 0.01,
+        ang_vel_fade: float = 1.0,
     ) -> torch.Tensor:
         asset = env.scene["robot"]
         foot_pos = asset.data.site_pos_w[:, self.foot_site_ids]
@@ -250,6 +256,7 @@ class forward_symmetry:
 
         self.mean_diff = alpha * forward_diff + (1.0 - alpha) * self.mean_diff
 
-        vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-        is_moving = (torch.norm(vel_cmd, dim=1) > command_threshold).float()
-        return torch.abs(self.mean_diff) * is_moving
+        cmd = env.command_manager.get_command(command_name)
+        is_moving = (torch.norm(cmd[:, :2], dim=1) > command_threshold).float()
+        turn_scale = torch.clamp(1.0 - torch.abs(cmd[:, 2]) / ang_vel_fade, min=0.0)
+        return torch.abs(self.mean_diff) * is_moving * turn_scale

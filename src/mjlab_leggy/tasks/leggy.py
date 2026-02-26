@@ -116,6 +116,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
             "command_threshold": 0,
+            "ang_vel_fade": 1.0,
         },
     )
 
@@ -126,6 +127,7 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "command_name": "twist",
             "command_threshold": 0,
             "alpha": 0.01,
+            "ang_vel_fade": 1.0,
         },
     )
 
