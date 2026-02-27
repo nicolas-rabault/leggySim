@@ -32,6 +32,7 @@ from mjlab_leggy.leggy.leggy_rewards import (
     gait_symmetry,
     mechanical_power,
     same_foot_penalty,
+    track_ang_vel_l1,
 )
 
 
@@ -56,6 +57,11 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # -- Velocity tracking --
     cfg.rewards["track_linear_velocity"].weight = 5.0
     cfg.rewards["track_angular_velocity"].weight = 6.0
+    cfg.rewards["track_ang_vel_l1"] = RewardTermCfg(
+        func=track_ang_vel_l1,
+        weight=-1.5,
+        params={"command_name": "twist"},
+    )
 
     # -- Pose and orientation --
     cfg.rewards["upright"].weight = 1.0
@@ -116,7 +122,6 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
             "command_threshold": 0,
-            "ang_vel_fade": 1.0,
         },
     )
 
@@ -127,7 +132,6 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "command_name": "twist",
             "command_threshold": 0,
             "alpha": 0.01,
-            "ang_vel_fade": 1.0,
         },
     )
 
