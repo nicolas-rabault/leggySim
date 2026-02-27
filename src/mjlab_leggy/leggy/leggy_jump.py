@@ -204,8 +204,8 @@ _FIRST_JUMP_ITERATION = 70_000
 _LAST_JUMP_ITERATION = 90_000
 _FIRST_JUMP_STEP = _FIRST_JUMP_ITERATION * NUM_STEPS_PER_ENV
 _LAST_JUMP_STEP = _LAST_JUMP_ITERATION * NUM_STEPS_PER_ENV
-_JUMP_INITIAL = {"jump_probability": 0.15, "height_w": 5.0, "landing_w": 2, "timeout_w": -0.5}
-_JUMP_FINAL = {"jump_probability": 0.25, "height_w": 10.0, "landing_w": 5.0, "timeout_w": -1.0}
+_JUMP_INITIAL = {"jump_probability": 0.15, "height_w": 5.0, "landing_w": 5, "timeout_w": -0.5}
+_JUMP_FINAL = {"jump_probability": 0.25, "height_w": 10.0, "landing_w": 10.0, "timeout_w": -1.0}
 
 JUMP_STAGES = []
 for _i in range(_N_JUMP_STAGES):
