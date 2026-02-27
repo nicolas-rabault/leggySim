@@ -514,12 +514,12 @@
     <material name="kneelinkr_material" rgba="0.647059 0.647059 0.647059 1"/>
   </asset>
   <actuator>
-    <position class="leggy" name="LhipY" joint="LhipY" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="LhipX" joint="LhipX" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="Lknee" joint="Lknee" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="RhipY" joint="RhipY" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="RhipX" joint="RhipX" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="Rknee" joint="Rknee" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
+    <position class="leggy" name="LhipY" joint="LhipY" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="LhipX" joint="LhipX" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="Lknee" joint="Lknee" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="RhipY" joint="RhipY" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="RhipX" joint="RhipX" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="Rknee" joint="Rknee" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
   </actuator>
   <equality>
     <connect site1="closing_L_1" site2="closing_L_2" solref="0.002 1" solimp="0.99 0.999 0.0005 0.5 2"/>
