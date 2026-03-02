@@ -75,10 +75,14 @@ def action_rate_running_adaptive(
     env: ManagerBasedRlEnv,
     command_name: str = "twist",
     velocity_threshold: float = 1.0,
+    ang_vel_weight: float = 0.5,
 ) -> torch.Tensor:
-    """Action rate penalty that reduces to 30% above velocity_threshold."""
-    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-    vel_magnitude = torch.norm(vel_cmd, dim=1)
+    """Action rate penalty that reduces to 30% above velocity_threshold.
+
+    Considers angular velocity as movement (scaled by ang_vel_weight).
+    """
+    cmd = env.command_manager.get_command(command_name)
+    vel_magnitude = torch.norm(cmd[:, :2], dim=1) + torch.abs(cmd[:, 2]) * ang_vel_weight
     action_rate = torch.sum((env.action_manager.action - env.action_manager.prev_action) ** 2, dim=1)
     scale = torch.where(vel_magnitude < velocity_threshold,
                         torch.ones_like(vel_magnitude),
@@ -111,6 +115,7 @@ class same_foot_penalty:
         sensor_name: str = "feet_ground_contact",
         command_name: str = "twist",
         command_threshold: float = 0.1,
+        ang_vel_weight: float = 0.5,
     ) -> torch.Tensor:
         sensor: ContactSensor = env.scene[sensor_name]
         contact = sensor.data.found.squeeze(-1) > 0  # [B, 2]
@@ -142,8 +147,9 @@ class same_foot_penalty:
             entered_single & (current_support >= 0), current_support, self.last_support
         )
 
-        vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-        is_moving = (torch.norm(vel_cmd, dim=1) > command_threshold).float()
+        cmd = env.command_manager.get_command(command_name)
+        effective_speed = torch.norm(cmd[:, :2], dim=1) + torch.abs(cmd[:, 2]) * ang_vel_weight
+        is_moving = (effective_speed > command_threshold).float()
         return self.same_foot_count * is_moving
 
 
@@ -152,17 +158,16 @@ def flight_penalty(
     sensor_name: str = "feet_ground_contact",
     command_name: str = "twist",
     run_threshold: float = 0.8,
+    ang_vel_weight: float = 0.5,
 ) -> torch.Tensor:
-    """Penalize both feet in the air, scaled down at high speed.
-
-    Full penalty at 0 m/s, zero penalty above run_threshold.
-    """
+    """Penalize both feet in the air, scaled down at high speed or turn rate."""
     sensor: ContactSensor = env.scene[sensor_name]
     contact = sensor.data.found.squeeze(-1) > 0
     both_in_air = (~contact[:, 0] & ~contact[:, 1]).float()
 
-    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-    scale = torch.clamp(1.0 - torch.norm(vel_cmd, dim=1) / run_threshold, min=0.0)
+    cmd = env.command_manager.get_command(command_name)
+    effective_speed = torch.norm(cmd[:, :2], dim=1) + torch.abs(cmd[:, 2]) * ang_vel_weight
+    scale = torch.clamp(1.0 - effective_speed / run_threshold, min=0.0)
     return both_in_air * scale
 
 
