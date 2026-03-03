@@ -71,9 +71,10 @@ class KeyboardController:
         cmd_term.vel_command_b[:, 2] = self.ang_vel_z
         cmd_term.time_left[:] = 1e9
 
-        jump_term = env.unwrapped.command_manager.get_term("jump")
-        jump_term._jump_cmd[:] = 1.0 if self.jump else 0.0
-        jump_term.time_left[:] = 1e9
+        if "jump" in env.unwrapped.command_manager._terms:
+            jump_term = env.unwrapped.command_manager.get_term("jump")
+            jump_term._jump_cmd[:] = 1.0 if self.jump else 0.0
+            jump_term.time_left[:] = 1e9
 
     def _jump_off(self) -> None:
         self.jump = False
