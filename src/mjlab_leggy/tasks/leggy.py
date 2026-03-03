@@ -172,7 +172,8 @@ def leggy_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.events.pop("body_mass", None)
         cfg.curriculum.pop("command_vel", None)
         cfg.curriculum.pop("jump", None)
-        cfg.commands["jump"].jump_probability = 0.3
+        if "jump" in cfg.commands:
+            cfg.commands["jump"].jump_probability = 0.3
 
         velocities = VELOCITY_STAGES_STANDARD[-1]
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
