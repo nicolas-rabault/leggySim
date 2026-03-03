@@ -7,6 +7,7 @@ the reward functions to shape the gait naturally.
 
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.managers.curriculum_manager import CurriculumTermCfg
+from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 from mjlab.tasks.velocity.mdp.curriculums import commands_vel
@@ -15,6 +16,7 @@ from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG, NUM_STEPS_PER_ENV
 from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
+from mjlab_leggy.leggy.leggy_rewards import same_foot_penalty
 
 VELOCITY_STAGES_RUN = [
     {"step": 0, "lin_vel_x": (-1.0, 1.0), "lin_vel_y": (-0.5, 0.5), "ang_vel_z": (-0.5, 0.5)},
@@ -46,6 +48,16 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["body_ang_vel"].weight = -0.05
     cfg.rewards["angular_momentum"].weight = -0.02
     cfg.rewards["leg_collision_penalty"].weight = -1.0
+
+    cfg.rewards["same_foot_penalty"] = RewardTermCfg(
+        func=same_foot_penalty,
+        weight=-2.0,
+        params={
+            "sensor_name": "feet_ground_contact",
+            "command_name": "twist",
+            "command_threshold": 0.1,
+        },
+    )
 
     # Leggy-specific foot params (smaller robot than G1)
     cfg.rewards["foot_clearance"].params["target_height"] = 0.05
