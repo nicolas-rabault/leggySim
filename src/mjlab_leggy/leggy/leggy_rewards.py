@@ -141,7 +141,7 @@ class same_foot_penalty:
         diff_foot = entered_single & (self.last_support >= 0) & (current_support >= 0) & (current_support != self.last_support)
 
         self.same_foot_count = torch.where(same_foot, self.same_foot_count + 1.0, self.same_foot_count)
-        self.same_foot_count = torch.where(diff_foot, torch.ones_like(self.same_foot_count), self.same_foot_count)
+        self.same_foot_count = torch.where(diff_foot, torch.zeros_like(self.same_foot_count), self.same_foot_count)
 
         self.last_support = torch.where(
             entered_single & (current_support >= 0), current_support, self.last_support
