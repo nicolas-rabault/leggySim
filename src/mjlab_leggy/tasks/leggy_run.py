@@ -16,13 +16,12 @@ from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG, NUM_STEPS_PER_ENV
 from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
-from mjlab_leggy.leggy.leggy_rewards import same_foot_penalty
-
-VELOCITY_STAGES_RUN = [
-    {"step": 0, "lin_vel_x": (-1.0, 1.0), "lin_vel_y": (-0.5, 0.5), "ang_vel_z": (-0.5, 0.5)},
-    {"step": 5000 * NUM_STEPS_PER_ENV, "lin_vel_x": (-1.5, 2.0), "lin_vel_y": (-0.7, 0.7), "ang_vel_z": (-0.7, 0.7)},
-    {"step": 10000 * NUM_STEPS_PER_ENV, "lin_vel_x": (-2.0, 3.0), "lin_vel_y": (-0.8, 0.8), "ang_vel_z": (-1.0, 1.0)},
-]
+from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD
+from mjlab_leggy.leggy.leggy_rewards import (
+    action_rate_running_adaptive,
+    flight_penalty,
+    same_foot_penalty,
+)
 
 
 def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -45,6 +44,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # pose=1.0, dof_pos_limits=-1.0, action_rate_l2=-0.1, air_time=0.0,
     # foot_clearance=-2.0, foot_swing_height=-0.25, foot_slip=-0.1,
     # soft_landing=-1e-5
+    cfg.rewards["track_angular_velocity"].weight = 4.0
     cfg.rewards["body_ang_vel"].weight = -0.05
     cfg.rewards["angular_momentum"].weight = -0.02
     cfg.rewards["leg_collision_penalty"].weight = -1.0
@@ -56,6 +56,22 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "sensor_name": "feet_ground_contact",
             "command_name": "twist",
             "command_threshold": 0.1,
+        },
+    )
+
+    cfg.rewards["action_rate_l2"] = RewardTermCfg(
+        func=action_rate_running_adaptive,
+        weight=-1.5,
+        params={"command_name": "twist", "velocity_threshold": 0.5},
+    )
+
+    cfg.rewards["flight_penalty"] = RewardTermCfg(
+        func=flight_penalty,
+        weight=-2.0,
+        params={
+            "sensor_name": "feet_ground_contact",
+            "command_name": "twist",
+            "run_threshold": 0.8,
         },
     )
 
@@ -73,7 +89,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         func=commands_vel,
         params={
             "command_name": "twist",
-            "velocity_stages": VELOCITY_STAGES_RUN,
+            "velocity_stages": VELOCITY_STAGES_STANDARD,
         },
     )
 
@@ -90,7 +106,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.events.pop("effort_limits", None)
         cfg.curriculum.pop("command_vel", None)
 
-        velocities = VELOCITY_STAGES_RUN[-1]
+        velocities = VELOCITY_STAGES_STANDARD[-1]
         cfg.commands["twist"].ranges.ang_vel_z = velocities["ang_vel_z"]
         cfg.commands["twist"].ranges.lin_vel_y = velocities["lin_vel_y"]
         cfg.commands["twist"].ranges.lin_vel_x = velocities["lin_vel_x"]
@@ -128,5 +144,5 @@ def leggy_run_rl_cfg() -> RslRlOnPolicyRunnerCfg:
         experiment_name="leggy_run",
         save_interval=50,
         num_steps_per_env=NUM_STEPS_PER_ENV,
-        max_iterations=30_000,
+        max_iterations=100_000,
     )
