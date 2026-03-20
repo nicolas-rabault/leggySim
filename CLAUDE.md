@@ -38,7 +38,7 @@ src/mjlab_leggy/
 │   ├── leggy_curriculums.py  # Velocity curriculum stages
 │   └── leggy_env.py          # Custom env with torque logging to wandb
 └── tasks/
-    └── leggy.py              # Task definition (env_cfg + rl_cfg)
+    └── leggy_run.py          # Task definition (env_cfg + rl_cfg)
 ```
 
 Key pattern: scripts monkey-patch `_train.ManagerBasedRlEnv = LeggyRlEnv` to inject custom env without modifying mjlab.

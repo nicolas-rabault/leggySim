@@ -15,8 +15,6 @@ if TYPE_CHECKING:
 
 from .leggy_actions import knee_to_motor
 
-_JOINT_NAMES = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
-
 
 def joint_pos_limits_motor(
     env: ManagerBasedRlEnv,
@@ -56,19 +54,6 @@ def leg_collision_penalty(env: ManagerBasedRlEnv, sensor_name: str) -> torch.Ten
     """Penalize leg-leg collisions (1.0 if collision, 0.0 otherwise)."""
     sensor: ContactSensor = env.scene[sensor_name]
     return torch.any(sensor.data.found, dim=-1).float()
-
-
-def mechanical_power(
-    env: ManagerBasedRlEnv,
-    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-) -> torch.Tensor:
-    """Penalize mechanical power (|torque * velocity|) across actuated joints."""
-    asset = env.scene[asset_cfg.name]
-    actuator_ids = asset.find_actuators(_JOINT_NAMES)[0]
-    joint_ids = asset.find_joints(_JOINT_NAMES)[0]
-    torques = asset.data.actuator_force[:, actuator_ids]
-    velocities = asset.data.joint_vel[:, joint_ids]
-    return torch.sum(torch.abs(torques * velocities), dim=1)
 
 
 def action_rate_running_adaptive(
@@ -169,61 +154,6 @@ def flight_penalty(
     effective_speed = torch.norm(cmd[:, :2], dim=1) + torch.abs(cmd[:, 2]) * ang_vel_weight
     scale = torch.clamp(1.0 - effective_speed / run_threshold, min=0.0)
     return both_in_air * scale
-
-
-def gait_symmetry(
-    env: ManagerBasedRlEnv,
-    sensor_name: str = "feet_ground_contact",
-    command_name: str = "twist",
-    command_threshold: float = 0.1,
-    ang_vel_fade: float = 1.0,
-) -> torch.Tensor:
-    """Penalize asymmetric contact durations between left and right feet.
-
-    Fades to zero when |ang_vel_z_cmd| exceeds ang_vel_fade (turning needs asymmetry).
-    """
-    sensor: ContactSensor = env.scene[sensor_name]
-    last_contact = sensor.data.last_contact_time  # [B, 2]
-    asymmetry = torch.abs(last_contact[:, 0] - last_contact[:, 1])
-
-    cmd = env.command_manager.get_command(command_name)
-    is_moving = (torch.norm(cmd[:, :2], dim=1) > command_threshold).float()
-    turn_scale = torch.clamp(1.0 - torch.abs(cmd[:, 2]) / ang_vel_fade, min=0.0)
-    return asymmetry * is_moving * turn_scale
-
-
-def gait_frequency(
-    env: ManagerBasedRlEnv,
-    sensor_name: str = "feet_ground_contact",
-    command_name: str = "twist",
-    min_period: float = 0.15,
-    max_period: float = 0.5,
-    speed_for_min_period: float = 2.0,
-) -> torch.Tensor:
-    """Penalize stride period deviating from speed-dependent target.
-
-    Target period interpolates linearly from max_period (speed=0)
-    to min_period (speed>=speed_for_min_period).
-    """
-    sensor: ContactSensor = env.scene[sensor_name]
-    step_period = sensor.data.last_contact_time + sensor.data.last_air_time  # [B, 2]
-
-    vel_cmd = env.command_manager.get_command(command_name)[:, :2]
-    speed = torch.norm(vel_cmd, dim=1)
-
-    t = torch.clamp(speed / speed_for_min_period, max=1.0)
-    target_period = max_period + (min_period - max_period) * t  # [B]
-
-    error = (step_period - target_period.unsqueeze(1)) ** 2  # [B, 2]
-    valid = step_period > 0  # no complete cycle yet
-    error = torch.where(valid, error, torch.zeros_like(error))
-
-    penalty = error.mean(dim=1)
-
-    env.extras.setdefault("log", {})["Metrics/stride_period_mean"] = (
-        step_period[valid].mean().item() if valid.any() else 0.0
-    )
-    return penalty
 
 
 class forward_symmetry:

@@ -37,7 +37,7 @@ uv run leggy-train Mjlab-Leggy --help
 uv run leggy-play Mjlab-Leggy --wandb-run-path <your-wandb-path>
 
 # Play with a local checkpoint
-uv run leggy-play Mjlab-Leggy --checkpoint-file logs/rsl_rl/leggy/<run>/model_*.pt
+uv run leggy-play Mjlab-Leggy --checkpoint-file logs/rsl_rl/leggy_run/<run>/model_*.pt
 
 # Use random actions (for testing)
 uv run leggy-play Mjlab-Leggy --agent random
@@ -96,7 +96,7 @@ leggySim/
         │   └── keyboard_controller.py # Arrow key velocity control
         └── tasks/
             ├── __init__.py          # Task registration
-            └── leggy.py             # Leggy task definition
+            └── leggy_run.py          # Leggy task definition
 ```
 
 ## Environment Details

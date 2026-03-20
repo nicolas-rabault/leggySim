@@ -151,7 +151,7 @@ def leggy_run_rl_cfg() -> RslRlOnPolicyRunnerCfg:
             max_grad_norm=1.0,
         ),
         experiment_name="leggy_run",
-        save_interval=50,
+        save_interval=500,
         num_steps_per_env=NUM_STEPS_PER_ENV,
         max_iterations=100_000,
     )
