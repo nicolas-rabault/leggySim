@@ -8,7 +8,7 @@ import torch
 
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import ContactSensor
-from mjlab.utils.lab_api.math import euler_xyz_from_quat
+from mjlab.utils.lab_api.math import euler_xyz_from_quat, quat_apply_inverse
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv
@@ -154,6 +154,43 @@ def flight_penalty(
     effective_speed = torch.norm(cmd[:, :2], dim=1) + torch.abs(cmd[:, 2]) * ang_vel_weight
     scale = torch.clamp(1.0 - effective_speed / run_threshold, min=0.0)
     return both_in_air * scale
+
+
+class dynamic_upright:
+    """Reward upright orientation accounting for centripetal lean during turns.
+
+    When running and turning, the robot should lean inward. The target orientation
+    shifts from pure vertical to account for v*omega/g centripetal acceleration.
+    """
+
+    def __init__(self, cfg, env: ManagerBasedRlEnv):
+        asset = env.scene["robot"]
+        self.body_ids = asset.find_bodies(("boddy",))[0]
+
+    def __call__(
+        self,
+        env: ManagerBasedRlEnv,
+        std: float = 0.447,
+        command_name: str = "twist",
+    ) -> torch.Tensor:
+        asset = env.scene["robot"]
+        body_quat_w = asset.data.body_link_quat_w[:, self.body_ids].squeeze(1)
+        gravity_w = asset.data.gravity_vec_w
+
+        cmd = env.command_manager.get_command(command_name)
+        centripetal = cmd[:, 0] * cmd[:, 2]  # v_forward * omega
+
+        # Target gravity in body frame: [0, -centripetal, -g]
+        target = torch.zeros(env.num_envs, 3, device=env.device)
+        target[:, 1] = -centripetal
+        target[:, 2] = gravity_w[:, 2]  # -9.81
+        target = target / target.norm(dim=1, keepdim=True)
+
+        projected_gravity_b = quat_apply_inverse(body_quat_w, gravity_w)
+        projected_gravity_b = projected_gravity_b / projected_gravity_b.norm(dim=1, keepdim=True)
+
+        error = torch.sum(torch.square(projected_gravity_b - target), dim=1)
+        return torch.exp(-error / std**2)
 
 
 class forward_symmetry:
