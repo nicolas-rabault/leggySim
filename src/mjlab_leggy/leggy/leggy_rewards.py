@@ -178,6 +178,7 @@ class forward_symmetry:
         command_threshold: float = 0.1,
         alpha: float = 0.01,
         ang_vel_fade: float = 1.0,
+        lateral_vel_fade: float = 0.5,
     ) -> torch.Tensor:
         asset = env.scene["robot"]
         foot_pos = asset.data.site_pos_w[:, self.foot_site_ids]
@@ -194,4 +195,5 @@ class forward_symmetry:
         cmd = env.command_manager.get_command(command_name)
         is_moving = (torch.norm(cmd[:, :2], dim=1) > command_threshold).float()
         turn_scale = torch.clamp(1.0 - torch.abs(cmd[:, 2]) / ang_vel_fade, min=0.0)
-        return torch.abs(self.mean_diff) * is_moving * turn_scale
+        lateral_scale = torch.clamp(1.0 - torch.abs(cmd[:, 1]) / lateral_vel_fade, min=0.0)
+        return torch.abs(self.mean_diff) * is_moving * turn_scale * lateral_scale
