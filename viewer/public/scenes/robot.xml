@@ -253,7 +253,7 @@
             <inertial pos="0.0259177 0.0149636 0.001" mass="0.00458484" fullinertia="1.44e-06 4.27206e-06 5.70887e-06 -2.45264e-06 -0 0"/>
             <!-- Part foot -->
             <geom class="visual" type="mesh" pos="0.0848705 0.049 0.001" quat="1.66179e-15 -0.258819 0.965926 5.79884e-15" mesh="foot" material="foot_material"/>
-            <geom class="collision" type="sphere" pos="0.0848705 0.049 0.001" quat="1.66179e-15 -0.258819 0.965926 5.79884e-15" name="left_foot_collision" size="0.0025" contype="1" conaffinity="1" condim="3" priority="1" solref="0.002 1.0" solimp="0.998 0.9998 0.0005 0.5 2" friction="1 0.005 0.0001"/>
+            <geom class="collision" type="sphere" pos="0.0848705 0.049 0.001" quat="1.66179e-15 -0.258819 0.965926 5.79884e-15" name="left_foot_collision" size="0.0025" contype="1" conaffinity="1" condim="3" priority="1" solref="0.002 1.0" solimp="0.998 0.9998 0.0005 0.5 2"/>
             <!-- Part collider -->
             <geom class="collision" type="mesh" pos="0.0848705 0.049 0.001" quat="4.09071e-15 0.258819 -0.965926 2.47185e-15" mesh="collider" material="collider_material" name="left_tibia_collision" contype="4" conaffinity="4" condim="1"/>
             <!-- Part tibia -->
@@ -420,7 +420,7 @@
             <geom class="visual" type="mesh" pos="-0.0848705 -0.049 -0.001" quat="0.965926 3.31293e-15 -3.8434e-16 0.258819" mesh="tibia" material="tibia_material"/>
             <!-- Part foot_2 -->
             <geom class="visual" type="mesh" pos="-0.0848705 -0.049 -0.001" quat="6.30946e-16 0.965926 0.258819 -1.64889e-16" mesh="foot" material="foot_material"/>
-            <geom class="collision" type="sphere" pos="-0.0848705 -0.049 -0.001" quat="6.30946e-16 0.965926 0.258819 -1.64889e-16" name="right_foot_collision" size="0.0025" contype="1" conaffinity="1" condim="3" priority="1" solref="0.002 1.0" solimp="0.998 0.9998 0.0005 0.5 2" friction="1 0.005 0.0001"/>
+            <geom class="collision" type="sphere" pos="-0.0848705 -0.049 -0.001" quat="6.30946e-16 0.965926 0.258819 -1.64889e-16" name="right_foot_collision" size="0.0025" contype="1" conaffinity="1" condim="3" priority="1" solref="0.002 1.0" solimp="0.998 0.9998 0.0005 0.5 2"/>
             <!-- Frame right_foot -->
             <site group="3" name="right_foot" pos="-0.0870356 -0.05025 -0.001" quat="0 -0.965926 -0.258819 -0"/>
             <!-- Link rod_2 -->
@@ -514,12 +514,12 @@
     <material name="kneelinkr_material" rgba="0.647059 0.647059 0.647059 1"/>
   </asset>
   <actuator>
-    <position class="leggy" name="LhipY" joint="LhipY" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="LhipX" joint="LhipX" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="Lknee" joint="Lknee" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="RhipY" joint="RhipY" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="RhipX" joint="RhipX" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
-    <position class="leggy" name="Rknee" joint="Rknee" kp="10" forcerange="-2.36 2.36" inheritrange="1"/>
+    <position class="leggy" name="LhipY" joint="LhipY" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="LhipX" joint="LhipX" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="Lknee" joint="Lknee" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="RhipY" joint="RhipY" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="RhipX" joint="RhipX" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
+    <position class="leggy" name="Rknee" joint="Rknee" kp="10" forcerange="-10.0 10.0" inheritrange="1"/>
   </actuator>
   <equality>
     <connect site1="closing_L_1" site2="closing_L_2" solref="0.002 1" solimp="0.99 0.999 0.0005 0.5 2"/>

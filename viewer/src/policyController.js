@@ -14,7 +14,6 @@ const OBS_TERMS = [
   { name: "command", size: 3 },
   { name: "body_euler", size: 3 },
   { name: "joint_torques", size: 6 },
-  { name: "jump_command", size: 1 },
 ];
 
 export class PolicyController {
@@ -26,7 +25,7 @@ export class PolicyController {
     this.actionScale = 0.5;
     this.defaultJointPos = [0.2268928028, -0.6108652382, -0.05235987756, 0.2268928028, -0.6108652382, -0.05235987756];
     this.historyLength = 5;
-    this.obsSize = 37;
+    this.obsSize = 36;
     this.decimation = 2;
 
     // Per-term history buffers (term-major flattening)
@@ -221,9 +220,6 @@ export class PolicyController {
       jt[i] = this.data.actuator_force[this.actuatorIndices[i]];
     }
     terms.joint_torques = jt;
-
-    // jump_command (1)
-    terms.jump_command = new Float32Array([this.jump ? 1.0 : 0.0]);
 
     return terms;
   }

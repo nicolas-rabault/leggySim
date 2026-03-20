@@ -14,13 +14,13 @@ DEFAULT_CHECKPOINT = "logs/rsl_rl/leggy/wandb_checkpoints/ckf6ortq/model_49999.p
 DEFAULT_OUTPUT = "viewer/public/policy.onnx"
 
 JOINT_NAMES = ["LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee"]
-OBS_NAMES = ["joint_pos", "joint_vel", "body_euler", "joint_torques", "base_lin_vel", "base_ang_vel", "command", "actions", "jump_command"]
+OBS_NAMES = ["joint_pos", "joint_vel", "body_euler", "joint_torques", "base_lin_vel", "base_ang_vel", "command", "actions"]
 DEFAULT_JOINT_POS = [0.22689280275926282, -0.6108652381980153, -0.6632251157578453, 0.22689280275926282, -0.6108652381980153, -0.6632251157578453]
 ACTION_SCALE = 0.5
 JOINT_STIFFNESS = [10, 10, 10, 10, 10, 10]
 JOINT_DAMPING = [1, 1, 1, 1, 1, 1]
 HISTORY_LENGTH = 5
-OBS_SIZE = 37
+OBS_SIZE = 36
 DECIMATION = 2
 
 LEGGY_DIR = Path("src/mjlab_leggy/leggy")
