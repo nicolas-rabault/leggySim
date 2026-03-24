@@ -178,12 +178,12 @@ class dynamic_upright:
         gravity_w = asset.data.gravity_vec_w
 
         cmd = env.command_manager.get_command(command_name)
-        centripetal = cmd[:, 0] * cmd[:, 2]  # v_forward * omega
+        centripetal = cmd[:, 0] * cmd[:, 2] / 9.81  # v*omega/g
 
-        # Target gravity in body frame: [0, -centripetal, -g]
+        # Target gravity in body frame: [0, -v*omega/g, -1]
         target = torch.zeros(env.num_envs, 3, device=env.device)
         target[:, 1] = -centripetal
-        target[:, 2] = gravity_w[:, 2]  # -9.81
+        target[:, 2] = -1.0
         target = target / target.norm(dim=1, keepdim=True)
 
         projected_gravity_b = quat_apply_inverse(body_quat_w, gravity_w)
