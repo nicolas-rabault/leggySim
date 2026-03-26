@@ -87,7 +87,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     cfg.rewards["forward_symmetry"] = RewardTermCfg(
         func=forward_symmetry,
-        weight=-2.0,
+        weight=-3.0,
         params={"command_name": "twist"},
     )
 
