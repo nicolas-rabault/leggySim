@@ -48,3 +48,6 @@ wandb/
 viewer/node_modules/
 viewer/dist/
 viewer/public/*.wasm
+
+# Discord webhook config (contains secrets)
+.claude-discord.md

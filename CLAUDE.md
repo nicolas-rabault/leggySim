@@ -1,3 +1,5 @@
+@.claude-discord.md
+
 # LeggySim
 
 Biped robot locomotion training using mjlab + MuJoCo + rsl_rl (PPO).
