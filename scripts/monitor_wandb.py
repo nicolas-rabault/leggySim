@@ -19,13 +19,12 @@ def get_run_status(run):
     return run.state  # "running", "finished", "killed", "crashed"
 
 
-def fetch_latest_metrics(run, num_samples=5):
-    rows = run.history(samples=num_samples, pandas=False)
-    if not rows:
-        return None, None
-    latest = rows[-1]
-    previous = rows[-2] if len(rows) >= 2 else None
-    return latest, previous
+def fetch_latest_metrics(run):
+    run.update()
+    latest = dict(run.summary)
+    if not latest or "_step" not in latest:
+        return None
+    return latest
 
 
 def trend(current, previous, key):
@@ -127,7 +126,7 @@ def main():
     api = wandb.Api()
     run = api.run(args.run_path)
 
-    latest, wandb_previous = fetch_latest_metrics(run)
+    latest = fetch_latest_metrics(run)
     if latest is None:
         print("No metrics available yet.")
         sys.exit(0)
@@ -135,8 +134,6 @@ def main():
     previous_check = None
     if args.previous:
         previous_check = load_previous_metrics(args.previous)
-    if previous_check is None:
-        previous_check = wandb_previous
 
     summary = format_summary(run, latest, previous_check)
     print(summary)
