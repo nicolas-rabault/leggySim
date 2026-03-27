@@ -144,14 +144,8 @@ def main():
     # Embed raw metrics for next comparison
     print(f"\n<!-- RAW_METRICS:{json.dumps({k: v for k, v in latest.items() if v is not None})}-->")
 
-    # Exit code based on status
     status = get_run_status(run)
-    if status == "running":
-        sys.exit(0)
-    elif status == "finished":
-        sys.exit(0)
-    else:
-        sys.exit(2)
+    sys.exit(2 if status in ("killed", "crashed") else 0)
 
 
 if __name__ == "__main__":

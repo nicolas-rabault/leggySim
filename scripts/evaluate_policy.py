@@ -44,6 +44,9 @@ def evaluate(run_path: str, output_dir: str):
     env_cfg = load_env_cfg(TASK_ID, play=True)
     rl_cfg = load_rl_cfg(TASK_ID)
     env_cfg.scene.num_envs = 1
+    env_cfg.viewer.width = 1280
+    env_cfg.viewer.height = 720
+    env_cfg.viewer.distance = 1.0
 
     log_root = (Path("logs") / "rsl_rl" / rl_cfg.experiment_name).resolve()
     checkpoint_path, was_cached = get_wandb_checkpoint_path(log_root, Path(run_path))
@@ -52,6 +55,7 @@ def evaluate(run_path: str, output_dir: str):
 
     total_steps = sum(s for _, _, _, _, s in TEST_COMMANDS)
     env = LeggyRlEnv(cfg=env_cfg, device=device, render_mode="rgb_array")
+    env.metadata["render_fps"] = 30
     env = VideoRecorder(
         env,
         video_folder=output_dir,
