@@ -14,7 +14,7 @@ _FINAL = {"lin_vel_x": (-2, 3.0), "lin_vel_y": (-0.8, 0.8), "ang_vel_z": (-2.0, 
 _RAMP = {
     "lin_vel_x": (0.0, 0.6),
     "lin_vel_y": (0.0, 0.6),
-    "ang_vel_z": (0.3, 1.0),
+    "ang_vel_z": (0.0, 0.7),
 }
 
 

@@ -47,8 +47,8 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # foot_clearance=-2.0, foot_swing_height=-0.25, foot_slip=-0.1,
     # soft_landing=-1e-5
     cfg.rewards["track_linear_velocity"].params["std"] = 0.7
-    cfg.rewards["track_angular_velocity"].weight = 3.0
-    cfg.rewards["track_angular_velocity"].params["std"] = 1.0
+    cfg.rewards["track_angular_velocity"].weight = 4.0
+    cfg.rewards["track_angular_velocity"].params["std"] = 0.7
     cfg.rewards["body_ang_vel"].weight = -0.05
     cfg.rewards["angular_momentum"].weight = -0.02
     cfg.rewards["leg_collision_penalty"].weight = -1.0
@@ -65,7 +65,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     cfg.rewards["action_rate_l2"] = RewardTermCfg(
         func=action_rate_running_adaptive,
-        weight=-1.5,
+        weight=-1.0,
         params={"command_name": "twist", "velocity_threshold": 0.5},
     )
 
@@ -87,8 +87,8 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     cfg.rewards["forward_symmetry"] = RewardTermCfg(
         func=forward_symmetry,
-        weight=-3.0,
-        params={"command_name": "twist"},
+        weight=-5.0,
+        params={"command_name": "twist", "alpha": 0.04},
     )
 
     # Leggy-specific foot params (smaller robot than G1)
