@@ -14,11 +14,14 @@ Policy observation layout per timestep (36 dims, ×5 history = 180):
   [27:30] body_euler     — roll, pitch, yaw
   [30:36] joint_torques  — LhipY, LhipX, Lknee, RhipY, RhipX, Rknee
 
-Critic observation layout (48 dims = 36 base + 12 foot terms):
-  [36:38] foot_height         — L, R
-  [38:40] foot_air_time       — L, R
-  [40:42] foot_contact        — L, R
-  [42:48] foot_contact_forces — Lx, Ly, Lz, Rx, Ry, Rz
+Critic observation layout (48 dims):
+  [0:27]  same as policy per-timestep (through command)
+  [27:29] foot_height         — L, R
+  [29:31] foot_air_time       — L, R
+  [31:33] foot_contact        — L, R
+  [33:39] foot_contact_forces — Lx, Ly, Lz, Rx, Ry, Rz
+  [39:42] body_euler          — roll, pitch, yaw
+  [42:48] joint_torques       — LhipY, LhipX, Lknee, RhipY, RhipX, Rknee
 """
 
 import torch
@@ -27,8 +30,8 @@ from tensordict import TensorDict
 OBS_DIM = 36
 HISTORY_LENGTH = 5
 
-# Per-timestep base obs permutation (36 dims)
-_BASE_PERM = [
+# Per-timestep policy obs permutation (36 dims)
+_POLICY_STEP_PERM = [
     0, 1, 2,                           # base_lin_vel
     3, 4, 5,                           # base_ang_vel
     9, 10, 11, 6, 7, 8,               # joint_pos: swap L↔R
@@ -38,7 +41,7 @@ _BASE_PERM = [
     27, 28, 29,                        # body_euler
     33, 34, 35, 30, 31, 32,           # joint_torques: swap L↔R
 ]
-_BASE_SIGN = [
+_POLICY_STEP_SIGN = [
     1, -1, 1,                          # base_lin_vel: negate vy
     -1, 1, -1,                         # base_ang_vel: negate wx, wz
     1, -1, 1, 1, -1, 1,               # joint_pos: negate hipX
@@ -49,31 +52,43 @@ _BASE_SIGN = [
     1, -1, 1, 1, -1, 1,               # joint_torques
 ]
 
-# Foot terms permutation (12 dims, appended after base 36)
-_FOOT_PERM = [
-    37, 36,                            # foot_height: swap L↔R
-    39, 38,                            # foot_air_time: swap L↔R
-    41, 40,                            # foot_contact: swap L↔R
-    45, 46, 47, 42, 43, 44,           # foot_contact_forces: swap feet
-]
-_FOOT_SIGN = [
-    1, 1,                              # foot_height
-    1, 1,                              # foot_air_time
-    1, 1,                              # foot_contact
-    1, -1, 1, 1, -1, 1,               # foot_contact_forces: negate y
-]
-
-# Policy obs: tile base perm across history frames
+# Full policy obs: tile across history frames
 _POLICY_PERM = []
 _POLICY_SIGN = []
 for h in range(HISTORY_LENGTH):
     off = h * OBS_DIM
-    _POLICY_PERM.extend([p + off for p in _BASE_PERM])
-    _POLICY_SIGN.extend(_BASE_SIGN)
+    _POLICY_PERM.extend([p + off for p in _POLICY_STEP_PERM])
+    _POLICY_SIGN.extend(_POLICY_STEP_SIGN)
 
-# Critic obs: base (36) + foot (12) = 48
-_CRITIC_PERM = _BASE_PERM + _FOOT_PERM
-_CRITIC_SIGN = _BASE_SIGN + _FOOT_SIGN
+# Critic obs permutation (48 dims) — foot terms between command and body_euler
+_CRITIC_PERM = [
+    0, 1, 2,                           # [0:3] base_lin_vel
+    3, 4, 5,                           # [3:6] base_ang_vel
+    9, 10, 11, 6, 7, 8,               # [6:12] joint_pos: swap L↔R
+    15, 16, 17, 12, 13, 14,           # [12:18] joint_vel: swap L↔R
+    21, 22, 23, 18, 19, 20,           # [18:24] actions: swap L↔R
+    24, 25, 26,                        # [24:27] command
+    28, 27,                            # [27:29] foot_height: swap L↔R
+    30, 29,                            # [29:31] foot_air_time: swap L↔R
+    32, 31,                            # [31:33] foot_contact: swap L↔R
+    36, 37, 38, 33, 34, 35,           # [33:39] foot_contact_forces: swap feet
+    39, 40, 41,                        # [39:42] body_euler
+    45, 46, 47, 42, 43, 44,           # [42:48] joint_torques: swap L↔R
+]
+_CRITIC_SIGN = [
+    1, -1, 1,                          # base_lin_vel: negate vy
+    -1, 1, -1,                         # base_ang_vel: negate wx, wz
+    1, -1, 1, 1, -1, 1,               # joint_pos: negate hipX
+    1, -1, 1, 1, -1, 1,               # joint_vel
+    1, -1, 1, 1, -1, 1,               # actions
+    1, -1, -1,                         # command: negate vy, wz
+    1, 1,                              # foot_height
+    1, 1,                              # foot_air_time
+    1, 1,                              # foot_contact
+    1, -1, 1, 1, -1, 1,               # foot_contact_forces: negate y
+    -1, 1, -1,                         # body_euler: negate roll, yaw
+    1, -1, 1, 1, -1, 1,               # joint_torques
+]
 
 # Action permutation (6 dims): swap L↔R, negate hipX
 _ACT_PERM = [3, 4, 5, 0, 1, 2]
@@ -118,10 +133,9 @@ def leggy_mirror(obs=None, actions=None, env=None):
             tensor = obs[key]
             if tensor.shape[-1] == HISTORY_LENGTH * OBS_DIM:
                 mirrored_dict[key] = _mirror_tensor(tensor, c["policy_perm"], c["policy_sign"])
-            elif tensor.shape[-1] == OBS_DIM + 12:
+            elif tensor.shape[-1] == 48:
                 mirrored_dict[key] = _mirror_tensor(tensor, c["critic_perm"], c["critic_sign"])
             else:
-                # Unknown obs group — just duplicate
                 mirrored_dict[key] = torch.cat([tensor, tensor], dim=0)
         obs_out = TensorDict(mirrored_dict, batch_size=[obs.batch_size[0] * 2])
 
