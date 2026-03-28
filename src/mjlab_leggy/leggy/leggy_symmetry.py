@@ -1,8 +1,10 @@
 """Left-right symmetry augmentation for Leggy biped.
 
 Mirrors observations and actions by swapping left/right joints and
-negating lateral components. Used as data_augmentation_func in rsl_rl's
-symmetry_cfg to double training data with physical symmetry.
+negating lateral components. Yaw-related quantities (wz command, wz
+angular velocity, yaw euler) are NOT negated to preserve turning
+signals — the augmentation enforces structural L/R symmetry without
+flipping turning direction.
 
 Policy observation layout per timestep (36 dims, ×5 history = 180):
   [0:3]   base_lin_vel   — vx, vy, vz
@@ -43,12 +45,12 @@ _POLICY_STEP_PERM = [
 ]
 _POLICY_STEP_SIGN = [
     1, -1, 1,                          # base_lin_vel: negate vy
-    -1, 1, -1,                         # base_ang_vel: negate wx, wz
+    -1, 1, 1,                          # base_ang_vel: negate wx (keep wz for turning)
     1, -1, 1, 1, -1, 1,               # joint_pos: negate hipX
     1, -1, 1, 1, -1, 1,               # joint_vel
     1, -1, 1, 1, -1, 1,               # actions
-    1, -1, -1,                         # command: negate vy, wz
-    -1, 1, -1,                         # body_euler: negate roll, yaw
+    1, -1, 1,                          # command: negate vy (keep wz for turning)
+    -1, 1, 1,                          # body_euler: negate roll (keep yaw for turning)
     1, -1, 1, 1, -1, 1,               # joint_torques
 ]
 
@@ -77,16 +79,16 @@ _CRITIC_PERM = [
 ]
 _CRITIC_SIGN = [
     1, -1, 1,                          # base_lin_vel: negate vy
-    -1, 1, -1,                         # base_ang_vel: negate wx, wz
+    -1, 1, 1,                          # base_ang_vel: negate wx (keep wz for turning)
     1, -1, 1, 1, -1, 1,               # joint_pos: negate hipX
     1, -1, 1, 1, -1, 1,               # joint_vel
     1, -1, 1, 1, -1, 1,               # actions
-    1, -1, -1,                         # command: negate vy, wz
+    1, -1, 1,                          # command: negate vy (keep wz for turning)
     1, 1,                              # foot_height
     1, 1,                              # foot_air_time
     1, 1,                              # foot_contact
     1, -1, 1, 1, -1, 1,               # foot_contact_forces: negate y
-    -1, 1, -1,                         # body_euler: negate roll, yaw
+    -1, 1, 1,                          # body_euler: negate roll (keep yaw for turning)
     1, -1, 1, 1, -1, 1,               # joint_torques
 ]
 
