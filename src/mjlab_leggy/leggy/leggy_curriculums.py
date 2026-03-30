@@ -2,19 +2,19 @@
 
 from .leggy_constants import NUM_STEPS_PER_ENV
 
-_N_STAGES = 16
+_N_STAGES = 32
 _LAST_ITERATION = 80000
 _LAST_STEP = _LAST_ITERATION * NUM_STEPS_PER_ENV
 _INITIAL = {"lin_vel_x": (-0.1, 0.1), "lin_vel_y": (-0.1, 0.1), "ang_vel_z": (-0.1, 0.1)}
 _FINAL = {"lin_vel_x": (-2, 3.0), "lin_vel_y": (-0.8, 0.8), "ang_vel_z": (-2.0, 2.0)}
 
-# Staggered ramp rates per axis to avoid "winner takes all" reward competition.
-# Linear velocity ramps faster (done by ~60%), angular ramps slower (full at 100%).
-# This lets the policy consolidate locomotion before facing hard turning.
+# Staggered ramps: lin_vel finishes early (50%), ang_vel starts late (25%) and
+# finishes at 90%. This prevents "winner takes all" where the policy optimizes
+# lin_vel and abandons ang_vel when both get harder simultaneously.
 _RAMP = {
-    "lin_vel_x": (0.0, 0.6),
-    "lin_vel_y": (0.0, 0.6),
-    "ang_vel_z": (0.0, 0.7),
+    "lin_vel_x": (0.0, 0.5),
+    "lin_vel_y": (0.0, 0.5),
+    "ang_vel_z": (0.25, 0.9),
 }
 
 
