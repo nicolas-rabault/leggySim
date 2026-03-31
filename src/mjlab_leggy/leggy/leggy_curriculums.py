@@ -6,7 +6,7 @@ _N_STAGES = 32
 _LAST_ITERATION = 80000
 _LAST_STEP = _LAST_ITERATION * NUM_STEPS_PER_ENV
 _INITIAL = {"lin_vel_x": (-0.1, 0.1), "lin_vel_y": (-0.1, 0.1), "ang_vel_z": (-0.1, 0.1)}
-_FINAL = {"lin_vel_x": (-2, 3.0), "lin_vel_y": (-0.8, 0.8), "ang_vel_z": (-2.0, 2.0)}
+_FINAL = {"lin_vel_x": (-1.5, 2.0), "lin_vel_y": (-0.8, 0.8), "ang_vel_z": (-2.0, 2.0)}
 
 # Staggered ramps: lin_vel finishes early (50%), ang_vel starts late (25%) and
 # finishes at 90%. This prevents "winner takes all" where the policy optimizes

@@ -46,7 +46,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # foot_clearance=-2.0, foot_swing_height=-0.25, foot_slip=-0.1,
     # soft_landing=-1e-5
     cfg.rewards["track_linear_velocity"].params["std"] = 0.7
-    cfg.rewards["track_angular_velocity"].weight = 3.0
+    cfg.rewards["track_angular_velocity"].weight = 5.0
     cfg.rewards["track_angular_velocity"].params["std"] = 0.7
     cfg.rewards["body_ang_vel"].weight = -0.05
     cfg.rewards["angular_momentum"].weight = -0.02
@@ -147,7 +147,7 @@ def leggy_run_rl_cfg() -> RslRlOnPolicyRunnerCfg:
             schedule="adaptive",
             gamma=0.99,
             lam=0.95,
-            desired_kl=0.01,
+            desired_kl=0.005,
             max_grad_norm=1.0,
         ),
         experiment_name="leggy_run",
