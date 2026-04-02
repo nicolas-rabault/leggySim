@@ -3,8 +3,8 @@
 
 Usage:
     uv run scripts/monitor_wandb.py <run-path> [--previous <file>]
-    uv run scripts/monitor_wandb.py rabault-nicolas-leggy/mjlab/abc123
-    uv run scripts/monitor_wandb.py rabault-nicolas-leggy/mjlab/abc123 --previous logs/training_session/run_001/monitor_001.md
+    uv run scripts/monitor_wandb.py success-hf/Leggy/abc123
+    uv run scripts/monitor_wandb.py success-hf/Leggy/abc123 --previous logs/training_session/run_001/monitor_001.md
 """
 
 import argparse
@@ -139,7 +139,7 @@ def main():
     print(summary)
 
     # Embed raw metrics for next comparison
-    print(f"\n<!-- RAW_METRICS:{json.dumps({k: v for k, v in latest.items() if v is not None})}-->")
+    print(f"\n<!-- RAW_METRICS:{json.dumps({k: float(v) if isinstance(v, (int, float)) else str(v) for k, v in latest.items() if v is not None})}-->")
 
     status = get_run_status(run)
     sys.exit(2 if status in ("killed", "crashed") else 0)

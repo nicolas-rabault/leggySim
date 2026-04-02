@@ -46,4 +46,4 @@ ssh lerobot "screen -S leggy-train -X stuff 'export PATH=\$HOME/.local/bin:\$HOM
 
 echo "=== Training launched ==="
 echo "Monitor with: ssh lerobot 'screen -r leggy-train'"
-echo "Check wandb for the new run at: https://wandb.ai/rabault-nicolas-leggy/mjlab"
+echo "Check wandb for the new run at: https://wandb.ai/success-hf/Leggy"

@@ -111,7 +111,9 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         cfg.events.pop("pd_gains", None)
         cfg.events.pop("joint_damping", None)
         cfg.events.pop("passive_armature", None)
+        cfg.events.pop("passive_damping", None)
         cfg.events.pop("joint_frictionloss", None)
+        cfg.events.pop("passive_frictionloss", None)
         cfg.events.pop("body_mass", None)
         cfg.events.pop("effort_limits", None)
         cfg.curriculum.pop("command_vel", None)
@@ -152,6 +154,7 @@ def leggy_run_rl_cfg() -> RslRlOnPolicyRunnerCfg:
             max_grad_norm=1.0,
         ),
         experiment_name="leggy_run",
+        wandb_project="Leggy",
         save_interval=500,
         num_steps_per_env=NUM_STEPS_PER_ENV,
         max_iterations=100_000,
