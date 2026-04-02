@@ -16,7 +16,7 @@ if [ -z "$WEBHOOK_URL" ]; then
     exit 1
 fi
 
-MESSAGE="$1"
+MESSAGE=$(printf '%b' "$1")
 shift
 
 FILE=""
@@ -27,12 +27,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+PAYLOAD=$(jq -n --arg msg "$MESSAGE" '{content: $msg}')
+
 if [ -n "$FILE" ]; then
-    curl -s -F "payload_json={\"content\":\"$MESSAGE\"}" \
-         -F "file=@$FILE" \
+    curl -s -F "payload_json=$PAYLOAD" \
+         -F "file1=@$FILE" \
          "$WEBHOOK_URL"
 else
     curl -s -H "Content-Type: application/json" \
-         -d "{\"content\":\"$MESSAGE\"}" \
+         -d "$PAYLOAD" \
          "$WEBHOOK_URL"
 fi
