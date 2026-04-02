@@ -10,13 +10,11 @@ from mjlab.managers.curriculum_manager import CurriculumTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
-from mjlab.tasks.velocity.mdp.curriculums import commands_vel
-
 from mjlab_leggy.leggy.leggy_constants import LEGGY_ROBOT_CFG, NUM_STEPS_PER_ENV
 from mjlab_leggy.leggy.leggy_actions import LeggyJointActionCfg
 from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
-from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD
+from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD, commands_vel_gated
 from mjlab_leggy.leggy.leggy_rewards import (
     action_rate_running_adaptive,
     dynamic_upright,
@@ -96,10 +94,13 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     # Velocity curriculum (G1-style 3 stages)
     del cfg.curriculum["command_vel"]
     cfg.curriculum["command_vel"] = CurriculumTermCfg(
-        func=commands_vel,
+        func=commands_vel_gated,
         params={
             "command_name": "twist",
             "velocity_stages": VELOCITY_STAGES_STANDARD,
+            "reward_terms": ("track_linear_velocity", "track_angular_velocity"),
+            "gate_threshold": 0.5,
+            "ema_alpha": 0.01,
         },
     )
 
