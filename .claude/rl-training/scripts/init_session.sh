@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # Initialize or reset a training session directory.
 # Usage: .claude/rl-training/scripts/init_session.sh "<goal>" "<branch>"
+#
+# Creates logs/sessions/<branch-sanitized>/ with session_state.json.
+# Branch sanitization: / → --
 
 set -euo pipefail
 
 GOAL="$1"
 BRANCH="$2"
+BRANCH_SANITIZED="${BRANCH//\//--}"
 
-SESSION_DIR="logs/training_session"
+SESSION_DIR="logs/sessions/$BRANCH_SANITIZED"
 
 if [ -f "$SESSION_DIR/session_state.json" ]; then
     BACKUP="$SESSION_DIR/session_state.$(date +%Y%m%d_%H%M%S).json"
@@ -15,7 +19,6 @@ if [ -f "$SESSION_DIR/session_state.json" ]; then
     echo "Previous state backed up to $BACKUP"
 fi
 
-# Find the next run number by checking existing run_NNN directories
 NEXT_RUN=1
 if [ -d "$SESSION_DIR" ]; then
     LAST_RUN=$(ls -d "$SESSION_DIR"/run_* 2>/dev/null | sort -V | tail -1 | grep -oE '[0-9]+$' || echo "0")
@@ -28,8 +31,9 @@ mkdir -p "$SESSION_DIR/$RUN_DIR"
 jq -n \
   --arg goal "$GOAL" \
   --arg branch "$BRANCH" \
+  --arg branch_sanitized "$BRANCH_SANITIZED" \
   --argjson run "$NEXT_RUN" \
-  '{goal: $goal, branch: $branch, current_run: $run, wandb_run_path: "", phase: "CODE", monitor_count: 0, consecutive_bad: 0, iterations: []}' \
+  '{goal: $goal, branch: $branch, branch_sanitized: $branch_sanitized, current_run: $run, wandb_run_path: "", host: "", phase: "CODE", monitor_count: 0, consecutive_bad: 0, iterations: []}' \
   > "$SESSION_DIR/session_state.json"
 
 echo "Session initialized at $SESSION_DIR"
