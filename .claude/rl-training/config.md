@@ -18,8 +18,9 @@
 - Command: uv run leggy-train Mjlab-Leggy --env.scene.num-envs 2048
 - Execution: remote
 - Env count: 2048
-- Dependencies command: uv sync
-- Screen name: leggy
+
+## Hosts
+Order: [lerobot]
 
 ## Monitoring
 - Tool: wandb
