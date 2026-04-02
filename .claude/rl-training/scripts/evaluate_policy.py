@@ -171,7 +171,7 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("run_path", help="wandb run path: entity/project/runs/run_id")
-    parser.add_argument("--output-dir", default="logs/training_session/eval")
+    parser.add_argument("--output-dir", required=True, help="Session run directory for output")
     parser.add_argument("--config", default=".claude/rl-training/config.md")
     args = parser.parse_args()
     evaluate(args.run_path, args.output_dir, args.config)
