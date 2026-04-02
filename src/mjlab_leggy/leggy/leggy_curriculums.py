@@ -81,7 +81,7 @@ class commands_vel_gated:
                 else:
                     self.ema_ang = ema_alpha * mean_val + (1 - ema_alpha) * self.ema_ang
 
-        # Check advancement
+        # Check advancement (max +1 per call, reset EMAs after advancing)
         gated = False
         next_stage = self.current_stage + 1
         if next_stage < len(velocity_stages):
@@ -89,6 +89,8 @@ class commands_vel_gated:
             perf_ready = self.ema_lin >= gate_threshold and self.ema_ang >= gate_threshold
             if step_ready and perf_ready:
                 self.current_stage = next_stage
+                self.ema_lin = 0.0
+                self.ema_ang = 0.0
             elif step_ready and not perf_ready:
                 gated = True
 
