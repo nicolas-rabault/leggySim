@@ -1,10 +1,8 @@
 """Left-right symmetry augmentation for Leggy biped.
 
 Mirrors observations and actions by swapping left/right joints and
-negating lateral components. Yaw-related quantities (wz command, wz
-angular velocity, yaw euler) are NOT negated to preserve turning
-signals — the augmentation enforces structural L/R symmetry without
-flipping turning direction.
+negating lateral/yaw components. Joint values (pos, vel, actions, torques)
+are swapped L↔R without sign changes (joint conventions are symmetric).
 
 Policy observation layout per timestep (36 dims, ×5 history = 180):
   [0:3]   base_lin_vel   — vx, vy, vz
@@ -45,13 +43,13 @@ _POLICY_STEP_PERM = [
 ]
 _POLICY_STEP_SIGN = [
     1, -1, 1,                          # base_lin_vel: negate vy
-    -1, 1, 1,                          # base_ang_vel: negate wx (keep wz for turning)
-    1, -1, 1, 1, -1, 1,               # joint_pos: negate hipX
-    1, -1, 1, 1, -1, 1,               # joint_vel
-    1, -1, 1, 1, -1, 1,               # actions
-    1, -1, 1,                          # command: negate vy (keep wz for turning)
-    -1, 1, 1,                          # body_euler: negate roll (keep yaw for turning)
-    1, -1, 1, 1, -1, 1,               # joint_torques
+    -1, 1, -1,                         # base_ang_vel: negate wx, wz
+    1, 1, 1, 1, 1, 1,                 # joint_pos: swap only
+    1, 1, 1, 1, 1, 1,                 # joint_vel
+    1, 1, 1, 1, 1, 1,                 # actions
+    1, -1, -1,                         # command: negate vy, wz
+    -1, 1, -1,                         # body_euler: negate roll, yaw
+    1, 1, 1, 1, 1, 1,                 # joint_torques
 ]
 
 # Full policy obs: tile across history frames
@@ -79,22 +77,22 @@ _CRITIC_PERM = [
 ]
 _CRITIC_SIGN = [
     1, -1, 1,                          # base_lin_vel: negate vy
-    -1, 1, 1,                          # base_ang_vel: negate wx (keep wz for turning)
-    1, -1, 1, 1, -1, 1,               # joint_pos: negate hipX
-    1, -1, 1, 1, -1, 1,               # joint_vel
-    1, -1, 1, 1, -1, 1,               # actions
-    1, -1, 1,                          # command: negate vy (keep wz for turning)
+    -1, 1, -1,                         # base_ang_vel: negate wx, wz
+    1, 1, 1, 1, 1, 1,                 # joint_pos: swap only
+    1, 1, 1, 1, 1, 1,                 # joint_vel
+    1, 1, 1, 1, 1, 1,                 # actions
+    1, -1, -1,                         # command: negate vy, wz
     1, 1,                              # foot_height
     1, 1,                              # foot_air_time
     1, 1,                              # foot_contact
     1, -1, 1, 1, -1, 1,               # foot_contact_forces: negate y
-    -1, 1, 1,                          # body_euler: negate roll (keep yaw for turning)
-    1, -1, 1, 1, -1, 1,               # joint_torques
+    -1, 1, -1,                         # body_euler: negate roll, yaw
+    1, 1, 1, 1, 1, 1,                 # joint_torques
 ]
 
-# Action permutation (6 dims): swap L↔R, negate hipX
+# Action permutation (6 dims): swap L↔R
 _ACT_PERM = [3, 4, 5, 0, 1, 2]
-_ACT_SIGN = [1, -1, 1, 1, -1, 1]
+_ACT_SIGN = [1, 1, 1, 1, 1, 1]
 
 # Cached tensors per device
 _cache = {}

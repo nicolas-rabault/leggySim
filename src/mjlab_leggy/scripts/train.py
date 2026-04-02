@@ -32,7 +32,7 @@ SYMMETRY_CFG = {
     "use_data_augmentation": True,
     "use_mirror_loss": True,
     "data_augmentation_func": "mjlab_leggy.leggy.leggy_symmetry:leggy_mirror",
-    "mirror_loss_coeff": 1.0,
+    "mirror_loss_coeff": 5.0,
 }
 
 _orig_construct = MjlabOnPolicyRunner._construct_algorithm

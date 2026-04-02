@@ -13,9 +13,12 @@ from .leggy_rewards import joint_pos_limits_motor, leg_collision_penalty
 FOOT_GEOM_NAMES = ("left_foot_collision", "right_foot_collision")
 FOOT_SITE_NAMES = ("left_foot", "right_foot")
 BODY_NAME = "boddy"
-PASSIVE_JOINT_NAMES = ("Lpassive2", "LpassiveMotor", "Rpassive2", "RpassiveMotor")
-ALL_JOINT_NAMES = ("LhipY", "LhipX", "Lknee", "RhipY", "RhipX", "Rknee",
-                   *PASSIVE_JOINT_NAMES)
+LEFT_JOINT_NAMES = ("LhipY", "LhipX", "Lknee")
+RIGHT_JOINT_NAMES = ("RhipY", "RhipX", "Rknee")
+LEFT_PASSIVE_NAMES = ("Lpassive2", "LpassiveMotor")
+RIGHT_PASSIVE_NAMES = ("Rpassive2", "RpassiveMotor")
+PASSIVE_JOINT_NAMES = (*LEFT_PASSIVE_NAMES, *RIGHT_PASSIVE_NAMES)
+ALL_JOINT_NAMES = (*LEFT_JOINT_NAMES, *RIGHT_JOINT_NAMES, *PASSIVE_JOINT_NAMES)
 
 
 def configure_contact_sensors(cfg):
@@ -133,12 +136,32 @@ def configure_viewer(cfg):
     cfg.viewer.body_name = BODY_NAME
 
 
-def configure_physics_randomization(cfg):
-    """Configure physics domain randomization for sim-to-sim/sim-to-real transfer.
+def _randomize_symmetric(env, env_ids, field, left_cfg, right_cfg, **kwargs):
+    """Randomize left joints, then copy values to right so legs stay symmetric."""
+    mdp_events.randomize_field(env, env_ids, field=field, asset_cfg=left_cfg, **kwargs)
+    asset = env.scene[left_cfg.name]
+    idx = asset.indexing
+    model_field = getattr(env.sim.model, field)
+    if env_ids is None:
+        eids = slice(None)
+    else:
+        eids = env_ids
+    l_ids = idx.joint_v_adr[left_cfg.joint_ids]
+    r_ids = idx.joint_v_adr[right_cfg.joint_ids]
+    model_field[eids][:, r_ids] = model_field[eids][:, l_ids]
 
-    Randomizes actuator gains, joint dynamics, and body mass at startup so the
-    policy becomes robust to physics differences between MuJoCo backends.
+
+def configure_physics_randomization(cfg):
+    """Configure symmetric physics domain randomization.
+
+    Per-joint randomization is constrained so left and right legs get identical
+    values, preventing physics asymmetry from biasing the policy.
     """
+    left_act_cfg = SceneEntityCfg("robot", joint_names=LEFT_JOINT_NAMES)
+    right_act_cfg = SceneEntityCfg("robot", joint_names=RIGHT_JOINT_NAMES)
+    left_pass_cfg = SceneEntityCfg("robot", joint_names=LEFT_PASSIVE_NAMES)
+    right_pass_cfg = SceneEntityCfg("robot", joint_names=RIGHT_PASSIVE_NAMES)
+
     cfg.events["pd_gains"] = EventTermCfg(
         mode="startup",
         func=mdp_events.randomize_pd_gains,
@@ -151,10 +174,23 @@ def configure_physics_randomization(cfg):
     )
     cfg.events["joint_damping"] = EventTermCfg(
         mode="startup",
-        func=mdp_events.randomize_field,
+        func=_randomize_symmetric,
         domain_randomization=True,
         params={
-            "asset_cfg": SceneEntityCfg("robot", joint_names=ALL_JOINT_NAMES),
+            "left_cfg": left_act_cfg,
+            "right_cfg": right_act_cfg,
+            "field": "dof_damping",
+            "ranges": (0.5, 2.0),
+            "operation": "scale",
+        },
+    )
+    cfg.events["passive_damping"] = EventTermCfg(
+        mode="startup",
+        func=_randomize_symmetric,
+        domain_randomization=True,
+        params={
+            "left_cfg": left_pass_cfg,
+            "right_cfg": right_pass_cfg,
             "field": "dof_damping",
             "ranges": (0.5, 2.0),
             "operation": "scale",
@@ -162,10 +198,11 @@ def configure_physics_randomization(cfg):
     )
     cfg.events["passive_armature"] = EventTermCfg(
         mode="startup",
-        func=mdp_events.randomize_field,
+        func=_randomize_symmetric,
         domain_randomization=True,
         params={
-            "asset_cfg": SceneEntityCfg("robot", joint_names=PASSIVE_JOINT_NAMES),
+            "left_cfg": left_pass_cfg,
+            "right_cfg": right_pass_cfg,
             "field": "dof_armature",
             "ranges": (0.5, 20.0),
             "operation": "scale",
@@ -174,10 +211,23 @@ def configure_physics_randomization(cfg):
     )
     cfg.events["joint_frictionloss"] = EventTermCfg(
         mode="startup",
-        func=mdp_events.randomize_field,
+        func=_randomize_symmetric,
         domain_randomization=True,
         params={
-            "asset_cfg": SceneEntityCfg("robot", joint_names=ALL_JOINT_NAMES),
+            "left_cfg": left_act_cfg,
+            "right_cfg": right_act_cfg,
+            "field": "dof_frictionloss",
+            "ranges": (0.5, 3.0),
+            "operation": "scale",
+        },
+    )
+    cfg.events["passive_frictionloss"] = EventTermCfg(
+        mode="startup",
+        func=_randomize_symmetric,
+        domain_randomization=True,
+        params={
+            "left_cfg": left_pass_cfg,
+            "right_cfg": right_pass_cfg,
             "field": "dof_frictionloss",
             "ranges": (0.5, 3.0),
             "operation": "scale",
