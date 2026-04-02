@@ -38,7 +38,8 @@ Single file. No embedded scripts. No project-specific references. Pure orchestra
     ├── monitor.py
     ├── evaluate_policy.py
     ├── init_session.sh
-    └── get_latest_run.py
+    ├── get_latest_run.py
+    └── notify.sh          # (optional) custom notification script
 ```
 
 ### Sensitive infra (gitignored, in project memory)
@@ -86,6 +87,11 @@ Contains SSH host/user, WandB project path, remote paths, API keys — anything 
 - Scenarios: <list of test scenarios with commands/parameters>
 - Metrics: <what to measure during eval>
 - Video: <true|false>
+
+## Notifications
+- Enabled: <true|false>
+- Method: <skill:<skill-name>|script>
+- When: <list of events: training_started, monitor_update, eval_complete, training_killed, iteration_started, blocker>
 
 ## Source Files
 - Task config: <path to main task definition>
@@ -157,11 +163,20 @@ No user interaction. The agent:
 - Ask about evaluation scenarios and metrics
 - May iterate to nail down eval strategy
 
-### Step 5 — Generate (autonomous)
+### Step 5 — Notifications (interactive)
+
+- Ask if the user wants to be notified about training progression
+- If yes, ask how: existing Claude Code skill (e.g., discord-notify), email, Slack, custom script, etc.
+- If a skill exists (installed or available): reference it by name in config (`method: skill:<skill-name>`)
+- If custom: generate a `notify.sh` script in `.claude/rl-training/scripts/` that handles the notification delivery
+- Ask which events should trigger notifications (training started, monitor updates, eval complete, training killed, blockers, etc.)
+- Store any notification credentials/webhooks in `rl_training_infra.md` (gitignored)
+
+### Step 6 — Generate (autonomous)
 
 - Write `config.md` from gathered info
 - Write `rl_training_infra.md` to project memory
-- Generate all 6 scripts adapted to the project
+- Generate the 6 core scripts + optional `notify.sh` adapted to the project
 - Scripts use current Leggy scripts as structural reference (patterns, not literal content)
 - Present summary of generated files to user for review
 
@@ -200,7 +215,7 @@ Investigate → research → implement. Reads `config.md` → Source Files to kn
 - Calls `.claude/rl-training/scripts/monitor.py`
 - Optionally calls `.claude/rl-training/scripts/evaluate_policy.py`
 - Uses `config.md` → Monitoring section for thresholds and key metrics
-- Discord notifications via the existing discord-notify skill (not embedded)
+- Sends notifications based on `config.md` → Notifications settings (see Notification System below)
 - Decision logic: keep monitoring / finish / kill+iterate
 
 ### Phase: ITERATE
@@ -213,7 +228,7 @@ Diagnose failure → fix code → relaunch. Uses config for source file paths an
 - Hardcoded script paths (e.g., `scripts/train_remote.sh`)
 - Hardcoded WandB project
 - Hardcoded remote host details
-- Embedded Discord webhook logic
+- Embedded Discord webhook logic / hardcoded notification method
 - Hardcoded metric names and categories
 
 ### What Stays Generic
@@ -223,6 +238,20 @@ Diagnose failure → fix code → relaunch. Uses config for source file paths an
 - Decision logic structure (consecutive bad → kill, max iterations → pause)
 - File-based state machine (session_state.json)
 - Instructions to read config.md and infra memory
+
+## Notification System
+
+Notifications are decoupled from the skill logic. The skill generates the notification content (text message, optional file attachment like video), then delegates delivery based on config:
+
+- **`method: skill:<skill-name>`** — The skill invokes an installed Claude Code skill (e.g., `discord-notify`) to deliver the message. No custom script needed. The skill name is stored in config, credentials are managed by the notification skill itself.
+- **`method: script`** — The skill calls `.claude/rl-training/scripts/notify.sh <message> [--file <path>]`. This script is generated during setup, tailored to the user's chosen delivery method (Slack webhook, email via sendmail, custom API, etc.). Credentials stored in `rl_training_infra.md`.
+
+The SKILL.md orchestrator doesn't know or care about the delivery mechanism. It just:
+1. Composes the message text (status update, blocker alert, eval summary)
+2. Checks `config.md` → Notifications.When to see if this event type should notify
+3. If yes: calls the skill or script as configured
+
+If notifications are disabled (`Enabled: false`), the skill skips notification entirely.
 
 ## Script Generation Reference
 
@@ -236,6 +265,7 @@ The 6 scripts are generated per-project. The current Leggy scripts serve as stru
 | evaluate_policy.py | Headless eval | Evaluation.Scenarios, Evaluation.Metrics, Task.Name |
 | init_session.sh | Session management | (generic, minimal config needed) |
 | get_latest_run.py | Find active run | Monitoring.Tool, infra memory |
+| notify.sh (optional) | Deliver notifications | Notifications.Method, infra memory |
 
 ## LeggySim Migration
 
@@ -249,6 +279,6 @@ LeggySim is migrated directly — no interactive setup needed since everything i
 
 ## Out of Scope
 
-- Discord webhook management (handled by discord-notify skill)
+- Notification skill implementation (users install their preferred notification skill separately, or use a custom script)
 - Web export (project-specific, not part of generic training loop)
 - Multi-robot / multi-task training in single project
