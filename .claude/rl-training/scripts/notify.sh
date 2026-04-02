@@ -1,24 +1,35 @@
 #!/usr/bin/env bash
 # Send a notification via Discord webhook.
-# Usage: .claude/rl-training/scripts/notify.sh "<message>" [--file <path>]
+# Usage: .claude/rl-training/scripts/notify.sh "<message>" [--branch <name>] [--file <path>]
+#
+# --branch: prepends [<branch>] to the message
+# --file: attaches a file (e.g. video)
 #
 # Reads WEBHOOK_URL from .claude-discord.md in the project root.
 # Messages are truncated to 2000 chars (Discord limit).
+# IMPORTANT: pass actual newlines in the message, not literal \n.
+# Use printf or $'...' syntax to compose multi-line messages.
 
 set -euo pipefail
 
 MESSAGE="$1"
-FILE=""
-
 shift
+
+FILE=""
+BRANCH=""
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --file) FILE="$2"; shift 2 ;;
+        --branch) BRANCH="$2"; shift 2 ;;
         *) shift ;;
     esac
 done
 
-# Extract webhook URL from .claude-discord.md
+if [ -n "$BRANCH" ]; then
+    MESSAGE="[$BRANCH] $MESSAGE"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 DISCORD_CONFIG="$PROJECT_ROOT/.claude-discord.md"
@@ -35,17 +46,14 @@ if [ -z "$WEBHOOK_URL" ]; then
     exit 0
 fi
 
-# Truncate message to Discord's 2000 char limit
 MESSAGE="${MESSAGE:0:2000}"
 
 if [ -n "$FILE" ] && [ -f "$FILE" ]; then
-    # Send with file attachment
     curl -s \
         -F "payload_json={\"content\":$(printf '%s' "$MESSAGE" | jq -Rs .)}" \
         -F "file=@$FILE" \
         "$WEBHOOK_URL" > /dev/null
 else
-    # Send text only
     curl -s -H "Content-Type: application/json" \
         -d "{\"content\":$(printf '%s' "$MESSAGE" | jq -Rs .)}" \
         "$WEBHOOK_URL" > /dev/null
