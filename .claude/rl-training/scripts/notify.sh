@@ -12,6 +12,9 @@
 
 set -euo pipefail
 
+command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required but not installed" >&2; exit 1; }
+[ $# -lt 1 ] && { echo "Usage: notify.sh \"<message>\" [--branch <name>] [--file <path>]" >&2; exit 1; }
+
 MESSAGE="$1"
 shift
 
@@ -20,9 +23,9 @@ BRANCH=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --file) FILE="$2"; shift 2 ;;
-        --branch) BRANCH="$2"; shift 2 ;;
-        *) shift ;;
+        --file) [ $# -ge 2 ] || { echo "ERROR: --file requires a value" >&2; exit 1; }; FILE="$2"; shift 2 ;;
+        --branch) [ $# -ge 2 ] || { echo "ERROR: --branch requires a value" >&2; exit 1; }; BRANCH="$2"; shift 2 ;;
+        *) echo "WARNING: Unknown argument: $1" >&2; shift ;;
     esac
 done
 

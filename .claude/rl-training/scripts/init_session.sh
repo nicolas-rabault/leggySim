@@ -7,11 +7,16 @@
 
 set -euo pipefail
 
+command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required but not installed" >&2; exit 1; }
+[ $# -lt 2 ] && { echo "Usage: init_session.sh \"<goal>\" \"<branch>\"" >&2; exit 1; }
+
 GOAL="$1"
 BRANCH="$2"
 BRANCH_SANITIZED="${BRANCH//\//--}"
 
-SESSION_DIR="logs/sessions/$BRANCH_SANITIZED"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+SESSION_DIR="$PROJECT_ROOT/logs/sessions/$BRANCH_SANITIZED"
 
 if [ -f "$SESSION_DIR/session_state.json" ]; then
     BACKUP="$SESSION_DIR/session_state.$(date +%Y%m%d_%H%M%S).json"
@@ -33,7 +38,7 @@ jq -n \
   --arg branch "$BRANCH" \
   --arg branch_sanitized "$BRANCH_SANITIZED" \
   --argjson run "$NEXT_RUN" \
-  '{goal: $goal, branch: $branch, branch_sanitized: $branch_sanitized, current_run: $run, wandb_run_path: "", host: "", phase: "CODE", monitor_count: 0, consecutive_bad: 0, iterations: []}' \
+  '{goal: $goal, branch: $branch, branch_sanitized: $branch_sanitized, current_run: $run, wandb_run_path: "", host: "", phase: "LAUNCH", monitor_count: 0, consecutive_bad: 0, iterations: []}' \
   > "$SESSION_DIR/session_state.json"
 
 echo "Session initialized at $SESSION_DIR"

@@ -7,6 +7,7 @@ Usage:
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -73,8 +74,12 @@ def main():
     args = parser.parse_args()
 
     api = wandb.Api()
-    run = api.run(args.run_path)
-    run.update()
+    try:
+        run = api.run(args.run_path)
+        run.update()
+    except Exception as e:
+        print(f"ERROR: Failed to fetch run {args.run_path}: {e}", file=sys.stderr)
+        sys.exit(1)
     latest = dict(run.summary)
 
     if not latest or "_step" not in latest:
@@ -97,7 +102,8 @@ def main():
     summary = format_summary(run, latest, previous_check, categories)
     print(summary)
 
-    print(f"\n<!-- RAW_METRICS:{json.dumps({k: float(v) if isinstance(v, (int, float)) else str(v) for k, v in latest.items() if v is not None})}-->")
+    raw = {k: float(v) for k, v in latest.items() if isinstance(v, (int, float)) and math.isfinite(float(v))}
+    print(f"\n<!-- RAW_METRICS:{json.dumps(raw)}-->")
 
     sys.exit(2 if run.state in ("killed", "crashed") else 0)
 

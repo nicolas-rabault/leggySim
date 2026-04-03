@@ -9,6 +9,7 @@ import argparse
 import importlib
 import json
 import re
+import sys
 from pathlib import Path
 
 import torch
@@ -23,7 +24,8 @@ from mjlab.utils.wrappers import VideoRecorder
 def parse_config(config_path):
     text = Path(config_path).read_text()
 
-    task_match = re.search(r"^- Name:\s*(.+)$", text, re.MULTILINE)
+    task_section = text[text.index("## Task"):]
+    task_match = re.search(r"^- Name:\s*(.+)$", task_section, re.MULTILINE)
     task_id = task_match.group(1).strip()
 
     actuators_match = re.search(r"^- Actuators:\s*\[(.+)\]$", text, re.MULTILINE)
@@ -36,7 +38,7 @@ def parse_config(config_path):
             in_scenarios = True
             continue
         if in_scenarios:
-            m = re.match(r"\s+- (\w+):\s*vx=([\d.+-]+),\s*vy=([\d.+-]+),\s*vz=([\d.+-]+),\s*steps=(\d+)", line)
+            m = re.match(r"\s+- (\w+):\s*vx=([-+]?\d*\.?\d+),\s*vy=([-+]?\d*\.?\d+),\s*vz=([-+]?\d*\.?\d+),\s*steps=(\d+)", line)
             if m:
                 scenarios.append((m.group(1), float(m.group(2)), float(m.group(3)), float(m.group(4)), int(m.group(5))))
             elif line.strip().startswith("- ") and not line.startswith("  "):
@@ -51,8 +53,8 @@ def find_env_class(task_id):
         module_name = type(env_cfg).__module__
         pkg = module_name.split(".")[0]
         importlib.import_module(pkg + ".tasks")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[WARN] Could not import task module for {task_id}: {e}", file=sys.stderr)
 
 
 def evaluate(run_path: str, output_dir: str, config_path: str):
@@ -81,7 +83,8 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
     try:
         mod = importlib.import_module(type(env_cfg).__module__.rsplit(".", 1)[0])
         env_cls = getattr(mod, env_cls_name, None)
-    except Exception:
+    except Exception as e:
+        print(f"[WARN] Could not find env class {env_cls_name}: {e}", file=sys.stderr)
         env_cls = None
 
     if env_cls is None:
@@ -110,49 +113,64 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
 
     metrics = {}
 
-    for cmd_name, vx, vy, vz, duration in scenarios:
-        vel_errors_xy, vel_errors_yaw, torques, falls = [], [], [], 0
+    try:
+        for cmd_name, vx, vy, vz, duration in scenarios:
+            vel_errors_xy, vel_errors_yaw, torques, falls = [], [], [], 0
 
-        for _ in range(duration):
-            cmd_term.vel_command_b[:, 0] = vx
-            cmd_term.vel_command_b[:, 1] = vy
-            cmd_term.vel_command_b[:, 2] = vz
-            cmd_term.time_left[:] = 1e9
+            try:
+                for _ in range(duration):
+                    cmd_term.vel_command_b[:, 0] = vx
+                    cmd_term.vel_command_b[:, 1] = vy
+                    cmd_term.vel_command_b[:, 2] = vz
+                    cmd_term.time_left[:] = 1e9
 
-            action = policy(obs)
-            obs, _, dones, extras = wrapped.step(action)
+                    action = policy(obs)
+                    obs, _, dones, extras = wrapped.step(action)
 
-            actual_vel = robot.data.root_link_lin_vel_b[0].cpu()
-            actual_ang = robot.data.root_link_ang_vel_b[0, 2].cpu().item()
-            torque = robot.data.actuator_force[0].cpu().abs().tolist()
+                    actual_vel = robot.data.root_link_lin_vel_b[0].cpu()
+                    actual_ang = robot.data.root_link_ang_vel_b[0, 2].cpu().item()
+                    torque = robot.data.actuator_force[0].cpu().abs().tolist()
 
-            vel_errors_xy.append(((actual_vel[0].item() - vx)**2 + (actual_vel[1].item() - vy)**2)**0.5)
-            vel_errors_yaw.append(abs(actual_ang - vz))
-            torques.append(torque)
+                    vel_errors_xy.append(((actual_vel[0].item() - vx)**2 + (actual_vel[1].item() - vy)**2)**0.5)
+                    vel_errors_yaw.append(abs(actual_ang - vz))
+                    torques.append(torque)
 
-            if dones.any():
-                falls += 1
+                    if dones.any():
+                        falls += 1
+                        cmd_term.vel_command_b[:, 0] = vx
+                        cmd_term.vel_command_b[:, 1] = vy
+                        cmd_term.vel_command_b[:, 2] = vz
+                        cmd_term.time_left[:] = 1e9
+            except Exception as e:
+                print(f"[WARN] Scenario '{cmd_name}' failed at step {len(vel_errors_xy)}: {e}", file=sys.stderr)
+                if not vel_errors_xy:
+                    metrics[cmd_name] = {"command": {"vx": vx, "vy": vy, "vz": vz}, "error": str(e)}
+                    continue
 
-        n = len(vel_errors_xy)
-        avg_torques = [sum(t[i] for t in torques) / n for i in range(len(joints))]
-        metrics[cmd_name] = {
-            "command": {"vx": vx, "vy": vy, "vz": vz},
-            "rms_vel_error_xy": (sum(e**2 for e in vel_errors_xy) / n)**0.5,
-            "rms_vel_error_yaw": (sum(e**2 for e in vel_errors_yaw) / n)**0.5,
-            "falls": falls,
-            "mean_torque": avg_torques,
-        }
-
-    env.close()
+            n = len(vel_errors_xy)
+            avg_torques = [sum(t[i] for t in torques) / n for i in range(len(joints))]
+            metrics[cmd_name] = {
+                "command": {"vx": vx, "vy": vy, "vz": vz},
+                "rms_vel_error_xy": (sum(e**2 for e in vel_errors_xy) / n)**0.5,
+                "rms_vel_error_yaw": (sum(e**2 for e in vel_errors_yaw) / n)**0.5,
+                "falls": falls,
+                "mean_torque_per_joint": avg_torques,
+            }
+    finally:
+        env.close()
 
     lines = [f"# Policy Evaluation — {run_path}", ""]
     for name, m in metrics.items():
         cmd = m["command"]
         lines.append(f"## {name} (vx={cmd['vx']}, vy={cmd['vy']}, vz={cmd['vz']})")
+        if "error" in m:
+            lines.append(f"- **FAILED**: {m['error']}")
+            lines.append("")
+            continue
         lines.append(f"- RMS velocity error XY: {m['rms_vel_error_xy']:.4f}")
         lines.append(f"- RMS velocity error yaw: {m['rms_vel_error_yaw']:.4f}")
         lines.append(f"- Falls: {m['falls']}")
-        torque_str = ", ".join(f"{joints[i]}={m['mean_torque'][i]:.3f}" for i in range(len(joints)))
+        torque_str = ", ".join(f"{joints[i]}={m['mean_torque_per_joint'][i]:.3f}" for i in range(len(joints)))
         lines.append(f"- Mean torque: {torque_str}")
         lines.append("")
 
