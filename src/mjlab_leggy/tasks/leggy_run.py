@@ -168,5 +168,5 @@ def leggy_run_rl_cfg() -> RslRlOnPolicyRunnerCfg:
         wandb_project="Leggy",
         save_interval=500,
         num_steps_per_env=NUM_STEPS_PER_ENV,
-        max_iterations=100_000,
+        max_iterations=50_000,
     )

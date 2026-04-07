@@ -10,7 +10,7 @@ from mjlab_leggy.leggy.leggy_actions import motor_to_knee, knee_to_motor
 LEGGY_XML: Path = Path(os.path.dirname(__file__)) / "robot.xml"
 assert LEGGY_XML.exists(), f"XML not found: {LEGGY_XML}"
 
-NUM_STEPS_PER_ENV = 24
+NUM_STEPS_PER_ENV = 48
 
 
 def get_spec() -> mujoco.MjSpec:
