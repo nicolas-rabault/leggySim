@@ -16,6 +16,40 @@ if TYPE_CHECKING:
 from .leggy_actions import knee_to_motor
 
 
+def track_linear_velocity_xy(
+    env: ManagerBasedRlEnv,
+    std: float,
+    command_name: str,
+) -> torch.Tensor:
+    """Track commanded xy linear velocity without penalizing z-velocity.
+
+    The default mjlab version includes z_error which punishes vertical motion
+    caused by turning at speed — creating a conflict with angular tracking.
+    """
+    asset = env.scene["robot"]
+    command = env.command_manager.get_command(command_name)
+    actual = asset.data.root_link_lin_vel_b
+    xy_error = torch.sum(torch.square(command[:, :2] - actual[:, :2]), dim=1)
+    return torch.exp(-xy_error / std**2)
+
+
+def track_angular_velocity_yaw(
+    env: ManagerBasedRlEnv,
+    std: float,
+    command_name: str,
+) -> torch.Tensor:
+    """Track commanded yaw rate without penalizing roll/pitch rates.
+
+    The default mjlab version includes xy_error which punishes roll/pitch
+    oscillations caused by running — creating a conflict with linear tracking.
+    """
+    asset = env.scene["robot"]
+    command = env.command_manager.get_command(command_name)
+    actual = asset.data.root_link_ang_vel_b
+    yaw_error = torch.square(command[:, 2] - actual[:, 2])
+    return torch.exp(-yaw_error / std**2)
+
+
 def joint_pos_limits_motor(
     env: ManagerBasedRlEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),

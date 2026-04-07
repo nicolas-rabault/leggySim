@@ -23,6 +23,8 @@ from mjlab_leggy.leggy.leggy_rewards import (
     flight_penalty,
     forward_symmetry,
     same_foot_penalty,
+    track_angular_velocity_yaw,
+    track_linear_velocity_xy,
 )
 
 
@@ -41,14 +43,19 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     configure_leggy_observations(cfg, enable_corruption=True)
     configure_leggy_base(cfg)
 
-    # G1-style reward weights -- base defaults already match G1 for:
-    # track_linear_velocity=2.0, track_angular_velocity=2.0, upright=1.0,
-    # pose=1.0, dof_pos_limits=-1.0, action_rate_l2=-0.1, air_time=0.0,
-    # foot_clearance=-2.0, foot_swing_height=-0.25, foot_slip=-0.1,
-    # soft_landing=-1e-5
-    cfg.rewards["track_linear_velocity"].params["std"] = 0.7
-    cfg.rewards["track_angular_velocity"].weight = 3.0
-    cfg.rewards["track_angular_velocity"].params["std"] = 1.0
+    # Replace default velocity tracking with conflict-free versions:
+    # Default mjlab rewards cross-penalize (lin penalizes z-vel from turning,
+    # ang penalizes roll/pitch from running). Custom versions track only xy/yaw.
+    cfg.rewards["track_linear_velocity"] = RewardTermCfg(
+        func=track_linear_velocity_xy,
+        weight=2.0,
+        params={"command_name": "twist", "std": 0.7},
+    )
+    cfg.rewards["track_angular_velocity"] = RewardTermCfg(
+        func=track_angular_velocity_yaw,
+        weight=3.0,
+        params={"command_name": "twist", "std": 1.0},
+    )
     cfg.rewards["body_ang_vel"].weight = -0.05
     cfg.rewards["angular_momentum"].weight = -0.02
     cfg.rewards["leg_collision_penalty"].weight = -1.0

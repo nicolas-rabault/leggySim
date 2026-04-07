@@ -64,12 +64,18 @@ class LeggyRlEnv(ManagerBasedRlEnv):
             # Store temporarily — parent's _reset_idx overwrites extras["log"].
             self._pending_torque_log = {}
             for name, l_idx, r_idx in _JOINT_GROUPS:
-                mean_val = (mean_torques[:, l_idx] + mean_torques[:, r_idx]) / 2.0
-                peak_val = torch.max(peak_torques[:, l_idx], peak_torques[:, r_idx])
-                sat_val = (sat_ratio[:, l_idx] + sat_ratio[:, r_idx]) / 2.0
-                self._pending_torque_log[f"Torque/mean_{name}"] = torch.mean(mean_val)
-                self._pending_torque_log[f"Torque/peak_{name}"] = torch.mean(peak_val)
-                self._pending_torque_log[f"Torque/saturation_{name}"] = torch.mean(sat_val)
+                l_mean = mean_torques[:, l_idx]
+                r_mean = mean_torques[:, r_idx]
+                l_peak = peak_torques[:, l_idx]
+                r_peak = peak_torques[:, r_idx]
+                l_sat = sat_ratio[:, l_idx]
+                r_sat = sat_ratio[:, r_idx]
+                self._pending_torque_log[f"Torque/L{name}_mean"] = torch.mean(l_mean)
+                self._pending_torque_log[f"Torque/R{name}_mean"] = torch.mean(r_mean)
+                self._pending_torque_log[f"Torque/L{name}_peak"] = torch.mean(l_peak)
+                self._pending_torque_log[f"Torque/R{name}_peak"] = torch.mean(r_peak)
+                self._pending_torque_log[f"Torque/L{name}_sat"] = torch.mean(l_sat)
+                self._pending_torque_log[f"Torque/R{name}_sat"] = torch.mean(r_sat)
 
             # Reset accumulators for these environments.
             self._torque_abs_sum[env_ids] = 0.0
