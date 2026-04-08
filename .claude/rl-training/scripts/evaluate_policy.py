@@ -102,8 +102,9 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
     )
     wrapped = RslRlVecEnvWrapper(env, clip_actions=rl_cfg.clip_actions)
 
+    from dataclasses import asdict
     runner_cls = load_runner_cls(task_id) or OnPolicyRunner
-    runner = runner_cls(wrapped, {k: v for k, v in rl_cfg.__dict__.items()}, device=device)
+    runner = runner_cls(wrapped, asdict(rl_cfg), device=device)
     runner.load(str(checkpoint_path), map_location=device)
     policy = runner.get_inference_policy(device=device)
 
@@ -116,9 +117,12 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
     try:
         for cmd_name, vx, vy, vz, duration in scenarios:
             vel_errors_xy, vel_errors_yaw, torques, falls = [], [], [], 0
+            actions_history, vel_x_history, vel_y_history, ang_z_history = [], [], [], []
+
+            settle_steps = 100  # 1 second at 100Hz to reach steady state
 
             try:
-                for _ in range(duration):
+                for step_i in range(duration):
                     cmd_term.vel_command_b[:, 0] = vx
                     cmd_term.vel_command_b[:, 1] = vy
                     cmd_term.vel_command_b[:, 2] = vz
@@ -134,6 +138,10 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
                     vel_errors_xy.append(((actual_vel[0].item() - vx)**2 + (actual_vel[1].item() - vy)**2)**0.5)
                     vel_errors_yaw.append(abs(actual_ang - vz))
                     torques.append(torque)
+                    actions_history.append(action[0].cpu().tolist())
+                    vel_x_history.append(actual_vel[0].item())
+                    vel_y_history.append(actual_vel[1].item())
+                    ang_z_history.append(actual_ang)
 
                     if dones.any():
                         falls += 1
@@ -149,12 +157,35 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
 
             n = len(vel_errors_xy)
             avg_torques = [sum(t[i] for t in torques) / n for i in range(len(joints))]
+
+            # Steady-state smoothness (after settling)
+            ss = min(settle_steps, n // 2)
+            ss_vel_x = vel_x_history[ss:]
+            ss_vel_y = vel_y_history[ss:]
+            ss_ang_z = ang_z_history[ss:]
+            ss_actions = actions_history[ss:]
+
+            import statistics
+            vel_x_std = statistics.stdev(ss_vel_x) if len(ss_vel_x) > 1 else 0.0
+            vel_y_std = statistics.stdev(ss_vel_y) if len(ss_vel_y) > 1 else 0.0
+            ang_z_std = statistics.stdev(ss_ang_z) if len(ss_ang_z) > 1 else 0.0
+
+            # Action jitter: mean of per-joint std of consecutive action differences
+            action_jitter = 0.0
+            if len(ss_actions) > 2:
+                diffs = [[ss_actions[i+1][j] - ss_actions[i][j] for i in range(len(ss_actions)-1)] for j in range(len(ss_actions[0]))]
+                action_jitter = sum(statistics.stdev(d) for d in diffs) / len(diffs)
+
             metrics[cmd_name] = {
                 "command": {"vx": vx, "vy": vy, "vz": vz},
                 "rms_vel_error_xy": (sum(e**2 for e in vel_errors_xy) / n)**0.5,
                 "rms_vel_error_yaw": (sum(e**2 for e in vel_errors_yaw) / n)**0.5,
                 "falls": falls,
                 "mean_torque_per_joint": avg_torques,
+                "steady_state_vel_x_std": vel_x_std,
+                "steady_state_vel_y_std": vel_y_std,
+                "steady_state_ang_z_std": ang_z_std,
+                "steady_state_action_jitter": action_jitter,
             }
     finally:
         env.close()
@@ -172,6 +203,10 @@ def evaluate(run_path: str, output_dir: str, config_path: str):
         lines.append(f"- Falls: {m['falls']}")
         torque_str = ", ".join(f"{joints[i]}={m['mean_torque_per_joint'][i]:.3f}" for i in range(len(joints)))
         lines.append(f"- Mean torque: {torque_str}")
+        lines.append(f"- Steady-state vel_x std: {m.get('steady_state_vel_x_std', 0):.4f}")
+        lines.append(f"- Steady-state vel_y std: {m.get('steady_state_vel_y_std', 0):.4f}")
+        lines.append(f"- Steady-state ang_z std: {m.get('steady_state_ang_z_std', 0):.4f}")
+        lines.append(f"- Action jitter: {m.get('steady_state_action_jitter', 0):.4f}")
         lines.append("")
 
     summary = "\n".join(lines)

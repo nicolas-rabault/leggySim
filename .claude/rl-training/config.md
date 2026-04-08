@@ -31,13 +31,13 @@ Order: [lerobot]
 
 ## Evaluation
 - Scenarios:
-  - stand: vx=0.0, vy=0.0, vz=0.0, steps=100
-  - walk_forward: vx=0.5, vy=0.0, vz=0.0, steps=200
-  - run_forward: vx=2.0, vy=0.0, vz=0.0, steps=200
-  - turn_left: vx=0.5, vy=0.0, vz=1.0, steps=200
-  - turn_right: vx=0.5, vy=0.0, vz=-1.0, steps=200
-  - side_step: vx=0.0, vy=0.5, vz=0.0, steps=200
-- Metrics: [rms_vel_error_xy, rms_vel_error_yaw, falls, mean_torque_per_joint]
+  - stand: vx=0.0, vy=0.0, vz=0.0, steps=300
+  - walk_forward: vx=0.5, vy=0.0, vz=0.0, steps=400
+  - run_forward: vx=2.0, vy=0.0, vz=0.0, steps=400
+  - turn_left: vx=0.5, vy=0.0, vz=1.0, steps=400
+  - turn_right: vx=0.5, vy=0.0, vz=-1.0, steps=400
+  - side_step: vx=0.0, vy=0.5, vz=0.0, steps=400
+- Metrics: [rms_vel_error_xy, rms_vel_error_yaw, falls, mean_torque_per_joint, steady_state_vel_std, action_jitter]
 - Video: true
 
 ## Decision Criteria

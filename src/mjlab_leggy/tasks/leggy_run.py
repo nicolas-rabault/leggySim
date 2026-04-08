@@ -18,7 +18,6 @@ from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD
 from mjlab_leggy.leggy.leggy_rewards import (
-    action_rate_running_adaptive,
     dynamic_upright,
     flight_penalty,
     forward_symmetry,
@@ -70,11 +69,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         },
     )
 
-    cfg.rewards["action_rate_l2"] = RewardTermCfg(
-        func=action_rate_running_adaptive,
-        weight=-1.5,
-        params={"command_name": "twist", "velocity_threshold": 0.5},
-    )
+    cfg.rewards["action_rate_l2"].weight = -2.5
 
     cfg.rewards["flight_penalty"] = RewardTermCfg(
         func=flight_penalty,
@@ -100,7 +95,7 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
     # Leggy-specific foot params (smaller robot than G1)
     cfg.rewards["foot_clearance"].params["target_height"] = 0.05
-    cfg.rewards["foot_swing_height"].params["target_height"] = 0.08
+    cfg.rewards["foot_swing_height"].params["target_height"] = 0.04
 
     # Pose thresholds for speed-adaptive posture
     cfg.rewards["pose"].params["walking_threshold"] = 0.5
