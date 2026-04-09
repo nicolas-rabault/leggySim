@@ -227,6 +227,37 @@ class dynamic_upright:
         return torch.exp(-error / std**2)
 
 
+class action_symmetry:
+    """Penalize persistent left-right action bias using EMA.
+
+    Tracks EMA of (left_action - right_action) per joint pair.
+    Fades with speed so symmetry is enforced at low speeds only.
+    """
+
+    def __init__(self, cfg, env: ManagerBasedRlEnv):
+        self.mean_diff = torch.zeros(env.num_envs, 3, device=env.device)
+
+    def reset(self, env_ids: torch.Tensor):
+        self.mean_diff[env_ids] = 0.0
+
+    def __call__(
+        self,
+        env: ManagerBasedRlEnv,
+        command_name: str = "twist",
+        alpha: float = 0.05,
+        fade_speed: float = 1.5,
+        ang_vel_weight: float = 0.5,
+    ) -> torch.Tensor:
+        action = env.action_manager.action
+        diff = action[:, :3] - action[:, 3:]  # L - R per joint pair
+        self.mean_diff = alpha * diff + (1.0 - alpha) * self.mean_diff
+
+        cmd = env.command_manager.get_command(command_name)
+        effective_speed = torch.norm(cmd[:, :2], dim=1) + torch.abs(cmd[:, 2]) * ang_vel_weight
+        scale = torch.clamp(1.0 - effective_speed / fade_speed, min=0.0)
+        return torch.norm(self.mean_diff, dim=1) * scale
+
+
 class forward_symmetry:
     """Penalize one foot being consistently ahead of the other.
 

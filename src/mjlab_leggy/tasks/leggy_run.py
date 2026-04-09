@@ -18,6 +18,7 @@ from mjlab_leggy.leggy.leggy_observations import configure_leggy_observations
 from mjlab_leggy.leggy.leggy_config import configure_leggy_base
 from mjlab_leggy.leggy.leggy_curriculums import VELOCITY_STAGES_STANDARD
 from mjlab_leggy.leggy.leggy_rewards import (
+    action_symmetry,
     dynamic_upright,
     flight_penalty,
     forward_symmetry,
@@ -90,6 +91,12 @@ def leggy_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.rewards["forward_symmetry"] = RewardTermCfg(
         func=forward_symmetry,
         weight=-3.0,
+        params={"command_name": "twist"},
+    )
+
+    cfg.rewards["action_symmetry"] = RewardTermCfg(
+        func=action_symmetry,
+        weight=-4.0,
         params={"command_name": "twist"},
     )
 
